@@ -56,7 +56,7 @@ func (j RelyAuthWebhookConfig) Validate() error {
 	}
 
 	if j.Method != http.MethodPost && j.Method != http.MethodGet {
-		return fmt.Errorf("%w, got `%s`", ErrWebhookAuthMethodNotAllowed, j.Method)
+		return fmt.Errorf("%w, got `%s`", ErrMethodNotAllowed, j.Method)
 	}
 
 	return nil

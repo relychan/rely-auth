@@ -3,7 +3,7 @@
   "$id": "https://github.com/relychan/rely-auth/auth/rely-auth-config",
   "$ref": "#/$defs/RelyAuthConfig",
   "$defs": {
-    "AllOrList": {
+    "AllOrListString": {
       "oneOf": [
         {
           "type": "string",
@@ -69,6 +69,30 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "FieldMappingEntryConfig": {
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "default": {
+          "$ref": "#/$defs/EnvAny"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "FieldMappingEntryStringConfig": {
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "default": {
+          "$ref": "#/$defs/EnvString"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "JWTClaimsConfig": {
       "properties": {
         "namespace": {
@@ -76,7 +100,7 @@
         },
         "locations": {
           "additionalProperties": {
-            "$ref": "#/$defs/JWTClaimsMappingEntry"
+            "$ref": "#/$defs/FieldMappingEntryConfig"
           },
           "type": "object"
         }
@@ -91,18 +115,6 @@
         "StringifiedJson"
       ],
       "description": "the format in which JWT claims will be present."
-    },
-    "JWTClaimsMappingEntry": {
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "default": {
-          "$ref": "#/$defs/EnvAny"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
     },
     "JWTClaimsNamespace": {
       "properties": {
@@ -347,14 +359,14 @@
               ],
               "description": "GET webhook method"
             },
-            "customHeadersConfig": {
+            "customRequest": {
               "properties": {
                 "headers": {
                   "$ref": "#/$defs/WebhookAuthHeadersConfig"
                 }
               },
               "type": "object",
-              "description": "The configuration for the headers to be sent to the auth hook"
+              "description": "Configurations for request headers and transformed request body to be sent to the auth hook"
             }
           },
           "type": "object"
@@ -368,22 +380,17 @@
               ],
               "description": "POST webhook method"
             },
-            "customHeadersConfig": {
+            "customRequest": {
               "properties": {
                 "headers": {
                   "$ref": "#/$defs/WebhookAuthHeadersConfig"
                 },
                 "body": {
-                  "properties": {
-                    "headers": {
-                      "$ref": "#/$defs/WebhookAuthHeadersConfig"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "https://raw.githubusercontent.com/relychan/gotransform/refs/heads/main/jsonschema/gotransform.schema.json"
                 }
               },
               "type": "object",
-              "description": "The configuration for the headers to be sent to the auth hook"
+              "description": "Configurations for request headers and transformed request body to be sent to the auth hook"
             }
           },
           "type": "object"
@@ -408,6 +415,10 @@
         "httpClient": {
           "$ref": "https://raw.githubusercontent.com/relychan/gorestly/refs/heads/main/jsonschema/gorestly.schema.json",
           "description": "Configurations for the HTTP client"
+        },
+        "customResponse": {
+          "$ref": "#/$defs/WebhookAuthCustomResponseConfig",
+          "description": "The configuration for transforming response bodies"
         }
       },
       "type": "object",
@@ -441,14 +452,26 @@
         "name"
       ]
     },
+    "WebhookAuthCustomResponseConfig": {
+      "properties": {
+        "response": {
+          "additionalProperties": {
+            "$ref": "#/$defs/FieldMappingEntryConfig"
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "WebhookAuthHeadersConfig": {
       "properties": {
         "forward": {
-          "$ref": "#/$defs/AllOrList"
+          "$ref": "#/$defs/AllOrListString"
         },
         "additional": {
           "additionalProperties": {
-            "$ref": "#/$defs/EnvString"
+            "$ref": "#/$defs/FieldMappingEntryStringConfig"
           },
           "type": "object"
         }

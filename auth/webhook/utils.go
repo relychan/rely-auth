@@ -2,7 +2,9 @@ package webhook
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/relychan/gotransform/jmes"
@@ -37,6 +39,10 @@ func decodeResponseJSON(span trace.Span, resp *resty.Response, value any) error 
 	if err != nil {
 		span.SetStatus(codes.Error, "failed to decode session variables")
 		span.RecordError(err)
+
+		if errors.Is(err, io.EOF) {
+			return ErrResponseBodyRequired
+		}
 
 		ct := resp.Header().Get("Content-Type")
 

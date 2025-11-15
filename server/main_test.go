@@ -67,7 +67,7 @@ func TestHasuraDDNAuthHookHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			runPreRoute(t, requestURL, tc.Body, tc.StatusCode, tc.ResponseBody)
+			runRequest(t, requestURL, http.MethodPost, tc.Body, tc.StatusCode, tc.ResponseBody)
 		})
 	}
 }
@@ -122,19 +122,94 @@ func TestHasuraV2AuthHookHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			runPreRoute(t, requestURL, tc.Body, tc.StatusCode, tc.ResponseBody)
+			runRequest(t, requestURL, http.MethodPost, tc.Body, tc.StatusCode, tc.ResponseBody)
 		})
 	}
 }
 
-func runPreRoute[T any](t *testing.T, requestURL string, body authmode.AuthenticateRequestData, statusCode int, responseBody T) {
+func TestAuthWebhook(t *testing.T) {
+	webhookServer := initWebhookServer(t)
+	defer webhookServer.Close()
+
+	t.Setenv("AUTH_HOOK_URL", webhookServer.URL+"/authorize")
+
+	server := initTestServer(t, "./testdata/webhook.yaml")
+	defer server.Close()
+
+	requestURL := server.URL + "/auth/ddn"
+	testCases := []struct {
+		Name         string
+		Method       string
+		Body         authmode.AuthenticateRequestData
+		StatusCode   int
+		ResponseBody map[string]any
+	}{
+		{
+			Name:       "get",
+			Method:     http.MethodGet,
+			Body:       authmode.AuthenticateRequestData{},
+			StatusCode: 200,
+			ResponseBody: map[string]any{
+				"x-hasura-role": "admin",
+			},
+		},
+		{
+			Name:   "post",
+			Method: http.MethodPost,
+			Body: authmode.AuthenticateRequestData{
+				Headers: map[string]string{
+					"Authorization": "Bearer posttoken",
+					"x-test-header": "test",
+				},
+			},
+			StatusCode: 200,
+			ResponseBody: map[string]any{
+				"x-hasura-role": "user",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			runRequest(t, requestURL, tc.Method, tc.Body, tc.StatusCode, tc.ResponseBody)
+		})
+	}
+}
+
+func runRequest[T any](t *testing.T, requestURL string, method string, body authmode.AuthenticateRequestData, statusCode int, responseBody T) {
 	t.Helper()
 
-	bodyBytes, err := json.Marshal(body)
-	assert.NilError(t, err)
+	var resp *http.Response
+	var err error
 
-	resp, err := http.Post(requestURL, "application/json", bytes.NewReader(bodyBytes))
-	assert.NilError(t, err)
+	switch method {
+	case http.MethodGet:
+		req, err := http.NewRequest(method, requestURL, nil)
+		assert.NilError(t, err)
+
+		for key, header := range body.Headers {
+			req.Header.Set(key, header)
+		}
+
+		resp, err = http.DefaultClient.Do(req)
+		assert.NilError(t, err)
+	case http.MethodPost:
+		bodyBytes, err := json.Marshal(body)
+		assert.NilError(t, err)
+
+		req, err := http.NewRequest(method, requestURL, bytes.NewReader(bodyBytes))
+		assert.NilError(t, err)
+
+		for key, header := range body.Headers {
+			req.Header.Set(key, header)
+		}
+
+		req.Header.Set("content-type", "application/json")
+
+		resp, err = http.DefaultClient.Do(req)
+		assert.NilError(t, err)
+	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode != statusCode {
@@ -181,4 +256,34 @@ func initTestServer(t *testing.T, configPath string) *httptest.Server {
 	router := setupRouter(&envVars, authManager, logger)
 
 	return httptest.NewServer(router)
+}
+
+func initWebhookServer(t *testing.T) *httptest.Server {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /authorize", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer bearertoken" {
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
+		_, _ = w.Write([]byte(`{"x-hasura-role":"admin"}`))
+	})
+
+	mux.HandleFunc("POST /authorize", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer posttoken" {
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
+		assert.Equal(t, r.Header.Get("x-test-header"), "")
+
+		data, err := io.ReadAll(r.Body)
+		assert.NilError(t, err)
+		_, _ = w.Write(data)
+	})
+
+	return httptest.NewServer(mux)
 }

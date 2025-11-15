@@ -108,50 +108,7 @@ func (wa *WebhookAuthenticator) Authenticate(
 		return nil, gohttps.NewUnauthorizedError()
 	}
 
-	sessionVariables := map[string]any{}
-
-	if len(wa.customResponse.Body) == 0 {
-		err := decodeResponseJSON(span, resp, &sessionVariables)
-		if err != nil {
-			span.SetStatus(codes.Error, "failed to decode session variables")
-			span.RecordError(err)
-
-			return nil, err
-		}
-
-		span.SetStatus(codes.Ok, "")
-
-		return sessionVariables, nil
-	}
-
-	// transform response body
-	var responseBody any
-
-	err = decodeResponseJSON(span, resp, &responseBody)
-	if err != nil {
-		span.SetStatus(codes.Error, "failed to decode response body to transform")
-		span.RecordError(err)
-
-		return nil, err
-	}
-
-	responseVariables := map[string]any{
-		"headers": goutils.ExtractHeaders(resp.Header()),
-		"body":    responseBody,
-	}
-
-	for key, field := range wa.customResponse.Body {
-		fieldValue, err := field.Evaluate(responseVariables)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", key, err)
-		}
-
-		sessionVariables[key] = fieldValue
-	}
-
-	span.SetStatus(codes.Ok, "")
-
-	return sessionVariables, nil
+	return wa.evaluateResponseBody(resp, span)
 }
 
 // Close handles the resources cleaning.
@@ -332,4 +289,58 @@ func (wa *WebhookAuthenticator) forwardRequestHeaders(
 			}
 		}
 	}
+}
+
+func (wa *WebhookAuthenticator) evaluateResponseBody(
+	resp *resty.Response,
+	span trace.Span,
+) (map[string]any, error) {
+	if resp.Body == nil || resp.Body == http.NoBody {
+		return nil, ErrResponseBodyRequired
+	}
+
+	sessionVariables := map[string]any{}
+
+	if len(wa.customResponse.Body) == 0 {
+		err := decodeResponseJSON(span, resp, &sessionVariables)
+		if err != nil {
+			span.SetStatus(codes.Error, "failed to decode session variables")
+			span.RecordError(err)
+
+			return nil, err
+		}
+
+		span.SetStatus(codes.Ok, "")
+
+		return sessionVariables, nil
+	}
+
+	// transform response body
+	var responseBody any
+
+	err := decodeResponseJSON(span, resp, &responseBody)
+	if err != nil {
+		span.SetStatus(codes.Error, "failed to decode response body to transform")
+		span.RecordError(err)
+
+		return nil, err
+	}
+
+	responseVariables := map[string]any{
+		"headers": goutils.ExtractHeaders(resp.Header()),
+		"body":    responseBody,
+	}
+
+	for key, field := range wa.customResponse.Body {
+		fieldValue, err := field.Evaluate(responseVariables)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", key, err)
+		}
+
+		sessionVariables[key] = fieldValue
+	}
+
+	span.SetStatus(codes.Ok, "")
+
+	return sessionVariables, nil
 }

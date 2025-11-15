@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../docs/auth.schema.json
+settings:
+  strict: true
+definitions:
+  - mode: webhook
+    url:
+      env: AUTH_HOOK_URL
+    method: POST
+    customRequest:
+      headers:
+        forward:
+          - Authorization
+      body:
+        type: gotmpl
+        contentType: application/json
+        template: |
+          {
+            "x-hasura-role": "user"
+          }
+  - mode: webhook
+    url:
+      env: AUTH_HOOK_URL
+    method: GET
+    customRequest:
+      headers:
+        additional:
+          Authorization:
+            default:
+              value: Bearer bearertoken

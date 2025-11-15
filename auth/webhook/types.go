@@ -8,8 +8,13 @@ import (
 	"github.com/relychan/goutils"
 )
 
-// ErrWebhookAuthMethodNotAllowed occurs when the method is neither GET nor POST.
-var ErrWebhookAuthMethodNotAllowed = errors.New("webhook mode must be one of GET or POST")
+var (
+	// ErrMethodNotAllowed occurs when the method is neither GET nor POST.
+	ErrMethodNotAllowed = errors.New("webhook mode must be one of GET or POST")
+
+	// ErrResponseBodyRequired occurs when the response body have no content.
+	ErrResponseBodyRequired = errors.New("response body must have content")
+)
 
 type customWebhookResponseConfig struct {
 	Body map[string]jmes.FieldMappingEntry

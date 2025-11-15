@@ -60,6 +60,8 @@ func (am *RelyAuthManager) Authenticate(
 	ctx, span := tracer.Start(ctx, "Authenticate", trace.WithSpanKind(trace.SpanKindInternal))
 	defer span.End()
 
+	logger := gotel.GetLogger(ctx)
+
 	var tokenNotFound bool
 
 	for _, authenticator := range am.authenticators {
@@ -76,6 +78,12 @@ func (am *RelyAuthManager) Authenticate(
 		}
 
 		tokenNotFound = tokenNotFound || errors.Is(err, authmode.ErrAuthTokenNotFound)
+
+		logger.Debug(
+			"Authentication failed",
+			slog.String("error", err.Error()),
+			slog.String("auth_mode", string(authenticator.GetMode())),
+		)
 
 		span.AddEvent("Authentication failed", trace.WithAttributes(
 			attribute.String("error", err.Error()),

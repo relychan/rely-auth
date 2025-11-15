@@ -63,6 +63,9 @@ func (handler *HasuraDDNAuthHookHandler) Post(w http.ResponseWriter, r *http.Req
 
 	sessionVariables, err := handler.authManager.Authenticate(ctx, *body)
 	if err != nil {
+		span.SetStatus(codes.Error, "failed to authenticate")
+		span.RecordError(err)
+
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
