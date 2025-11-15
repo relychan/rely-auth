@@ -34,17 +34,16 @@ definitions:
     url:
       value: http://auth_hook:3050/validate-request
     method: POST
-    customHeadersConfig:
+    customRequest:
       headers:
         forward:
           - Authorization
         additional:
           user-agent:
-            value: hasura-ddn
-      body:
-        headers:
-          forward:
-            - Authorization
-          additional:
-            user-agent:
+            default:
               value: hasura-ddn
+      body:
+        type: jmespath
+        template:
+          properties: {}
+          type: object

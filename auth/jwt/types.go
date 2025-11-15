@@ -90,7 +90,7 @@ var enumValueSignatureAlgorithms = []jose.SignatureAlgorithm{
 	jose.EdDSA,
 	jose.HS256,
 	jose.HS384,
-	jose.ES512,
+	jose.HS512,
 	jose.PS256,
 	jose.PS384,
 	jose.PS512,
