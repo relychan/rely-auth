@@ -1,0 +1,16 @@
+services:
+  app_mypostgres_promptql:
+    build:
+      context: .
+      dockerfile: .hasura-connector/Dockerfile.mypostgres_promptql
+    environment:
+      HASURA_LOG_LEVEL: $APP_MYPOSTGRES_PROMPTQL_HASURA_LOG_LEVEL
+      HASURA_SERVICE_TOKEN_SECRET: $APP_MYPOSTGRES_PROMPTQL_HASURA_SERVICE_TOKEN_SECRET
+      JDBC_SCHEMAS: $APP_MYPOSTGRES_PROMPTQL_JDBC_SCHEMAS
+      JDBC_URL: $APP_MYPOSTGRES_PROMPTQL_JDBC_URL
+      OTEL_EXPORTER_OTLP_ENDPOINT: $APP_MYPOSTGRES_PROMPTQL_OTEL_EXPORTER_OTLP_ENDPOINT
+      OTEL_SERVICE_NAME: $APP_MYPOSTGRES_PROMPTQL_OTEL_SERVICE_NAME
+    extra_hosts:
+      - local.hasura.dev:host-gateway
+    ports:
+      - 8329:8080

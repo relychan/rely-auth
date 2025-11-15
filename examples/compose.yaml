@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:18.1
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres/chinook.sql:/docker-entrypoint-initdb.d/chinook.sql
+    environment:
+      POSTGRES_PASSWORD: "password"
+    extra_hosts:
+      - local.hasura.dev:host-gateway
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-hook:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    volumes:
+      - ./auth:/config
+    environment:
+      CONFIG_PATH: /config/config.yaml
+    ports:
+      - "8080"
+    

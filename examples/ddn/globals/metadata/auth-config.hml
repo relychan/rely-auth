@@ -1,0 +1,11 @@
+kind: AuthConfig
+version: v3
+definition:
+  mode:
+    webhook:
+      method: GET
+      url:
+        value: http://auth-hook:8080/auth/ddn
+      customHeadersConfig:
+        headers:
+          forward: "*"

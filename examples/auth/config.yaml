@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../docs/auth.schema.json
+settings:
+  strict: true
+definitions:
+  - mode: apiKey
+    in: header
+    name: Authorization
+    value:
+      value: "randomsecret"
+    sessionVariables:
+      x-hasura-role:
+        value: admin
+  - mode: noAuth
+    sessionVariables:
+      x-hasura-role:
+        value: anonymous

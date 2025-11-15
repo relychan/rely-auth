@@ -1,0 +1,19 @@
+kind: Subgraph
+version: v2
+definition:
+  name: app
+  generator:
+    rootPath: .
+    namingConvention: snake_case_v2
+  includePaths:
+    - metadata
+  envMapping:
+    APP_MYPOSTGRES_PROMPTQL_AUTHORIZATION_HEADER:
+      fromEnv: APP_MYPOSTGRES_PROMPTQL_AUTHORIZATION_HEADER
+    APP_MYPOSTGRES_PROMPTQL_READ_URL:
+      fromEnv: APP_MYPOSTGRES_PROMPTQL_READ_URL
+    APP_MYPOSTGRES_PROMPTQL_WRITE_URL:
+      fromEnv: APP_MYPOSTGRES_PROMPTQL_WRITE_URL
+  connectors:
+    - path: connector/mypostgres_promptql/connector.yaml
+      connectorLinkName: mypostgres_promptql

@@ -1,0 +1,41 @@
+{
+    "version": "v2",
+    "connection_uri": {
+        "variable": "JDBC_URL"
+    },
+    "tables": [
+        {
+            "name": "public.Artist",
+            "description": null,
+            "category": "TABLE",
+            "columns": [
+                {
+                    "name": "ArtistId",
+                    "nullable": false,
+                    "auto_increment": false,
+                    "is_primarykey": true,
+                    "data": {
+                        "database_type": "integer"
+                    }
+                },
+                {
+                    "name": "Name",
+                    "nullable": true,
+                    "auto_increment": false,
+                    "is_primarykey": false,
+                    "data": {
+                        "database_type": "character_varying",
+                        "metadata": {
+                            "type": "length",
+                            "length": 120
+                        }
+                    }
+                }
+            ],
+            "primary_keys": [
+                "ArtistId"
+            ],
+            "foreign_keys": {}
+        }
+    ]
+}
