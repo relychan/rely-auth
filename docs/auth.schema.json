@@ -1,0 +1,460 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/relychan/rely-auth/auth/rely-auth-config",
+  "$ref": "#/$defs/RelyAuthConfig",
+  "$defs": {
+    "AllOrList": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "*"
+          ]
+        },
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      ]
+    },
+    "EnvAny": {
+      "anyOf": [
+        {
+          "required": [
+            "value"
+          ],
+          "title": "value"
+        },
+        {
+          "required": [
+            "env"
+          ],
+          "title": "env"
+        }
+      ],
+      "properties": {
+        "value": true,
+        "env": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "EnvString": {
+      "anyOf": [
+        {
+          "required": [
+            "value"
+          ],
+          "title": "value"
+        },
+        {
+          "required": [
+            "env"
+          ],
+          "title": "env"
+        }
+      ],
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "env": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "JWTClaimsConfig": {
+      "properties": {
+        "namespace": {
+          "$ref": "#/$defs/JWTClaimsNamespace"
+        },
+        "locations": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JWTClaimsMappingEntry"
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "JWTClaimsFormat": {
+      "type": "string",
+      "enum": [
+        "Json",
+        "StringifiedJson"
+      ],
+      "description": "the format in which JWT claims will be present."
+    },
+    "JWTClaimsMappingEntry": {
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "default": {
+          "$ref": "#/$defs/EnvAny"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "JWTClaimsNamespace": {
+      "properties": {
+        "location": {
+          "type": "string"
+        },
+        "claimsFormat": {
+          "$ref": "#/$defs/JWTClaimsFormat",
+          "description": "The format in which JWT claims will be present"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "location",
+        "claimsFormat"
+      ]
+    },
+    "JWTKey": {
+      "oneOf": [
+        {
+          "properties": {
+            "algorithm": {
+              "$ref": "#/$defs/JWTSignatureAlgorithm"
+            },
+            "key": {
+              "$ref": "#/$defs/EnvString",
+              "description": "Inline value of the key to use for decoding the JWT"
+            }
+          },
+          "type": "object",
+          "required": [
+            "algorithm",
+            "key"
+          ]
+        },
+        {
+          "properties": {
+            "algorithm": {
+              "$ref": "#/$defs/JWTSignatureAlgorithm"
+            },
+            "jwkFromUrl": {
+              "$ref": "#/$defs/EnvString",
+              "description": "An URL where a provider publishes their JWKs (JSON Web Keys - which are used for signing the JWTs). The URL must publish the JWKs in the standard format as described in the RFC 7517 specification."
+            }
+          },
+          "type": "object",
+          "required": [
+            "jwkFromUrl"
+          ]
+        }
+      ]
+    },
+    "JWTSignatureAlgorithm": {
+      "type": "string",
+      "enum": [
+        "ES256",
+        "ES384",
+        "ES512",
+        "EdDSA",
+        "HS256",
+        "HS384",
+        "ES512",
+        "PS256",
+        "PS384",
+        "PS512",
+        "RS256",
+        "RS384",
+        "RS512"
+      ],
+      "description": "Specifies the cryptographic signing algorithm which is used to sign the JWTs. This is required only if you are using the key property in the config."
+    },
+    "RelyAuthAPIKeyConfig": {
+      "properties": {
+        "in": {
+          "type": "string",
+          "enum": [
+            "header",
+            "query",
+            "cookie"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "scheme": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "apiKey"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "sessionVariables": {
+          "additionalProperties": {
+            "$ref": "#/$defs/EnvAny"
+          },
+          "type": "object"
+        },
+        "value": {
+          "$ref": "#/$defs/EnvString"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "in",
+        "name",
+        "mode",
+        "sessionVariables",
+        "value"
+      ]
+    },
+    "RelyAuthConfig": {
+      "properties": {
+        "settings": {
+          "$ref": "#/$defs/RelyAuthSettings"
+        },
+        "definitions": {
+          "items": {
+            "$ref": "#/$defs/RelyAuthDefinition"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "definitions"
+      ]
+    },
+    "RelyAuthDefinition": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RelyAuthAPIKeyConfig"
+        },
+        {
+          "$ref": "#/$defs/RelyAuthJWTConfig"
+        },
+        {
+          "$ref": "#/$defs/RelyAuthNoAuthConfig"
+        },
+        {
+          "$ref": "#/$defs/RelyAuthWebhookConfig"
+        }
+      ]
+    },
+    "RelyAuthJWTConfig": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "jwt"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "audience": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "issuer": {
+          "type": "string"
+        },
+        "allowedSkew": {
+          "type": "integer"
+        },
+        "tokenLocation": {
+          "$ref": "#/$defs/TokenLocation"
+        },
+        "key": {
+          "$ref": "#/$defs/JWTKey"
+        },
+        "claimsConfig": {
+          "$ref": "#/$defs/JWTClaimsConfig"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "mode",
+        "tokenLocation",
+        "key",
+        "claimsConfig"
+      ]
+    },
+    "RelyAuthNoAuthConfig": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "noAuth"
+          ]
+        },
+        "sessionVariables": {
+          "additionalProperties": {
+            "$ref": "#/$defs/EnvAny"
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "mode",
+        "sessionVariables"
+      ]
+    },
+    "RelyAuthSettings": {
+      "properties": {
+        "strict": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RelyAuthWebhookConfig": {
+      "oneOf": [
+        {
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": [
+                "GET"
+              ],
+              "description": "GET webhook method"
+            },
+            "customHeadersConfig": {
+              "properties": {
+                "headers": {
+                  "$ref": "#/$defs/WebhookAuthHeadersConfig"
+                }
+              },
+              "type": "object",
+              "description": "The configuration for the headers to be sent to the auth hook"
+            }
+          },
+          "type": "object"
+        },
+        {
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": [
+                "POST"
+              ],
+              "description": "POST webhook method"
+            },
+            "customHeadersConfig": {
+              "properties": {
+                "headers": {
+                  "$ref": "#/$defs/WebhookAuthHeadersConfig"
+                },
+                "body": {
+                  "properties": {
+                    "headers": {
+                      "$ref": "#/$defs/WebhookAuthHeadersConfig"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object",
+              "description": "The configuration for the headers to be sent to the auth hook"
+            }
+          },
+          "type": "object"
+        }
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "webhook"
+          ],
+          "description": "Authentication mode which is always webhook"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description of the auth config"
+        },
+        "url": {
+          "$ref": "#/$defs/EnvString",
+          "description": "The URL of the authentication webhook"
+        },
+        "httpClient": {
+          "$ref": "https://raw.githubusercontent.com/relychan/gorestly/refs/heads/main/jsonschema/gorestly.schema.json",
+          "description": "Configurations for the HTTP client"
+        }
+      },
+      "type": "object",
+      "required": [
+        "mode",
+        "url",
+        "method"
+      ]
+    },
+    "TokenLocation": {
+      "properties": {
+        "in": {
+          "type": "string",
+          "enum": [
+            "header",
+            "query",
+            "cookie"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "scheme": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "in",
+        "name"
+      ]
+    },
+    "WebhookAuthHeadersConfig": {
+      "properties": {
+        "forward": {
+          "$ref": "#/$defs/AllOrList"
+        },
+        "additional": {
+          "additionalProperties": {
+            "$ref": "#/$defs/EnvString"
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

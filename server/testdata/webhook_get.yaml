@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../docs/auth.schema.json
+settings:
+  strict: true
+definitions:
+  - mode: webhook
+    url:
+      env: AUTH_HOOK_URL
+    method: GET
