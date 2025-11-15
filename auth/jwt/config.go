@@ -80,7 +80,7 @@ type JWTClaimsConfig struct {
 
 // Validate if the current instance is valid.
 func (j JWTClaimsConfig) Validate() error {
-	if j.Namespace != nil && len(j.Locations) == 0 {
+	if j.Namespace == nil && len(j.Locations) == 0 {
 		return ErrJWTClaimsConfigEmpty
 	}
 
