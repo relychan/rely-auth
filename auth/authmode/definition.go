@@ -26,12 +26,18 @@ type HasuraV2PostRequestBody struct {
 	Query         string         `json:"query"`
 }
 
+// AuthenticatedOutput represents the authenticated output and authenticator metadata.
+type AuthenticatedOutput struct {
+	ID               string
+	SessionVariables map[string]any
+}
+
 // RelyAuthenticator abstracts the authenticator for the auth webhook.
 type RelyAuthenticator interface {
 	// GetMode returns the auth mode of the current authenticator.
-	GetMode() AuthMode
+	Mode() AuthMode
 	// Authenticate validates and authenticates the token from the auth webhook request.
-	Authenticate(ctx context.Context, body AuthenticateRequestData) (map[string]any, error)
+	Authenticate(ctx context.Context, body AuthenticateRequestData) (AuthenticatedOutput, error)
 	// Reload credentials of the authenticator.
 	Reload(ctx context.Context) error
 	// Close handles the resources cleaning.

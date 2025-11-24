@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/hasura/goenvconf"
-	"github.com/relychan/gorestly"
+	"github.com/relychan/gohttpc/httpconfig"
 	"github.com/relychan/gotransform"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/goutils"
@@ -30,7 +30,7 @@ type RelyAuthWebhookConfig struct {
 	// The configuration for transforming response bodies.
 	CustomResponse *WebhookAuthCustomResponseConfig `json:"customResponse,omitempty" yaml:"customResponse,omitempty"`
 	// Configurations for the HTTP client.
-	HTTPClient *gorestly.RestyConfig `json:"httpClient,omitempty" yaml:"httpClient,omitempty"`
+	HTTPClient *httpconfig.HTTPClientConfig `json:"httpClient,omitempty" yaml:"httpClient,omitempty"`
 }
 
 var _ authmode.RelyAuthDefinitionInterface = (*RelyAuthWebhookConfig)(nil)
@@ -83,5 +83,5 @@ type WebhookAuthHeadersConfig struct {
 
 // WebhookAuthCustomResponseConfig is the configuration for transforming response bodies.
 type WebhookAuthCustomResponseConfig struct {
-	Body map[string]jmes.FieldMappingEntryConfig `json:"response,omitempty" yaml:"response,omitempty"`
+	Body *gotransform.TemplateTransformerConfig `json:"response,omitempty" yaml:"response,omitempty"`
 }

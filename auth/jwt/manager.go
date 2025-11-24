@@ -12,15 +12,19 @@ import (
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
-	"github.com/relychan/gohttps"
+	"github.com/relychan/gohttpc"
+	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"resty.dev/v3"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
+
+var tracer = otel.Tracer("rely-auth/authenticator/jwt")
 
 // JWTAuthenticator implements the authenticator with JWT key.
 type JWTAuthenticator struct {
 	keySets    map[string][]*JWTKeySet
-	httpClient *resty.Client
+	httpClient *gohttpc.Client
 }
 
 var _ authmode.RelyAuthenticator = (*JWTAuthenticator)(nil)
@@ -28,7 +32,7 @@ var _ authmode.RelyAuthenticator = (*JWTAuthenticator)(nil)
 // NewJWTAuthenticator creates a JWT authenticator instance.
 func NewJWTAuthenticator(
 	configs []RelyAuthJWTConfig,
-	httpClient *resty.Client,
+	httpClient *gohttpc.Client,
 ) (*JWTAuthenticator, error) {
 	result := &JWTAuthenticator{
 		httpClient: httpClient,
@@ -44,8 +48,8 @@ func NewJWTAuthenticator(
 	return result, nil
 }
 
-// GetMode returns the auth mode of the current authenticator.
-func (*JWTAuthenticator) GetMode() authmode.AuthMode {
+// Mode returns the auth mode of the current authenticator.
+func (*JWTAuthenticator) Mode() authmode.AuthMode {
 	return authmode.AuthModeJWT
 }
 
@@ -73,13 +77,19 @@ func (ja *JWTAuthenticator) Close() error {
 func (ja *JWTAuthenticator) Authenticate(
 	ctx context.Context,
 	body authmode.AuthenticateRequestData,
-) (map[string]any, error) {
+) (authmode.AuthenticatedOutput, error) {
+	_, span := tracer.Start(ctx, "JWT")
+	defer span.End()
+
 	for _, group := range ja.keySets {
+		output := authmode.AuthenticatedOutput{}
 		tokenLocation := group[0].GetConfig().TokenLocation
 
 		rawToken, err := authmode.FindAuthTokenByLocation(&body, &tokenLocation)
 		if err != nil {
-			return nil, err
+			span.SetStatus(codes.Error, err.Error())
+
+			return output, err
 		}
 
 		algorithms := []jose.SignatureAlgorithm{}
@@ -93,14 +103,20 @@ func (ja *JWTAuthenticator) Authenticate(
 
 		sig, err := jose.ParseSigned(rawToken, algorithms)
 		if err != nil {
-			return nil, err
+			span.SetStatus(codes.Error, "failed to parse signed token")
+			span.RecordError(err)
+
+			return output, err
 		}
 
 		var claims jwt.Claims
 
 		err = json.Unmarshal(sig.UnsafePayloadWithoutVerification(), &claims)
 		if err != nil {
-			return nil, err
+			span.SetStatus(codes.Error, "failed to decode jwt payload")
+			span.RecordError(err)
+
+			return output, err
 		}
 
 		for _, key := range group {
@@ -114,11 +130,26 @@ func (ja *JWTAuthenticator) Authenticate(
 				continue
 			}
 
-			return key.TransformClaims(verifiedBytes)
+			sessionVariables, err := key.TransformClaims(verifiedBytes)
+			if err != nil {
+				span.SetStatus(codes.Error, "failed to transform claims")
+				span.RecordError(err)
+
+				return output, err
+			}
+
+			output.ID = key.config.ID
+			output.SessionVariables = sessionVariables
+
+			span.SetStatus(codes.Ok, "")
+
+			return output, nil
 		}
 	}
 
-	return nil, gohttps.NewUnauthorizedError()
+	span.SetStatus(codes.Error, "unauthorized")
+
+	return authmode.AuthenticatedOutput{}, goutils.NewUnauthorizedError()
 }
 
 // Reload credentials of the authenticator.

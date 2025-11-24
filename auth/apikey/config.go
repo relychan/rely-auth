@@ -2,7 +2,7 @@ package apikey
 
 import (
 	"github.com/hasura/goenvconf"
-	"github.com/relychan/gorestly/authc/authscheme"
+	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/rely-auth/auth/authmode"
 )
 

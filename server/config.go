@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/hasura/gotel"
@@ -33,20 +32,28 @@ func GetEnvironment() (Environment, error) {
 		return result, errConfigPathRequired
 	}
 
+	if result.Telemetry.ServiceName == "" {
+		result.Telemetry.ServiceName = "rely-auth"
+	}
+
 	return result, nil
 }
 
 // InitAuthManager initializes the auth manager from config.
 func InitAuthManager(
 	environment *Environment,
-	logger *slog.Logger,
+	exporters *gotel.OTelExporters,
 ) (*auth.RelyAuthManager, error) {
 	authConfig, err := goutils.ReadJSONOrYAMLFile[auth.RelyAuthConfig](environment.ConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load auth config: %w", err)
 	}
 
-	manager, err := auth.NewRelyAuthManager(authConfig, logger)
+	manager, err := auth.NewRelyAuthManager(
+		authConfig,
+		auth.WithLogger(exporters.Logger),
+		auth.WithMeter(exporters.Meter),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create auth manager: %w", err)
 	}

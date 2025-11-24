@@ -2,31 +2,30 @@
 package webhook
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log/slog"
 	"net/http"
+	"reflect"
 	"sync"
 
-	"github.com/relychan/gohttps"
-	"github.com/relychan/gorestly"
+	"github.com/relychan/gohttpc"
+	"github.com/relychan/gohttpc/httpconfig"
 	"github.com/relychan/gotransform"
-	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/goutils"
+	"github.com/relychan/goutils/httpheader"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
-	"resty.dev/v3"
 )
 
 // WebhookAuthenticator implements the authenticator with API key.
 type WebhookAuthenticator struct {
 	config     RelyAuthWebhookConfig
-	httpClient *resty.Client
+	httpClient *gohttpc.Client
 	url        string
 	mu         sync.RWMutex
 
@@ -52,8 +51,8 @@ func NewWebhookAuthenticator(config RelyAuthWebhookConfig) (*WebhookAuthenticato
 	return result, nil
 }
 
-// GetMode returns the auth mode of the current authenticator.
-func (*WebhookAuthenticator) GetMode() authmode.AuthMode {
+// Mode returns the auth mode of the current authenticator.
+func (*WebhookAuthenticator) Mode() authmode.AuthMode {
 	return authmode.AuthModeWebhook
 }
 
@@ -61,41 +60,44 @@ func (*WebhookAuthenticator) GetMode() authmode.AuthMode {
 func (wa *WebhookAuthenticator) Authenticate(
 	ctx context.Context,
 	body authmode.AuthenticateRequestData,
-) (map[string]any, error) {
-	ctx, span := tracer.Start(ctx, "Authenticate", trace.WithSpanKind(trace.SpanKindInternal))
+) (authmode.AuthenticatedOutput, error) {
+	ctx, span := tracer.Start(ctx, "Webhook", trace.WithSpanKind(trace.SpanKindInternal))
 	defer span.End()
 
 	span.SetAttributes(attribute.String("auth.mode", string(wa.config.GetMode())))
 
 	wa.mu.RLock()
-	req := wa.httpClient.R().SetContext(ctx)
-	endpoint := wa.url
+	req := wa.httpClient.NewRequest(wa.config.Method, wa.url)
 	wa.mu.RUnlock()
+
+	result := authmode.AuthenticatedOutput{
+		ID: wa.config.ID,
+	}
 
 	err := wa.transformRequest(req, body)
 	if err != nil {
 		span.SetStatus(codes.Error, "failed to transform request")
 		span.RecordError(err)
 
-		return nil, fmt.Errorf("failed to transform request: %w", err)
+		return result, fmt.Errorf("failed to transform request: %w", err)
 	}
 
-	resp, err := req.Execute(wa.config.Method, endpoint)
+	resp, err := req.Execute(ctx)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 
-		return nil, fmt.Errorf("failed to execute auth webhook: %w", err)
+		return result, fmt.Errorf("failed to execute auth webhook: %w", err)
 	}
 
-	defer goutils.CatchWarnErrorFunc(resp.Body.Close)
+	defer goutils.CatchWarnErrorFunc(resp.Close)
 
 	if resp.StatusCode() != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
+		body, err := resp.ReadBytes()
 		if err != nil {
 			span.SetStatus(codes.Error, "unable to read response body")
 			span.RecordError(err)
 
-			return nil, fmt.Errorf("unable to read response body: %w", err)
+			return result, fmt.Errorf("unable to read response body: %w", err)
 		}
 
 		span.SetAttributes(
@@ -105,10 +107,14 @@ func (wa *WebhookAuthenticator) Authenticate(
 
 		span.SetStatus(codes.Error, "authentication failed")
 
-		return nil, gohttps.NewUnauthorizedError()
+		return result, goutils.NewUnauthorizedError()
 	}
 
-	return wa.evaluateResponseBody(resp, span)
+	sessionVariables, err := wa.evaluateResponseBody(resp, span)
+
+	result.SessionVariables = sessionVariables
+
+	return result, err
 }
 
 // Close handles the resources cleaning.
@@ -145,27 +151,26 @@ func (wa *WebhookAuthenticator) doReload() error {
 		return err
 	}
 
-	if wa.config.CustomResponse != nil {
-		responseMappingFields, err := jmes.EvaluateObjectFieldMappingEntries(
-			wa.config.CustomResponse.Body,
+	if wa.config.CustomResponse != nil && wa.config.CustomResponse.Body != nil {
+		body, err := gotransform.NewTransformerFromConfig(
+			fmt.Sprintf("auth_webhook_%s_response_body", wa.config.ID),
+			*wa.config.CustomResponse.Body,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to resolve transformed response config: %w", err)
 		}
 
-		wa.customResponse.Body = responseMappingFields
+		wa.customResponse.Body = body
 	}
 
 	httpConfig := wa.config.HTTPClient
 	if httpConfig == nil {
-		httpConfig = &gorestly.RestyConfig{}
+		httpConfig = &httpconfig.HTTPClientConfig{}
 	}
 
-	httpClient, err := gorestly.NewClientFromConfig(
+	httpClient, err := httpconfig.NewClientFromConfig(
 		*httpConfig,
-		gorestly.WithLogger(slog.With("type", "authenticator").
-			With(slog.String("mode", string(authmode.AuthModeWebhook)))),
-		gorestly.WithTracer(tracer),
+		gohttpc.WithTracer(tracer),
 	)
 	if err != nil {
 		return err
@@ -196,7 +201,10 @@ func (wa *WebhookAuthenticator) reloadCustomRequest() error {
 	}
 
 	if wa.config.CustomRequest.Body != nil {
-		body, err := gotransform.NewTransformerFromConfig("webhook", *wa.config.CustomRequest.Body)
+		body, err := gotransform.NewTransformerFromConfig(
+			fmt.Sprintf("auth_webhook_%s_request_body", wa.config.ID),
+			*wa.config.CustomRequest.Body,
+		)
 		if err != nil {
 			return err
 		}
@@ -208,7 +216,7 @@ func (wa *WebhookAuthenticator) reloadCustomRequest() error {
 }
 
 func (wa *WebhookAuthenticator) transformRequest(
-	req *resty.Request,
+	req *gohttpc.Request,
 	requestData authmode.AuthenticateRequestData,
 ) error {
 	// original request body
@@ -237,14 +245,14 @@ func (wa *WebhookAuthenticator) transformRequest(
 			}
 
 			if headerValue != nil {
-				req.SetHeader(key, *headerValue)
+				req.Header().Set(key, *headerValue)
 
 				continue
 			}
 		}
 
 		if additional.Default != nil {
-			req.SetHeader(key, *additional.Default)
+			req.Header().Set(key, *additional.Default)
 		}
 	}
 
@@ -255,20 +263,30 @@ func (wa *WebhookAuthenticator) transformRequest(
 		return nil
 	}
 
-	req.Header.Set("Content-Type", gohttps.ContentTypeJSON)
+	req.Header().Set(httpheader.ContentType, httpheader.ContentTypeJSON)
 
 	newBody, err := wa.customRequest.Body.Transform(originalRequest)
 	if err != nil {
 		return fmt.Errorf("failed to transform request body: %w", err)
 	}
 
-	req.SetBody(newBody)
+	bodyBuf := new(bytes.Buffer)
+
+	enc := json.NewEncoder(bodyBuf)
+	enc.SetEscapeHTML(false)
+
+	err = enc.Encode(newBody)
+	if err != nil {
+		return fmt.Errorf("failed to transform request body: %w", err)
+	}
+
+	req.Body = bodyBuf
 
 	return nil
 }
 
 func (wa *WebhookAuthenticator) forwardRequestHeaders(
-	req *resty.Request,
+	req *gohttpc.Request,
 	requestData authmode.AuthenticateRequestData,
 ) {
 	if wa.customRequest.Headers == nil || wa.customRequest.Headers.Forward == nil {
@@ -278,30 +296,30 @@ func (wa *WebhookAuthenticator) forwardRequestHeaders(
 	if wa.customRequest.Headers.Forward.IsAll() {
 		for key, header := range requestData.Headers {
 			if !excludedHeadersFromGET[key] {
-				req.SetHeader(key, header)
+				req.Header().Set(key, header)
 			}
 		}
 	} else {
 		for _, name := range wa.customRequest.Headers.Forward.List() {
 			value, ok := requestData.Headers[name]
 			if ok {
-				req.SetHeader(name, value)
+				req.Header().Set(name, value)
 			}
 		}
 	}
 }
 
 func (wa *WebhookAuthenticator) evaluateResponseBody(
-	resp *resty.Response,
+	resp *gohttpc.Response,
 	span trace.Span,
 ) (map[string]any, error) {
-	if resp.Body == nil || resp.Body == http.NoBody {
+	if resp.Body() == nil || resp.Body() == http.NoBody {
 		return nil, ErrResponseBodyRequired
 	}
 
-	sessionVariables := map[string]any{}
+	if wa.customResponse.Body == nil {
+		sessionVariables := map[string]any{}
 
-	if len(wa.customResponse.Body) == 0 {
 		err := decodeResponseJSON(span, resp, &sessionVariables)
 		if err != nil {
 			span.SetStatus(codes.Error, "failed to decode session variables")
@@ -331,13 +349,24 @@ func (wa *WebhookAuthenticator) evaluateResponseBody(
 		"body":    responseBody,
 	}
 
-	for key, field := range wa.customResponse.Body {
-		fieldValue, err := field.Evaluate(responseVariables)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", key, err)
-		}
+	newBody, err := wa.customResponse.Body.Transform(responseVariables)
+	if err != nil {
+		span.SetStatus(codes.Error, "failed to transform response body")
+		span.RecordError(err)
 
-		sessionVariables[key] = fieldValue
+		return nil, fmt.Errorf("failed to transform response body: %w", err)
+	}
+
+	sessionVariables, ok := newBody.(map[string]any)
+	if !ok {
+		err := fmt.Errorf(
+			"%w, got: %s",
+			ErrMalformedTransformedResponseBody,
+			reflect.TypeOf(newBody).String(),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
+		return nil, err
 	}
 
 	span.SetStatus(codes.Ok, "")

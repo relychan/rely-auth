@@ -20,14 +20,3 @@ services:
       io.hasura.ddn.service-name: engine
     ports:
       - 3280:3000
-  otel-collector:
-    command:
-      - --config=/etc/otel-collector-config.yaml
-    environment:
-      HASURA_DDN_PAT: ${HASURA_DDN_PAT}
-    image: otel/opentelemetry-collector:0.104.0
-    ports:
-      - 4317:4317
-      - 4318:4318
-    volumes:
-      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml

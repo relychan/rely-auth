@@ -3,7 +3,7 @@ package jwt
 import (
 	"github.com/go-jose/go-jose/v4"
 	"github.com/hasura/goenvconf"
-	"github.com/relychan/gorestly/authc/authscheme"
+	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/rely-auth/auth/authmode"
 )

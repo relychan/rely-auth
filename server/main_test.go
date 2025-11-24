@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -11,13 +12,17 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/hasura/gotel"
+	"github.com/relychan/rely-auth/auth"
 	"github.com/relychan/rely-auth/auth/authmode"
+	"go.opentelemetry.io/otel"
 	"gotest.tools/v3/assert"
 )
 
 func TestHasuraDDNAuthHookHandler(t *testing.T) {
-	server := initTestServer(t, "./testdata/config.yaml")
+	server, authManager := initTestServer(t, "./testdata/config.yaml")
 	defer server.Close()
+	defer authManager.Close()
 
 	requestURL := server.URL + "/auth/ddn"
 	testCases := []struct {
@@ -73,8 +78,9 @@ func TestHasuraDDNAuthHookHandler(t *testing.T) {
 }
 
 func TestHasuraV2AuthHookHandler(t *testing.T) {
-	server := initTestServer(t, "./testdata/config.yaml")
+	server, authManager := initTestServer(t, "./testdata/config.yaml")
 	defer server.Close()
+	defer authManager.Close()
 
 	requestURL := server.URL + "/auth/hasura"
 	testCases := []struct {
@@ -133,8 +139,9 @@ func TestAuthWebhook(t *testing.T) {
 
 	t.Setenv("AUTH_HOOK_URL", webhookServer.URL+"/authorize")
 
-	server := initTestServer(t, "./testdata/webhook.yaml")
+	server, authManager := initTestServer(t, "./testdata/webhook.yaml")
 	defer server.Close()
+	defer authManager.Close()
 
 	requestURL := server.URL + "/auth/ddn"
 	testCases := []struct {
@@ -239,7 +246,7 @@ func runRequest[T any](t *testing.T, requestURL string, method string, body auth
 	assert.DeepEqual(t, responseBody, output)
 }
 
-func initTestServer(t *testing.T, configPath string) *httptest.Server {
+func initTestServer(t *testing.T, configPath string) (*httptest.Server, *auth.RelyAuthManager) {
 	t.Setenv("CONFIG_PATH", configPath)
 
 	envVars, err := GetEnvironment()
@@ -250,12 +257,21 @@ func initTestServer(t *testing.T, configPath string) *httptest.Server {
 	}))
 	slog.SetDefault(logger)
 
-	authManager, err := InitAuthManager(&envVars, logger)
+	exporters := &gotel.OTelExporters{
+		Tracer: gotel.NewTracer("test"),
+		Meter:  otel.Meter("test"),
+		Logger: logger,
+		Shutdown: func(_ context.Context) error {
+			return nil
+		},
+	}
+
+	authManager, err := InitAuthManager(&envVars, exporters)
 	assert.NilError(t, err)
 
-	router := setupRouter(&envVars, authManager, logger)
+	router := setupRouter(&envVars, authManager, exporters)
 
-	return httptest.NewServer(router)
+	return httptest.NewServer(router), authManager
 }
 
 func initWebhookServer(t *testing.T) *httptest.Server {
@@ -282,6 +298,8 @@ func initWebhookServer(t *testing.T) *httptest.Server {
 
 		data, err := io.ReadAll(r.Body)
 		assert.NilError(t, err)
+		assert.Equal(t, `{"x-hasura-role":"user"}
+`, string(data))
 		_, _ = w.Write(data)
 	})
 

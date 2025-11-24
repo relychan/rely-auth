@@ -10,22 +10,21 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io"
-	"mime"
 	"net/http"
 	"reflect"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/jmespath-community/go-jmespath"
-	"github.com/relychan/gohttps"
+	"github.com/relychan/gohttpc"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/goutils"
+	"github.com/relychan/goutils/httpheader"
 	"golang.org/x/sync/singleflight"
-	"resty.dev/v3"
 )
 
 // JWTKeySet is a verifier that validates JWT against a static set of HMAC or public keys.
@@ -50,15 +49,15 @@ type JWTKeySet struct {
 	// cached locations after resolving environment variables
 	locations map[string]jmes.FieldMappingEntry
 
-	httpClient *resty.Client
+	httpClient *gohttpc.Client
 
 	mu sync.RWMutex
 }
 
 // NewJWTKeySet creates a new JWT key set from the configuration.
-func NewJWTKeySet(config *RelyAuthJWTConfig, httpClient *resty.Client) (*JWTKeySet, error) {
+func NewJWTKeySet(config *RelyAuthJWTConfig, httpClient *gohttpc.Client) (*JWTKeySet, error) {
 	if httpClient == nil {
-		httpClient = resty.New()
+		httpClient = gohttpc.NewClient()
 	}
 
 	result := JWTKeySet{
@@ -122,7 +121,7 @@ func (j *JWTKeySet) VerifySignature(
 	case len(j.hmacKey) > 0:
 		return sig.Verify(j.hmacKey)
 	default:
-		return nil, gohttps.NewUnauthorizedError()
+		return nil, goutils.NewUnauthorizedError()
 	}
 }
 
@@ -398,32 +397,31 @@ func (j *JWTKeySet) keysFromRemote(ctx context.Context) ([]jose.JSONWebKey, erro
 }
 
 func (j *JWTKeySet) updateKeys(ctx context.Context) ([]jose.JSONWebKey, error) {
-	req := j.httpClient.R().SetContext(ctx)
+	req := j.httpClient.NewRequest(http.MethodGet, j.jwksURL)
 
-	resp, err := req.Execute(http.MethodGet, j.jwksURL)
+	resp, err := req.Execute(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrGetJWKsFailed, err.Error())
 	}
 
-	defer goutils.CatchWarnErrorFunc(resp.Body.Close)
+	defer goutils.CatchWarnErrorFunc(resp.Close)
 
 	if resp.StatusCode() != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
+		body, err := resp.ReadBytes()
 		if err != nil {
 			return nil, fmt.Errorf("unable to read response body: %w", err)
 		}
 
-		return nil, fmt.Errorf("%w: %s %s", ErrGetJWKsFailed, resp.Status(), body)
+		return nil, fmt.Errorf("%w: %s %s", ErrGetJWKsFailed, resp.RawResponse.Status, body)
 	}
 
 	var keySet jose.JSONWebKeySet
 
-	err = json.NewDecoder(resp.Body).Decode(&keySet)
+	err = resp.ReadJSON(&keySet)
 	if err != nil {
-		ct := resp.Header().Get("Content-Type")
+		ct := resp.Header().Get(httpheader.ContentType)
 
-		mediaType, _, parseErr := mime.ParseMediaType(ct)
-		if parseErr == nil && mediaType == "application/json" {
+		if strings.HasPrefix(ct, httpheader.ContentTypeJSON) {
 			return nil, fmt.Errorf(
 				"got Content-Type = application/json, but could not unmarshal as JSON: %w",
 				err,

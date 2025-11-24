@@ -33,8 +33,8 @@ func NewNoAuth(config RelyAuthNoAuthConfig) (*NoAuth, error) {
 	return result, nil
 }
 
-// GetMode returns the auth mode of the current authenticator.
-func (*NoAuth) GetMode() authmode.AuthMode {
+// Mode returns the auth mode of the current authenticator.
+func (*NoAuth) Mode() authmode.AuthMode {
 	return authmode.AuthModeNoAuth
 }
 
@@ -42,8 +42,13 @@ func (*NoAuth) GetMode() authmode.AuthMode {
 func (j *NoAuth) Authenticate(
 	_ context.Context,
 	_ authmode.AuthenticateRequestData,
-) (map[string]any, error) {
-	return j.getSessionVariables(), nil
+) (authmode.AuthenticatedOutput, error) {
+	result := authmode.AuthenticatedOutput{
+		ID:               j.config.ID,
+		SessionVariables: j.getSessionVariables(),
+	}
+
+	return result, nil
 }
 
 // Close handles the resources cleaning.
@@ -60,7 +65,7 @@ func (j *NoAuth) Reload(ctx context.Context) error {
 }
 
 func (j *NoAuth) doReload(context.Context) error {
-	mode := j.GetMode()
+	mode := j.Mode()
 	sessionVariables := make(map[string]any)
 
 	for key, envValue := range j.config.SessionVariables {

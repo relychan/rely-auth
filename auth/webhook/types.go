@@ -14,10 +14,13 @@ var (
 
 	// ErrResponseBodyRequired occurs when the response body have no content.
 	ErrResponseBodyRequired = errors.New("response body must have content")
+
+	// ErrMalformedTransformedResponseBody occurs when the transformed response body is malformed.
+	ErrMalformedTransformedResponseBody = errors.New("malformed response body. Expected a map")
 )
 
 type customWebhookResponseConfig struct {
-	Body map[string]jmes.FieldMappingEntry
+	Body gotransform.TemplateTransformer
 }
 
 type customWebhookRequestConfig struct {

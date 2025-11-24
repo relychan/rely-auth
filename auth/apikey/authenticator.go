@@ -6,9 +6,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/relychan/gohttps"
+	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmode"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
+
+var tracer = otel.Tracer("rely-auth/authenticator/api-key")
 
 // APIKeyAuthenticator implements the authenticator with API key.
 type APIKeyAuthenticator struct {
@@ -44,8 +48,8 @@ func NewAPIKeyAuthenticator(config RelyAuthAPIKeyConfig) (*APIKeyAuthenticator, 
 	return result, nil
 }
 
-// GetMode returns the auth mode of the current authenticator.
-func (*APIKeyAuthenticator) GetMode() authmode.AuthMode {
+// Mode returns the auth mode of the current authenticator.
+func (*APIKeyAuthenticator) Mode() authmode.AuthMode {
 	return authmode.AuthModeAPIKey
 }
 
@@ -56,19 +60,35 @@ func (*APIKeyAuthenticator) Close() error {
 
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (aka *APIKeyAuthenticator) Authenticate(
-	_ context.Context,
+	ctx context.Context,
 	body authmode.AuthenticateRequestData,
-) (map[string]any, error) {
+) (authmode.AuthenticatedOutput, error) {
+	_, span := tracer.Start(ctx, "APIKey")
+	defer span.End()
+
+	result := authmode.AuthenticatedOutput{
+		ID: aka.config.ID,
+	}
+
 	rawToken, err := authmode.FindAuthTokenByLocation(&body, &aka.config.TokenLocation)
 	if err != nil {
-		return nil, err
+		span.SetStatus(codes.Error, err.Error())
+		span.RecordError(err)
+
+		return result, err
 	}
 
 	if rawToken != aka.getValue() {
-		return nil, gohttps.NewUnauthorizedError()
+		span.SetStatus(codes.Error, "api key does not match")
+
+		return result, goutils.NewUnauthorizedError()
 	}
 
-	return aka.getSessionVariables(), nil
+	result.SessionVariables = aka.getSessionVariables()
+
+	span.SetStatus(codes.Ok, "")
+
+	return result, nil
 }
 
 // Reload credentials of the authenticator.
@@ -80,7 +100,7 @@ func (aka *APIKeyAuthenticator) Reload(_ context.Context) error {
 }
 
 func (aka *APIKeyAuthenticator) doReload() error {
-	mode := aka.GetMode()
+	mode := aka.Mode()
 
 	value, err := aka.config.Value.Get()
 	if err != nil {

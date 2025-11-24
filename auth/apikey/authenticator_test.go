@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/hasura/goenvconf"
-	"github.com/relychan/gorestly/authc/authscheme"
+	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"gotest.tools/v3/assert"
 )
@@ -37,7 +37,7 @@ func TestAPIKeyAuthenticator(t *testing.T) {
 				},
 			})
 			assert.NilError(t, err)
-			assert.DeepEqual(t, result, map[string]any{"foo": "bar"})
+			assert.DeepEqual(t, result.SessionVariables, map[string]any{"foo": "bar"})
 			time.Sleep(time.Millisecond)
 		}()
 	}

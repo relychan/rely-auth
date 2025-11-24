@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relychan/gorestly/authc/authscheme"
+	"github.com/relychan/gohttpc/authc/authscheme"
 )
 
 // FindAuthTokenByLocation finds the authentication token or api key from the request.

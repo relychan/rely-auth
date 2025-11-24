@@ -8,10 +8,12 @@ import (
 	"log/slog"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/hasura/gotel"
-	"github.com/relychan/gohttps"
-	"github.com/relychan/gorestly"
+	"github.com/relychan/gohttpc"
+	"github.com/relychan/gohttpc/httpconfig"
+	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/relychan/rely-auth/auth/jwt"
@@ -20,33 +22,68 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
-	"resty.dev/v3"
 )
-
-var tracer = gotel.NewTracer("rely-auth")
 
 // RelyAuthManager manages multiple authentication strategies to verify HTTP requests.
 type RelyAuthManager struct {
-	settings       *authmode.RelyAuthSettings
-	authenticators []authmode.RelyAuthenticator
-	httpClient     *resty.Client
+	options relyAuthManagerOptions
+
+	settings              *authmode.RelyAuthSettings
+	authenticators        []authmode.RelyAuthenticator
+	httpClient            *gohttpc.Client
+	requestDuration       metric.Float64Histogram
+	authModeTotalRequests metric.Int64Counter
 }
 
 // NewRelyAuthManager creates a new RelyAuthManager instance from config.
-func NewRelyAuthManager(config *RelyAuthConfig, logger *slog.Logger) (*RelyAuthManager, error) {
-	httpClient, err := gorestly.NewClientFromConfig(
-		gorestly.RestyConfig{},
-		gorestly.WithLogger(logger.With("type", "auth-client")),
-		gorestly.WithTracer(otel.Tracer("rely-auth/client")),
+func NewRelyAuthManager(
+	config *RelyAuthConfig,
+	options ...RelyAuthManagerOption,
+) (*RelyAuthManager, error) {
+	opts := relyAuthManagerOptions{
+		Logger: slog.Default(),
+	}
+
+	for _, opt := range options {
+		opt(&opts)
+	}
+
+	if opts.Meter == nil {
+		opts.Meter = otel.Meter("rely_auth")
+	}
+
+	httpClient, err := httpconfig.NewClientFromConfig(
+		httpconfig.HTTPClientConfig{},
+		gohttpc.WithLogger(opts.Logger.With("type", "auth-client")),
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	manager := RelyAuthManager{
+		options:    opts,
 		settings:   &authmode.RelyAuthSettings{},
 		httpClient: httpClient,
+	}
+
+	manager.requestDuration, err = opts.Meter.Float64Histogram(
+		"rely_auth.request.duration",
+		metric.WithDescription("Duration of authentication requests."),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	manager.authModeTotalRequests, err = opts.Meter.Int64Counter(
+		"rely_auth.mode.request.total",
+		metric.WithDescription("Total number of successful auth mode requests."),
+		metric.WithUnit("{request}"),
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	return &manager, manager.init(config)
@@ -60,21 +97,44 @@ func (am *RelyAuthManager) Authenticate(
 	ctx, span := tracer.Start(ctx, "Authenticate", trace.WithSpanKind(trace.SpanKindInternal))
 	defer span.End()
 
+	startTime := time.Now()
+
 	logger := gotel.GetLogger(ctx)
 
 	var tokenNotFound bool
 
 	for _, authenticator := range am.authenticators {
+		authMode := authenticator.Mode()
 		// if auth token exists but it is unauthorized,
 		// the noAuth mode is skipped with the strict mode enabled.
-		if authenticator.GetMode() == authmode.AuthModeNoAuth &&
+		if authMode == authmode.AuthModeNoAuth &&
 			!tokenNotFound && am.settings.Strict {
 			break
 		}
 
 		result, err := authenticator.Authenticate(ctx, body)
 		if err == nil {
-			return result, nil
+			latency := time.Since(startTime).Seconds()
+			authModeAttr := attribute.String("auth.mode", string(authMode))
+			authIDAttr := attribute.String("auth.id", result.ID)
+
+			am.requestDuration.Record(
+				ctx,
+				latency,
+				metric.WithAttributeSet(attribute.NewSet(authStatusSuccessAttribute)),
+			)
+
+			span.SetAttributes(authModeAttr, authIDAttr)
+
+			am.authModeTotalRequests.Add(
+				ctx,
+				1,
+				metric.WithAttributeSet(
+					attribute.NewSet(authStatusSuccessAttribute, authModeAttr, authIDAttr),
+				),
+			)
+
+			return result.SessionVariables, nil
 		}
 
 		tokenNotFound = tokenNotFound || errors.Is(err, authmode.ErrAuthTokenNotFound)
@@ -82,7 +142,7 @@ func (am *RelyAuthManager) Authenticate(
 		logger.Debug(
 			"Authentication failed",
 			slog.String("error", err.Error()),
-			slog.String("auth_mode", string(authenticator.GetMode())),
+			slog.String("auth_mode", string(authMode)),
 		)
 
 		span.AddEvent("Authentication failed", trace.WithAttributes(
@@ -90,9 +150,16 @@ func (am *RelyAuthManager) Authenticate(
 		))
 	}
 
+	latency := time.Since(startTime).Seconds()
+
+	am.requestDuration.Record(
+		ctx,
+		latency,
+		metric.WithAttributeSet(attribute.NewSet(authStatusFailedAttribute)),
+	)
 	span.SetStatus(codes.Error, "authentication failed")
 
-	return nil, gohttps.NewUnauthorizedError()
+	return nil, goutils.NewUnauthorizedError()
 }
 
 // Reload credentials of the authenticator.
@@ -111,6 +178,27 @@ func (am *RelyAuthManager) Reload(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Close terminates all underlying authenticator resources.
+func (am *RelyAuthManager) Close() error {
+	var errs []error
+
+	for _, au := range am.authenticators {
+		err := au.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	switch len(errs) {
+	case 0:
+		return nil
+	case 1:
+		return errs[0]
+	default:
+		return errors.Join(errs...)
+	}
 }
 
 func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
@@ -193,4 +281,26 @@ func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
 	}
 
 	return nil
+}
+
+type relyAuthManagerOptions struct {
+	Meter  metric.Meter
+	Logger *slog.Logger
+}
+
+// RelyAuthManagerOption abstracts a function to modify auth manager options.
+type RelyAuthManagerOption func(*relyAuthManagerOptions)
+
+// WithLogger sets the logger to auth manager options.
+func WithLogger(logger *slog.Logger) RelyAuthManagerOption {
+	return func(ramo *relyAuthManagerOptions) {
+		ramo.Logger = logger
+	}
+}
+
+// WithMeter sets the meter to auth manager options.
+func WithMeter(meter metric.Meter) RelyAuthManagerOption {
+	return func(ramo *relyAuthManagerOptions) {
+		ramo.Meter = meter
+	}
 }

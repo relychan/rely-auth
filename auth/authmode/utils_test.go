@@ -3,7 +3,7 @@ package authmode
 import (
 	"testing"
 
-	"github.com/relychan/gorestly/authc/authscheme"
+	"github.com/relychan/gohttpc/authc/authscheme"
 	"gotest.tools/v3/assert"
 )
 

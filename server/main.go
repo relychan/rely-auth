@@ -5,13 +5,14 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/hasura/gotel"
+	"github.com/hasura/gotel/otelutils"
 	"github.com/relychan/gohttps"
 	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth"
@@ -33,7 +34,7 @@ func runServer() error {
 		return err
 	}
 
-	logger, _, err := gotel.NewJSONLogger(envVars.Server.LogLevel)
+	logger, _, err := otelutils.NewJSONLogger(envVars.Server.LogLevel)
 	if err != nil {
 		return fmt.Errorf("failed to initialize logger: %w", err)
 	}
@@ -53,12 +54,12 @@ func runServer() error {
 		goutils.CatchWarnContextErrorFunc(ts.Shutdown)
 	}()
 
-	authManager, err := InitAuthManager(&envVars, ts.Logger)
+	authManager, err := InitAuthManager(&envVars, ts)
 	if err != nil {
 		return err
 	}
 
-	router := setupRouter(&envVars, authManager, ts.Logger)
+	router := setupRouter(&envVars, authManager, ts)
 
 	err = gohttps.ListenAndServe(ctx, router, envVars.Server)
 	if err != nil {
@@ -71,10 +72,20 @@ func runServer() error {
 func setupRouter(
 	envVars *Environment,
 	authManager *auth.RelyAuthManager,
-	logger *slog.Logger,
+	exporters *gotel.OTelExporters,
 ) *chi.Mux {
-	router := gohttps.NewRouter(envVars.Server, logger)
-	router.Use(middleware.AllowContentType("application/json"))
+	router := gohttps.NewRouter(envVars.Server, exporters.Logger)
+	router.Use(
+		gotel.NewTracingMiddleware(
+			exporters,
+			gotel.ResponseWriterWrapperFunc(
+				func(w http.ResponseWriter, protoMajor int) gotel.WrapResponseWriter {
+					return middleware.NewWrapResponseWriter(w, protoMajor)
+				},
+			),
+		),
+		middleware.AllowContentType("application/json"),
+	)
 
 	pathAuthDDN := "/auth/ddn"
 	pathAuthHGE := "/auth/hasura"
