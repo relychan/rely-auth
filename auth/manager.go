@@ -12,7 +12,6 @@ import (
 
 	"github.com/hasura/gotel"
 	"github.com/relychan/gohttpc"
-	"github.com/relychan/gohttpc/httpconfig"
 	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"
@@ -50,16 +49,28 @@ func NewRelyAuthManager(
 		opt(&opts)
 	}
 
-	if opts.Meter == nil {
-		opts.Meter = otel.Meter("rely_auth")
+	httpClient := opts.HTTPClient
+
+	if httpClient == nil {
+		clientOptions := []gohttpc.Option{
+			gohttpc.WithLogger(opts.Logger.With("type", "auth-client")),
+			gohttpc.WithTimeout(time.Minute),
+		}
+
+		if opts.Meter != nil {
+			httpMetrics, err := gohttpc.NewHTTPClientMetrics(opts.Meter, false)
+			if err != nil {
+				return nil, fmt.Errorf("failed to initialize http client metrics: %w", err)
+			}
+
+			clientOptions = append(clientOptions, gohttpc.WithMetrics(httpMetrics))
+		}
+
+		httpClient = gohttpc.NewClient(clientOptions...)
 	}
 
-	httpClient, err := httpconfig.NewClientFromConfig(
-		httpconfig.HTTPClientConfig{},
-		gohttpc.WithLogger(opts.Logger.With("type", "auth-client")),
-	)
-	if err != nil {
-		return nil, err
+	if opts.Meter == nil {
+		opts.Meter = otel.Meter("rely_auth")
 	}
 
 	manager := RelyAuthManager{
@@ -67,6 +78,8 @@ func NewRelyAuthManager(
 		settings:   &authmode.RelyAuthSettings{},
 		httpClient: httpClient,
 	}
+
+	var err error
 
 	manager.requestDuration, err = opts.Meter.Float64Histogram(
 		"rely_auth.request.duration",
@@ -260,7 +273,7 @@ func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := webhook.NewWebhookAuthenticator(*def)
+			authenticator, err := webhook.NewWebhookAuthenticator(*def, am.httpClient)
 			if err != nil {
 				return fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}
@@ -284,8 +297,9 @@ func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
 }
 
 type relyAuthManagerOptions struct {
-	Meter  metric.Meter
-	Logger *slog.Logger
+	Meter      metric.Meter
+	Logger     *slog.Logger
+	HTTPClient *gohttpc.Client
 }
 
 // RelyAuthManagerOption abstracts a function to modify auth manager options.
@@ -302,5 +316,12 @@ func WithLogger(logger *slog.Logger) RelyAuthManagerOption {
 func WithMeter(meter metric.Meter) RelyAuthManagerOption {
 	return func(ramo *relyAuthManagerOptions) {
 		ramo.Meter = meter
+	}
+}
+
+// WithHTTPClient sets the HTTP client to auth manager options.
+func WithHTTPClient(client *gohttpc.Client) RelyAuthManagerOption {
+	return func(ramo *relyAuthManagerOptions) {
+		ramo.HTTPClient = client
 	}
 }

@@ -9,7 +9,7 @@ require (
 	github.com/hasura/goenvconf v0.3.0
 	github.com/hasura/gotel v0.4.1
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
-	github.com/relychan/gohttpc v0.0.0-20251124164035-1a1b37f19cfe
+	github.com/relychan/gohttpc v0.0.0-20251125091545-01ddea611cf4
 	github.com/relychan/gohttps v0.0.0-20251124055524-9d1da640ca19
 	github.com/relychan/gotransform v0.0.0-20251115070005-4e3c3650c419
 	github.com/relychan/goutils v0.0.0-20251124055119-cf9ed1cb3701

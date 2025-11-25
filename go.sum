@@ -75,6 +75,10 @@ github.com/relychan/gocompress v0.1.0 h1:8PbQqw5i5Vq29gzh7bf1mR0YBmEpRcpsfqJ8fXp
 github.com/relychan/gocompress v0.1.0/go.mod h1:7+ieDEYe3mCYBR90TpGrHD+terrda+5nti8z/s1NUTc=
 github.com/relychan/gohttpc v0.0.0-20251124164035-1a1b37f19cfe h1:DYIjWyk4tVC6IyRNvA/pLW6FkIyOafXMYbGWxe8GTaY=
 github.com/relychan/gohttpc v0.0.0-20251124164035-1a1b37f19cfe/go.mod h1:Lgf74RG+udKv5pGikpl1qTCepw31NWq2sGBoiDgN1f8=
+github.com/relychan/gohttpc v0.0.0-20251125071921-34926ac25e21 h1:gObmmoOilr1wl/sZwnJsClI15l5xXcRHtRT5Ae9NrlI=
+github.com/relychan/gohttpc v0.0.0-20251125071921-34926ac25e21/go.mod h1:Lgf74RG+udKv5pGikpl1qTCepw31NWq2sGBoiDgN1f8=
+github.com/relychan/gohttpc v0.0.0-20251125091545-01ddea611cf4 h1:/q4eCJSfugh4r3PWdNZxoVah0Rj8MYG5IHksTfSOltw=
+github.com/relychan/gohttpc v0.0.0-20251125091545-01ddea611cf4/go.mod h1:Lgf74RG+udKv5pGikpl1qTCepw31NWq2sGBoiDgN1f8=
 github.com/relychan/gohttps v0.0.0-20251124055524-9d1da640ca19 h1:dydqdtzJFhmyfkNH3DUCgCcnfw5lYhILlSvSBApIpR0=
 github.com/relychan/gohttps v0.0.0-20251124055524-9d1da640ca19/go.mod h1:9bGptsv2Zxz+nSoOyZxL0Of4EooNKK+490oMeShvOZ0=
 github.com/relychan/gotransform v0.0.0-20251115070005-4e3c3650c419 h1:w0XVlW5EO0dc7bfnvnRQi0vSl9nxL3uR1A4v+hJRHEU=

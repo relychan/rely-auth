@@ -38,9 +38,13 @@ var tracer = otel.Tracer("rely-auth/auth/webhook")
 var _ authmode.RelyAuthenticator = (*WebhookAuthenticator)(nil)
 
 // NewWebhookAuthenticator creates a webhook authenticator instance.
-func NewWebhookAuthenticator(config RelyAuthWebhookConfig) (*WebhookAuthenticator, error) {
+func NewWebhookAuthenticator(
+	config RelyAuthWebhookConfig,
+	httpClient *gohttpc.Client,
+) (*WebhookAuthenticator, error) {
 	result := &WebhookAuthenticator{
-		config: config,
+		config:     config,
+		httpClient: httpClient,
 	}
 
 	err := result.doReload()
@@ -165,13 +169,14 @@ func (wa *WebhookAuthenticator) doReload() error {
 
 	httpConfig := wa.config.HTTPClient
 	if httpConfig == nil {
+		if wa.httpClient != nil {
+			return nil
+		}
+
 		httpConfig = &httpconfig.HTTPClientConfig{}
 	}
 
-	httpClient, err := httpconfig.NewClientFromConfig(
-		*httpConfig,
-		gohttpc.WithTracer(tracer),
-	)
+	httpClient, err := httpconfig.NewClientFromConfig(*httpConfig)
 	if err != nil {
 		return err
 	}
@@ -280,7 +285,7 @@ func (wa *WebhookAuthenticator) transformRequest(
 		return fmt.Errorf("failed to transform request body: %w", err)
 	}
 
-	req.Body = bodyBuf
+	req.SetBody(bodyBuf)
 
 	return nil
 }
