@@ -85,6 +85,22 @@ func NewRelyAuthManager(
 		"rely_auth.request.duration",
 		metric.WithDescription("Duration of authentication requests."),
 		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(
+			0.005,
+			0.01,
+			0.025,
+			0.05,
+			0.075,
+			0.1,
+			0.25,
+			0.5,
+			0.75,
+			1,
+			2.5,
+			5,
+			7.5,
+			10,
+		),
 	)
 	if err != nil {
 		return nil, err

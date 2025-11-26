@@ -53,9 +53,8 @@ func TestTransformJWTClaims(t *testing.T) {
 		assert.NilError(t, err)
 
 		expected := map[string]any{
-			"x-hasura-allowed-roles": []any{"user", "admin"},
-			"x-hasura-default-role":  "user",
-			"x-hasura-user-id":       "user-id",
+			"x-hasura-role":    "user",
+			"x-hasura-user-id": "user-id",
 		}
 
 		assert.DeepEqual(t, result, expected)
@@ -85,7 +84,7 @@ func TestTransformJWTClaims(t *testing.T) {
 		assert.NilError(t, err)
 
 		rawClaims := `{
-			"claims.jwt.hasura.io": "{\"x-hasura-allowed-roles\": [\"user\", \"admin\"],\"x-hasura-default-role\": \"user\"}",
+			"claims.jwt.hasura.io": "{\"x-hasura-allowed-roles\": [\"user\", \"admin\"],\"x-hasura-role\": \"user\"}",
 			"iss": "https://relychan.com",
 			"sub": "user-id",
 			"aud": "https://relychan.com",
@@ -97,9 +96,8 @@ func TestTransformJWTClaims(t *testing.T) {
 		assert.NilError(t, err)
 
 		expected := map[string]any{
-			"x-hasura-allowed-roles": []any{"user", "admin"},
-			"x-hasura-default-role":  "user",
-			"x-hasura-user-id":       "user-id",
+			"x-hasura-role":    "user",
+			"x-hasura-user-id": "user-id",
 		}
 
 		assert.DeepEqual(t, result, expected)
