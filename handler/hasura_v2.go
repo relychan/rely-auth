@@ -76,6 +76,15 @@ func (handler *HasuraGraphQLEngineAuthHookHandler) handle(
 		return
 	}
 
+	hasuraRole, ok := serializedVariables[authmode.XHasuraRole]
+	if !ok || hasuraRole == "" {
+		span.SetStatus(codes.Error, "x-hasura-role session variable is empty")
+
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
 	err = gohttps.WriteResponseJSON(w, http.StatusOK, serializedVariables)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())

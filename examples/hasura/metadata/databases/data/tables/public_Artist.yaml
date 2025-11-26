@@ -1,0 +1,13 @@
+table:
+  name: Artist
+  schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - Name
+        - ArtistId
+      filter:
+        ArtistId:
+          _eq: x-hasura-user-id
+    comment: ""

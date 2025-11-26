@@ -19,6 +19,8 @@ import (
 	"gotest.tools/v3/assert"
 )
 
+const testJWTIdToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjbGFpbXMuand0Lmhhc3VyYS5pbyI6eyJ4LWhhc3VyYS1hbGxvd2VkLXJvbGVzIjpbInVzZXIiLCJhZG1pbiJdLCJ4LWhhc3VyYS1kZWZhdWx0LXJvbGUiOiJ1c2VyIiwieC1oYXN1cmEtZ3JvdXAtaWQiOjEwfSwiaXNzIjoiaHR0cHM6Ly9yZWx5Y2hhbi5jb20iLCJzdWIiOiJ1c2VyLWlkIiwiYXVkIjoiaHR0cHM6Ly9yZWx5Y2hhbi5jb20iLCJpYXQiOjE3NjA5Mzk5NTQsImV4cCI6OTc2MTAyNjM1NH0.0UuGOB-MPUCwhoMUCyHA7XN5Q05NmZ_j0Mc13oWquN4"
+
 func TestHasuraDDNAuthHookHandler(t *testing.T) {
 	server, authManager := initTestServer(t, "./testdata/config.yaml")
 	defer server.Close()
@@ -47,6 +49,20 @@ func TestHasuraDDNAuthHookHandler(t *testing.T) {
 				"x-some-object": map[string]any{
 					"foo": "baz",
 				},
+			},
+		},
+		{
+			Name: "jwt",
+			Body: authmode.AuthenticateRequestData{
+				Headers: map[string]string{
+					"Authorization": "Bearer " + testJWTIdToken,
+				},
+			},
+			StatusCode: 200,
+			ResponseBody: map[string]any{
+				"x-hasura-role":     "user",
+				"x-hasura-group-id": float64(10),
+				"x-hasura-user-id":  "user-id",
 			},
 		},
 		{
@@ -103,6 +119,21 @@ func TestHasuraV2AuthHookHandler(t *testing.T) {
 				"x-some-array-bool":   "{true,false}",
 				"x-some-array-string": "{foo,bar}",
 				"x-some-object":       `{"foo":"baz"}`,
+			},
+		},
+		{
+			Name: "jwt",
+			Body: authmode.AuthenticateRequestData{
+				Headers: map[string]string{
+					"Authorization": "Bearer " + testJWTIdToken,
+				},
+			},
+			StatusCode: 200,
+			ResponseBody: map[string]any{
+				"x-hasura-allowed-roles": []any{"user", "admin"},
+				"x-hasura-default-role":  "user",
+				"x-hasura-group-id":      "10",
+				"x-hasura-user-id":       "user-id",
 			},
 		},
 		{
@@ -183,7 +214,7 @@ func TestAuthWebhook(t *testing.T) {
 	}
 }
 
-func runRequest[T any](t *testing.T, requestURL string, method string, body authmode.AuthenticateRequestData, statusCode int, responseBody T) {
+func runRequest[T any](t *testing.T, requestURL string, method string, body authmode.AuthenticateRequestData, statusCode int, expectedBody T) {
 	t.Helper()
 
 	var resp *http.Response
@@ -239,15 +270,16 @@ func runRequest[T any](t *testing.T, requestURL string, method string, body auth
 	assert.NilError(t, err)
 
 	// ignore empty expected response.
-	if reflect.DeepEqual(responseBody, empty) {
+	if reflect.DeepEqual(expectedBody, empty) {
 		return
 	}
 
-	assert.DeepEqual(t, responseBody, output)
+	assert.DeepEqual(t, expectedBody, output)
 }
 
 func initTestServer(t *testing.T, configPath string) (*httptest.Server, *auth.RelyAuthManager) {
 	t.Setenv("CONFIG_PATH", configPath)
+	t.Setenv("JWT_KEY", "NTNv7j0TuYARvmNMmWXo6fKvM4o6nvxyz")
 
 	envVars, err := GetEnvironment()
 	assert.NilError(t, err)

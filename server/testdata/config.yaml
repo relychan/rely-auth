@@ -2,6 +2,22 @@
 settings:
   strict: true
 definitions:
+  - mode: jwt
+    tokenLocation:
+      in: header
+      name: Authorization
+      scheme: bearer
+    key:
+      algorithm: HS256
+      key:
+        env: JWT_KEY
+    claimsConfig:
+      namespace:
+        location: '"claims.jwt.hasura.io"'
+        claimsFormat: Json
+      locations:
+        x-hasura-user-id:
+          path: sub
   - mode: apiKey
     in: header
     name: Authorization

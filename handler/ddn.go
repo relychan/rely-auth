@@ -71,6 +71,15 @@ func (handler *HasuraDDNAuthHookHandler) Post(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	hasuraRole, ok := sessionVariables[authmode.XHasuraRole]
+	if !ok || hasuraRole == nil || hasuraRole == "" {
+		span.SetStatus(codes.Error, "x-hasura-role session variable is empty")
+
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
 	err = gohttps.WriteResponseJSON(w, http.StatusOK, sessionVariables)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())

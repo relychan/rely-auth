@@ -1,0 +1,27 @@
+services:
+  hasura:
+    image: hasura/graphql-engine:v2.48.7.cli-migrations-v3
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-hook:
+        condition: service_started
+    volumes:
+      - ./migrations:/hasura-migrations
+      - ./metadata:/hasura-metadata
+    environment:
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:password@postgres:5432/postgres
+      DATA_DATABASE_URL: postgres://postgres:password@postgres:5432/postgres
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+      HASURA_GRAPHQL_AUTH_HOOK: http://auth-hook:8080/auth/hasura
+      HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
+    extra_hosts:
+      - local.hasura.dev:host-gateway
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

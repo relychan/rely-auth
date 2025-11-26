@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/relychan/gohttpc/authc/authscheme"
+	"github.com/relychan/goutils"
 )
 
 // FindAuthTokenByLocation finds the authentication token or api key from the request.
@@ -86,40 +86,32 @@ func SerializeSessionVariablesHasuraGraphQLEngine(
 }
 
 func serializeSessionVariableHasuraGraphQLEngine(value any) (string, error) {
-	if value == nil {
-		return "", nil
-	}
+	return goutils.ToStringWithCustomTypeFormatter(value, "", func(anyValue any) (string, error) {
+		switch typedValue := anyValue.(type) {
+		case []any:
+			results := make([]string, 0, len(typedValue))
 
-	switch typedValue := value.(type) {
-	case bool:
-		return strconv.FormatBool(typedValue), nil
-	case string:
-		return typedValue, nil
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
-		return fmt.Sprint(value), nil
-	case []any:
-		results := make([]string, 0, len(typedValue))
+			for i, item := range typedValue {
+				result, err := serializeSessionVariableHasuraGraphQLEngine(item)
+				if err != nil {
+					return "", fmt.Errorf("%d: %w", i, err)
+				}
 
-		for i, item := range typedValue {
-			result, err := serializeSessionVariableHasuraGraphQLEngine(item)
+				if result != "" {
+					results = append(results, result)
+				}
+			}
+
+			return "{" + strings.Join(results, ",") + "}", nil
+		default:
+			jsonValue, err := json.Marshal(value)
 			if err != nil {
-				return "", fmt.Errorf("%d: %w", i, err)
+				return "", err
 			}
 
-			if result != "" {
-				results = append(results, result)
-			}
+			return string(jsonValue), nil
 		}
-
-		return "{" + strings.Join(results, ",") + "}", nil
-	default:
-		jsonValue, err := json.Marshal(value)
-		if err != nil {
-			return "", err
-		}
-
-		return string(jsonValue), nil
-	}
+	})
 }
 
 func findTokenByLocation(

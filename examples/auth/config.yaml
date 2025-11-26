@@ -9,7 +9,9 @@ definitions:
       value: "randomsecret"
     sessionVariables:
       x-hasura-role:
-        value: admin
+        value: user
+      x-hasura-user-id:
+        value: "1"
   - mode: noAuth
     sessionVariables:
       x-hasura-role:

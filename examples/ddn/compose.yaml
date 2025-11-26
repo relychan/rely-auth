@@ -1,6 +1,5 @@
 include:
   - path: app/connector/mypostgres_promptql/compose.yaml
-  - path: ../compose.yaml
 services:
   engine:
     build:

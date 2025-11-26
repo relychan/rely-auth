@@ -5,6 +5,15 @@ import (
 	"fmt"
 )
 
+const (
+	// XHasuraDefaultRole is the constant string of the x-hasura-default-role key.
+	XHasuraDefaultRole = "x-hasura-default-role"
+	// XHasuraAllowedRoles is the constant string of the x-hasura-allowed-roles key.
+	XHasuraAllowedRoles = "x-hasura-allowed-roles"
+	// XHasuraRole is the constant string of the x-hasura-role key.
+	XHasuraRole = "x-hasura-role"
+)
+
 var (
 	// ErrAuthConfigRequired occurs when the auth config is null.
 	ErrAuthConfigRequired = errors.New("auth definition is empty")
