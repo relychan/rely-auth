@@ -130,10 +130,9 @@ func TestHasuraV2AuthHookHandler(t *testing.T) {
 			},
 			StatusCode: 200,
 			ResponseBody: map[string]any{
-				"x-hasura-allowed-roles": []any{"user", "admin"},
-				"x-hasura-default-role":  "user",
-				"x-hasura-group-id":      "10",
-				"x-hasura-user-id":       "user-id",
+				"x-hasura-role":     "user",
+				"x-hasura-group-id": "10",
+				"x-hasura-user-id":  "user-id",
 			},
 		},
 		{
