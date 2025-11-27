@@ -1,0 +1,330 @@
+---
+kind: ScalarType
+version: v1
+definition:
+  name: int32
+  graphql:
+    typeName: int32
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: integer_bool_exp
+  operand:
+    scalar:
+      type: int32
+      comparisonOperators:
+        - name: _eq
+          argumentType: int32!
+        - name: _gt
+          argumentType: int32!
+        - name: _gte
+          argumentType: int32!
+        - name: _in
+          argumentType: "[int32!]!"
+        - name: _lt
+          argumentType: int32!
+        - name: _lte
+          argumentType: int32!
+        - name: _neq
+          argumentType: int32!
+      dataConnectorOperatorMapping:
+        - dataConnectorName: mypostgres_promptql
+          dataConnectorScalarType: integer
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: integer_bool_exp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: mypostgres_promptql
+  dataConnectorScalarType: integer
+  representation: int32
+  graphql:
+    comparisonExpressionTypeName: int32_comparison_exp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: string
+  graphql:
+    typeName: string
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: character_varying_bool_exp
+  operand:
+    scalar:
+      type: string
+      comparisonOperators:
+        - name: _eq
+          argumentType: string!
+        - name: _gt
+          argumentType: string!
+        - name: _gte
+          argumentType: string!
+        - name: _ilike
+          argumentType: string!
+        - name: _in
+          argumentType: "[string!]!"
+        - name: _iregex
+          argumentType: string!
+        - name: _like
+          argumentType: string!
+        - name: _lt
+          argumentType: string!
+        - name: _lte
+          argumentType: string!
+        - name: _neq
+          argumentType: string!
+        - name: _nilike
+          argumentType: string!
+        - name: _niregex
+          argumentType: string!
+        - name: _nlike
+          argumentType: string!
+        - name: _nregex
+          argumentType: string!
+        - name: _regex
+          argumentType: string!
+      dataConnectorOperatorMapping:
+        - dataConnectorName: mypostgres_promptql
+          dataConnectorScalarType: character_varying
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: character_varying_bool_exp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: mypostgres_promptql
+  dataConnectorScalarType: character_varying
+  representation: string
+  graphql:
+    comparisonExpressionTypeName: string_comparison_exp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: bigdecimal
+  graphql:
+    typeName: bigdecimal
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: decimal_bool_exp
+  operand:
+    scalar:
+      type: bigdecimal
+      comparisonOperators:
+        - name: _eq
+          argumentType: bigdecimal!
+        - name: _gt
+          argumentType: bigdecimal!
+        - name: _gte
+          argumentType: bigdecimal!
+        - name: _in
+          argumentType: "[bigdecimal!]!"
+        - name: _lt
+          argumentType: bigdecimal!
+        - name: _lte
+          argumentType: bigdecimal!
+        - name: _neq
+          argumentType: bigdecimal!
+      dataConnectorOperatorMapping:
+        - dataConnectorName: mypostgres_promptql
+          dataConnectorScalarType: decimal
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: decimal_bool_exp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: mypostgres_promptql
+  dataConnectorScalarType: decimal
+  representation: bigdecimal
+  graphql:
+    comparisonExpressionTypeName: bigdecimal_comparison_exp
+
+---
+kind: ScalarType
+version: v1
+definition:
+  name: biginteger
+  graphql:
+    typeName: biginteger
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: bigint_bool_exp
+  operand:
+    scalar:
+      type: biginteger
+      comparisonOperators:
+        - name: _eq
+          argumentType: biginteger!
+        - name: _gt
+          argumentType: biginteger!
+        - name: _gte
+          argumentType: biginteger!
+        - name: _in
+          argumentType: "[biginteger!]!"
+        - name: _lt
+          argumentType: biginteger!
+        - name: _lte
+          argumentType: biginteger!
+        - name: _neq
+          argumentType: biginteger!
+      dataConnectorOperatorMapping:
+        - dataConnectorName: mypostgres_promptql
+          dataConnectorScalarType: bigint
+          operatorMapping: {}
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: bigint_bool_exp
+
+---
+kind: DataConnectorScalarRepresentation
+version: v1
+definition:
+  dataConnectorName: mypostgres_promptql
+  dataConnectorScalarType: bigint
+  representation: biginteger
+  graphql:
+    comparisonExpressionTypeName: biginteger_comparison_exp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: integer_agg_exp
+  operand:
+    scalar:
+      aggregatedType: int32
+      aggregationFunctions:
+        - name: avg
+          returnType: bigdecimal
+        - name: max
+          returnType: int32
+        - name: min
+          returnType: int32
+        - name: stddev_pop
+          returnType: int32!
+        - name: stddev_samp
+          returnType: int32!
+        - name: sum
+          returnType: biginteger
+        - name: var_pop
+          returnType: int32!
+        - name: var_samp
+          returnType: int32!
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: mypostgres_promptql
+          dataConnectorScalarType: integer
+          functionMapping:
+            avg:
+              name: avg
+            max:
+              name: max
+            min:
+              name: min
+            stddev_pop:
+              name: stddev_pop
+            stddev_samp:
+              name: stddev_samp
+            sum:
+              name: sum
+            var_pop:
+              name: var_pop
+            var_samp:
+              name: var_samp
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: integer_agg_exp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: character_varying_agg_exp
+  operand:
+    scalar:
+      aggregatedType: string
+      aggregationFunctions:
+        - name: max
+          returnType: string
+        - name: min
+          returnType: string
+      dataConnectorAggregationFunctionMapping:
+        - dataConnectorName: mypostgres_promptql
+          dataConnectorScalarType: character_varying
+          functionMapping:
+            max:
+              name: max
+            min:
+              name: min
+  count:
+    enable: true
+  countDistinct:
+    enable: true
+  graphql:
+    selectTypeName: character_varying_agg_exp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: int32_order_by_exp
+  operand:
+    scalar:
+      orderedType: int32
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: int32_order_by_exp
+
+---
+kind: OrderByExpression
+version: v1
+definition:
+  name: string_order_by_exp
+  operand:
+    scalar:
+      orderedType: string
+      enableOrderByDirections:
+        enableAll: true
+  graphql:
+    expressionTypeName: string_order_by_exp
+

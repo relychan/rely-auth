@@ -1,0 +1,343 @@
+// Package auth defines a universal authentication manager
+package auth
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
+	"slices"
+	"strconv"
+	"time"
+
+	"github.com/hasura/gotel"
+	"github.com/relychan/gohttpc"
+	"github.com/relychan/goutils"
+	"github.com/relychan/rely-auth/auth/apikey"
+	"github.com/relychan/rely-auth/auth/authmode"
+	"github.com/relychan/rely-auth/auth/jwt"
+	"github.com/relychan/rely-auth/auth/noauth"
+	"github.com/relychan/rely-auth/auth/webhook"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
+)
+
+// RelyAuthManager manages multiple authentication strategies to verify HTTP requests.
+type RelyAuthManager struct {
+	options relyAuthManagerOptions
+
+	settings              *authmode.RelyAuthSettings
+	authenticators        []authmode.RelyAuthenticator
+	httpClient            *gohttpc.Client
+	requestDuration       metric.Float64Histogram
+	authModeTotalRequests metric.Int64Counter
+}
+
+// NewRelyAuthManager creates a new RelyAuthManager instance from config.
+func NewRelyAuthManager(
+	config *RelyAuthConfig,
+	options ...RelyAuthManagerOption,
+) (*RelyAuthManager, error) {
+	opts := relyAuthManagerOptions{
+		Logger: slog.Default(),
+	}
+
+	for _, opt := range options {
+		opt(&opts)
+	}
+
+	httpClient := opts.HTTPClient
+
+	if httpClient == nil {
+		clientOptions := []gohttpc.Option{
+			gohttpc.WithLogger(opts.Logger.With("type", "auth-client")),
+			gohttpc.WithTimeout(time.Minute),
+		}
+
+		if opts.Meter != nil {
+			httpMetrics, err := gohttpc.NewHTTPClientMetrics(opts.Meter, false)
+			if err != nil {
+				return nil, fmt.Errorf("failed to initialize http client metrics: %w", err)
+			}
+
+			clientOptions = append(clientOptions, gohttpc.WithMetrics(httpMetrics))
+		}
+
+		httpClient = gohttpc.NewClient(clientOptions...)
+	}
+
+	if opts.Meter == nil {
+		opts.Meter = otel.Meter("rely_auth")
+	}
+
+	manager := RelyAuthManager{
+		options:    opts,
+		settings:   &authmode.RelyAuthSettings{},
+		httpClient: httpClient,
+	}
+
+	var err error
+
+	manager.requestDuration, err = opts.Meter.Float64Histogram(
+		"rely_auth.request.duration",
+		metric.WithDescription("Duration of authentication requests."),
+		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(
+			0.005,
+			0.01,
+			0.025,
+			0.05,
+			0.075,
+			0.1,
+			0.25,
+			0.5,
+			0.75,
+			1,
+			2.5,
+			5,
+			7.5,
+			10,
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	manager.authModeTotalRequests, err = opts.Meter.Int64Counter(
+		"rely_auth.mode.request.total",
+		metric.WithDescription("Total number of successful auth mode requests."),
+		metric.WithUnit("{request}"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &manager, manager.init(config)
+}
+
+// Authenticate validates and authenticates the token from the auth webhook request.
+func (am *RelyAuthManager) Authenticate(
+	ctx context.Context,
+	body authmode.AuthenticateRequestData,
+) (map[string]any, error) {
+	ctx, span := tracer.Start(ctx, "Authenticate", trace.WithSpanKind(trace.SpanKindInternal))
+	defer span.End()
+
+	startTime := time.Now()
+
+	logger := gotel.GetLogger(ctx)
+
+	var tokenNotFound bool
+
+	for _, authenticator := range am.authenticators {
+		authMode := authenticator.Mode()
+		// if auth token exists but it is unauthorized,
+		// the noAuth mode is skipped with the strict mode enabled.
+		if authMode == authmode.AuthModeNoAuth &&
+			!tokenNotFound && am.settings.Strict {
+			break
+		}
+
+		result, err := authenticator.Authenticate(ctx, body)
+		if err == nil {
+			latency := time.Since(startTime).Seconds()
+			authModeAttr := attribute.String("auth.mode", string(authMode))
+			authIDAttr := attribute.String("auth.id", result.ID)
+
+			am.requestDuration.Record(
+				ctx,
+				latency,
+				metric.WithAttributeSet(attribute.NewSet(authStatusSuccessAttribute)),
+			)
+
+			span.SetAttributes(authModeAttr, authIDAttr)
+
+			am.authModeTotalRequests.Add(
+				ctx,
+				1,
+				metric.WithAttributeSet(
+					attribute.NewSet(authStatusSuccessAttribute, authModeAttr, authIDAttr),
+				),
+			)
+
+			return result.SessionVariables, nil
+		}
+
+		tokenNotFound = tokenNotFound || errors.Is(err, authmode.ErrAuthTokenNotFound)
+
+		logger.Debug(
+			"Authentication failed",
+			slog.String("error", err.Error()),
+			slog.String("auth_mode", string(authMode)),
+		)
+
+		span.AddEvent("Authentication failed", trace.WithAttributes(
+			attribute.String("error", err.Error()),
+		))
+	}
+
+	latency := time.Since(startTime).Seconds()
+
+	am.requestDuration.Record(
+		ctx,
+		latency,
+		metric.WithAttributeSet(attribute.NewSet(authStatusFailedAttribute)),
+	)
+	span.SetStatus(codes.Error, "authentication failed")
+
+	return nil, goutils.NewUnauthorizedError()
+}
+
+// Reload credentials of the authenticator.
+func (am *RelyAuthManager) Reload(ctx context.Context) error {
+	var errs []error
+
+	for _, authenticator := range am.authenticators {
+		err := authenticator.Reload(ctx)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
+	return nil
+}
+
+// Close terminates all underlying authenticator resources.
+func (am *RelyAuthManager) Close() error {
+	var errs []error
+
+	for _, au := range am.authenticators {
+		err := au.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	switch len(errs) {
+	case 0:
+		return nil
+	case 1:
+		return errs[0]
+	default:
+		return errors.Join(errs...)
+	}
+}
+
+func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
+	authModes := authmode.GetSupportedAuthModes()
+	definitions := config.Definitions
+
+	// Auth modes are sorted in order:
+	// - API Key: comparing static keys is cheap. So it should be used first.
+	// - JWT: verifying signatures is more expensive. However, because JSON web keys are stored in memory so the verification is still fast.
+	// - Webhook: calling HTTP requests takes highest latency due to network side effects. It should be the lowest priority.
+	// - No Auth: is always the last for unauthenticated users.
+	slices.SortFunc(definitions, func(a, b RelyAuthDefinition) int {
+		indexA := slices.Index(authModes, a.GetMode())
+		indexB := slices.Index(authModes, b.GetMode())
+
+		return indexA - indexB
+	})
+
+	if config.Settings != nil {
+		am.settings = config.Settings
+	}
+
+	var jwtAuth *jwt.JWTAuthenticator
+
+	for i, rawDef := range definitions {
+		switch def := rawDef.RelyAuthDefinitionInterface.(type) {
+		case *apikey.RelyAuthAPIKeyConfig:
+			if def.ID == "" {
+				def.ID = strconv.Itoa(i)
+			}
+
+			authenticator, err := apikey.NewAPIKeyAuthenticator(*def)
+			if err != nil {
+				return fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
+			}
+
+			am.authenticators = append(am.authenticators, authenticator)
+		case *jwt.RelyAuthJWTConfig:
+			if def.ID == "" {
+				def.ID = strconv.Itoa(i)
+			}
+
+			if jwtAuth == nil {
+				authenticator, err := jwt.NewJWTAuthenticator(nil, am.httpClient)
+				if err != nil {
+					return err
+				}
+
+				jwtAuth = authenticator
+				am.authenticators = append(am.authenticators, authenticator)
+			}
+
+			err := jwtAuth.Add(*def)
+			if err != nil {
+				return fmt.Errorf("failed to create JWT auth %s: %w", def.ID, err)
+			}
+		case *webhook.RelyAuthWebhookConfig:
+			if def.ID == "" {
+				def.ID = strconv.Itoa(i)
+			}
+
+			authenticator, err := webhook.NewWebhookAuthenticator(*def, am.httpClient)
+			if err != nil {
+				return fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
+			}
+
+			am.authenticators = append(am.authenticators, authenticator)
+		case *noauth.RelyAuthNoAuthConfig:
+			if def.ID == "" {
+				def.ID = strconv.Itoa(i)
+			}
+
+			authenticator, err := noauth.NewNoAuth(*def)
+			if err != nil {
+				return fmt.Errorf("failed to create noAuth: %w", err)
+			}
+
+			am.authenticators = append(am.authenticators, authenticator)
+		}
+	}
+
+	return nil
+}
+
+type relyAuthManagerOptions struct {
+	Meter      metric.Meter
+	Logger     *slog.Logger
+	HTTPClient *gohttpc.Client
+}
+
+// RelyAuthManagerOption abstracts a function to modify auth manager options.
+type RelyAuthManagerOption func(*relyAuthManagerOptions)
+
+// WithLogger sets the logger to auth manager options.
+func WithLogger(logger *slog.Logger) RelyAuthManagerOption {
+	return func(ramo *relyAuthManagerOptions) {
+		ramo.Logger = logger
+	}
+}
+
+// WithMeter sets the meter to auth manager options.
+func WithMeter(meter metric.Meter) RelyAuthManagerOption {
+	return func(ramo *relyAuthManagerOptions) {
+		ramo.Meter = meter
+	}
+}
+
+// WithHTTPClient sets the HTTP client to auth manager options.
+func WithHTTPClient(client *gohttpc.Client) RelyAuthManagerOption {
+	return func(ramo *relyAuthManagerOptions) {
+		ramo.HTTPClient = client
+	}
+}
