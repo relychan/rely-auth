@@ -71,14 +71,14 @@ func (wa *WebhookAuthenticator) Authenticate(
 	span.SetAttributes(attribute.String("auth.mode", string(wa.config.GetMode())))
 
 	wa.mu.RLock()
-	req := wa.httpClient.NewRequest(wa.config.Method, wa.url)
+	req := wa.httpClient.R(wa.config.Method, wa.url)
 	wa.mu.RUnlock()
 
 	result := authmode.AuthenticatedOutput{
 		ID: wa.config.ID,
 	}
 
-	err := wa.transformRequest(req, body)
+	err := wa.transformRequest(req.Request, body)
 	if err != nil {
 		span.SetStatus(codes.Error, "failed to transform request")
 		span.RecordError(err)
@@ -86,33 +86,21 @@ func (wa *WebhookAuthenticator) Authenticate(
 		return result, fmt.Errorf("failed to transform request: %w", err)
 	}
 
-	resp, err := req.Execute(ctx)
+	resp, err := req.Execute(ctx) //nolint:bodyclose
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
+		span.SetStatus(codes.Error, "failed to execute auth webhook")
+		span.RecordError(err)
 
-		return result, fmt.Errorf("failed to execute auth webhook: %w", err)
+		return result, err
 	}
 
-	defer goutils.CatchWarnErrorFunc(resp.Close)
+	if resp.Body == nil || resp.Body == http.NoBody {
+		span.SetStatus(codes.Error, ErrResponseBodyRequired.Error())
 
-	if resp.StatusCode() != http.StatusOK {
-		body, err := resp.ReadBytes()
-		if err != nil {
-			span.SetStatus(codes.Error, "unable to read response body")
-			span.RecordError(err)
-
-			return result, fmt.Errorf("unable to read response body: %w", err)
-		}
-
-		span.SetAttributes(
-			attribute.Int("auth.webhook.response.status", resp.StatusCode()),
-			attribute.String("auth.webhook.response.body", string(body)),
-		)
-
-		span.SetStatus(codes.Error, "authentication failed")
-
-		return result, goutils.NewUnauthorizedError()
+		return result, ErrResponseBodyRequired
 	}
+
+	defer goutils.CatchWarnErrorFunc(resp.Body.Close)
 
 	sessionVariables, err := wa.evaluateResponseBody(resp, span)
 
@@ -315,13 +303,9 @@ func (wa *WebhookAuthenticator) forwardRequestHeaders(
 }
 
 func (wa *WebhookAuthenticator) evaluateResponseBody(
-	resp *gohttpc.Response,
+	resp *http.Response,
 	span trace.Span,
 ) (map[string]any, error) {
-	if resp.Body() == nil || resp.Body() == http.NoBody {
-		return nil, ErrResponseBodyRequired
-	}
-
 	if wa.customResponse.Body == nil {
 		sessionVariables := map[string]any{}
 
@@ -350,7 +334,7 @@ func (wa *WebhookAuthenticator) evaluateResponseBody(
 	}
 
 	responseVariables := map[string]any{
-		"headers": goutils.ExtractHeaders(resp.Header()),
+		"headers": goutils.ExtractHeaders(resp.Header),
 		"body":    responseBody,
 	}
 

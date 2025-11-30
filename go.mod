@@ -9,7 +9,7 @@ require (
 	github.com/hasura/goenvconf v0.3.0
 	github.com/hasura/gotel v0.4.2
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
-	github.com/relychan/gohttpc v0.0.0-20251125091545-01ddea611cf4
+	github.com/relychan/gohttpc v0.0.0-20251130143850-93679e68055d
 	github.com/relychan/gohttps v0.0.0-20251124055524-9d1da640ca19
 	github.com/relychan/gotransform v0.0.0-20251115070005-4e3c3650c419
 	github.com/relychan/goutils v0.0.0-20251126052335-b9b7ec5a4db1
@@ -27,8 +27,10 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/failsafe-go/failsafe-go v0.9.2 // indirect
 	github.com/go-chi/cors v1.2.2 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

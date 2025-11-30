@@ -1,12 +1,13 @@
 package webhook
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
-	"github.com/relychan/gohttpc"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/goutils/httpheader"
 	"go.opentelemetry.io/otel/codes"
@@ -34,8 +35,8 @@ func newCustomWebhookAuthHeadersConfig(
 	return &result, nil
 }
 
-func decodeResponseJSON(span trace.Span, resp *gohttpc.Response, value any) error {
-	err := resp.ReadJSON(value)
+func decodeResponseJSON(span trace.Span, resp *http.Response, value any) error {
+	err := json.NewDecoder(resp.Body).Decode(value)
 	if err != nil {
 		span.SetStatus(codes.Error, "failed to decode session variables")
 		span.RecordError(err)
@@ -44,7 +45,7 @@ func decodeResponseJSON(span trace.Span, resp *gohttpc.Response, value any) erro
 			return ErrResponseBodyRequired
 		}
 
-		ct := resp.Header().Get(httpheader.ContentType)
+		ct := resp.Header.Get(httpheader.ContentType)
 
 		if strings.HasPrefix(ct, httpheader.ContentTypeJSON) {
 			return fmt.Errorf(

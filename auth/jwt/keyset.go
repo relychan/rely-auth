@@ -398,29 +398,24 @@ func (j *JWTKeySet) keysFromRemote(ctx context.Context) ([]jose.JSONWebKey, erro
 }
 
 func (j *JWTKeySet) updateKeys(ctx context.Context) ([]jose.JSONWebKey, error) {
-	req := j.httpClient.NewRequest(http.MethodGet, j.jwksURL)
+	req := j.httpClient.R(http.MethodGet, j.jwksURL)
 
-	resp, err := req.Execute(ctx)
+	resp, err := req.Execute(ctx) //nolint:bodyclose
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrGetJWKsFailed, err.Error())
 	}
 
-	defer goutils.CatchWarnErrorFunc(resp.Close)
-
-	if resp.StatusCode() != http.StatusOK {
-		body, err := resp.ReadBytes()
-		if err != nil {
-			return nil, fmt.Errorf("unable to read response body: %w", err)
-		}
-
-		return nil, fmt.Errorf("%w: %s %s", ErrGetJWKsFailed, resp.RawResponse.Status, body)
+	if resp.Body == nil {
+		return nil, fmt.Errorf("%w: response body has no content", ErrGetJWKsFailed)
 	}
+
+	defer goutils.CatchWarnErrorFunc(resp.Body.Close)
 
 	var keySet jose.JSONWebKeySet
 
-	err = resp.ReadJSON(&keySet)
+	err = json.NewDecoder(resp.Body).Decode(&keySet)
 	if err != nil {
-		ct := resp.Header().Get(httpheader.ContentType)
+		ct := resp.Header.Get(httpheader.ContentType)
 
 		if strings.HasPrefix(ct, httpheader.ContentTypeJSON) {
 			return nil, fmt.Errorf(
