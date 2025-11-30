@@ -52,18 +52,9 @@ func NewRelyAuthManager(
 	httpClient := opts.HTTPClient
 
 	if httpClient == nil {
-		clientOptions := []gohttpc.Option{
+		clientOptions := []gohttpc.ClientOption{
 			gohttpc.WithLogger(opts.Logger.With("type", "auth-client")),
 			gohttpc.WithTimeout(time.Minute),
-		}
-
-		if opts.Meter != nil {
-			httpMetrics, err := gohttpc.NewHTTPClientMetrics(opts.Meter, false)
-			if err != nil {
-				return nil, fmt.Errorf("failed to initialize http client metrics: %w", err)
-			}
-
-			clientOptions = append(clientOptions, gohttpc.WithMetrics(httpMetrics))
 		}
 
 		httpClient = gohttpc.NewClient(clientOptions...)
@@ -107,7 +98,7 @@ func NewRelyAuthManager(
 	}
 
 	manager.authModeTotalRequests, err = opts.Meter.Int64Counter(
-		"rely_auth.mode.request.total",
+		"rely_auth.request_mode.total",
 		metric.WithDescription("Total number of successful auth mode requests."),
 		metric.WithUnit("{request}"),
 	)
