@@ -59,7 +59,7 @@ func InitAuthManager(
 	}) {
 		httpClientMetrics, err := gohttpc.NewHTTPClientMetrics(exporters.Meter, false)
 		if err != nil {
-			return nil, fmt.Errorf("failed to setup http client meitrcs: %w", err)
+			return nil, fmt.Errorf("failed to setup http client metrics: %w", err)
 		}
 
 		gohttpc.SetHTTPClientMetrics(httpClientMetrics)

@@ -1,8 +1,14 @@
 name: Unit tests
 
 on:
+  pull_request:
   push:
+    branches:
+      - main
 
+permissions:
+  pull-requests: write
+  
 jobs:
   lint:
     name: Lint and test
