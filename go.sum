@@ -81,6 +81,8 @@ github.com/relychan/gohttpc v0.0.0-20251125091545-01ddea611cf4 h1:/q4eCJSfugh4r3
 github.com/relychan/gohttpc v0.0.0-20251125091545-01ddea611cf4/go.mod h1:Lgf74RG+udKv5pGikpl1qTCepw31NWq2sGBoiDgN1f8=
 github.com/relychan/gohttpc v0.0.0-20251130143850-93679e68055d h1:PUv6KG/nvL1tOZKh3xKf6Lm57a9QpDzelxVE/WrwCzc=
 github.com/relychan/gohttpc v0.0.0-20251130143850-93679e68055d/go.mod h1:x46OLaGsE2iby9tdjXkSg7sEdOvUGPgFTQH9w9+fDSY=
+github.com/relychan/gohttpc v0.0.0-20251201064400-b5ade71935b0 h1:qVo8GsOhxsHxs6mFekpzH1blLta27Vy3szdSZQVFdBs=
+github.com/relychan/gohttpc v0.0.0-20251201064400-b5ade71935b0/go.mod h1:x46OLaGsE2iby9tdjXkSg7sEdOvUGPgFTQH9w9+fDSY=
 github.com/relychan/gohttps v0.0.0-20251124055524-9d1da640ca19 h1:dydqdtzJFhmyfkNH3DUCgCcnfw5lYhILlSvSBApIpR0=
 github.com/relychan/gohttps v0.0.0-20251124055524-9d1da640ca19/go.mod h1:9bGptsv2Zxz+nSoOyZxL0Of4EooNKK+490oMeShvOZ0=
 github.com/relychan/gotransform v0.0.0-20251115070005-4e3c3650c419 h1:w0XVlW5EO0dc7bfnvnRQi0vSl9nxL3uR1A4v+hJRHEU=

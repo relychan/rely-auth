@@ -230,22 +230,24 @@ func (wa *WebhookAuthenticator) transformRequest(
 		originalRequest["body"] = body
 	}
 
-	for key, additional := range wa.customRequest.Headers.Additional {
-		if additional.Path != nil {
-			headerValue, err := additional.EvaluateString(originalRequest)
-			if err != nil {
-				return fmt.Errorf("failed to evaluate additional header: %w", err)
+	if wa.customRequest.Headers != nil {
+		for key, additional := range wa.customRequest.Headers.Additional {
+			if additional.Path != nil {
+				headerValue, err := additional.EvaluateString(originalRequest)
+				if err != nil {
+					return fmt.Errorf("failed to evaluate additional header: %w", err)
+				}
+
+				if headerValue != nil {
+					req.Header().Set(key, *headerValue)
+
+					continue
+				}
 			}
 
-			if headerValue != nil {
-				req.Header().Set(key, *headerValue)
-
-				continue
+			if additional.Default != nil {
+				req.Header().Set(key, *additional.Default)
 			}
-		}
-
-		if additional.Default != nil {
-			req.Header().Set(key, *additional.Default)
 		}
 	}
 

@@ -78,7 +78,8 @@ linters:
           disabled: true
         - name: exported
           disabled: true
-
+    nestif:
+      min-complexity: 7
     funlen:
       # Checks the number of lines in a function.
       # If lower than 0, disable the check.

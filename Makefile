@@ -4,7 +4,7 @@ format:
 
 .PHONY: test
 test:
-	go test -v -race -timeout 3m -coverprofile=coverage.out ./...
+	go test -v -race -timeout 3m -coverpkg=./... -coverprofile=coverage.out ./...
 
 # Install golangci-lint tool to run lint locally
 # https://golangci-lint.run/usage/install
