@@ -148,7 +148,7 @@ func TestParseSignatureAlgorithm(t *testing.T) {
 func TestGetSupportedSignatureAlgorithms(t *testing.T) {
 	algorithms := GetSupportedSignatureAlgorithms()
 	assert.Assert(t, len(algorithms) == 13)
-	
+
 	// Check that all expected algorithms are present
 	expectedAlgorithms := []jose.SignatureAlgorithm{
 		jose.ES256, jose.ES384, jose.ES512,
@@ -157,7 +157,7 @@ func TestGetSupportedSignatureAlgorithms(t *testing.T) {
 		jose.PS256, jose.PS384, jose.PS512,
 		jose.RS256, jose.RS384, jose.RS512,
 	}
-	
+
 	for _, expected := range expectedAlgorithms {
 		found := false
 		for _, alg := range algorithms {
@@ -169,4 +169,3 @@ func TestGetSupportedSignatureAlgorithms(t *testing.T) {
 		assert.Assert(t, found, "Expected algorithm %s not found", expected)
 	}
 }
-
