@@ -298,7 +298,7 @@ func initTestServer(t *testing.T, configPath string) (*httptest.Server, *auth.Re
 		},
 	}
 
-	authManager, err := config.InitAuthManager(envVars.ConfigPath, exporters)
+	authManager, err := config.InitAuthManager(envVars.GetConfigPath(), exporters)
 	assert.NilError(t, err)
 
 	router := setupRouter(envVars, authManager, exporters)
