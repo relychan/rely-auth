@@ -17,10 +17,12 @@ import (
 
 // RelyAuthServerConfig holds information of required configurations to run the auth server.
 type RelyAuthServerConfig struct {
-	Server    gohttps.ServerConfig
-	Telemetry gotel.OTLPConfig
-
-	ConfigPath string `env:"RELY_AUTH_CONFIG_PATH" envDefault:"/etc/rely-auth/auth.yaml"`
+	// Server configs.
+	Server gohttps.ServerConfig `json:"server" yaml:"server"`
+	// Telemetry configs.
+	Telemetry gotel.OTLPConfig `json:"telemetry" yaml:"telemetry"`
+	// Path of the auth config file.
+	ConfigPath string `json:"configPath" yaml:"configPath" env:"RELY_AUTH_CONFIG_PATH"`
 }
 
 // GetConfigPath returns the auth config path.
