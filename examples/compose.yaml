@@ -26,7 +26,7 @@ services:
     volumes:
       - ./auth:/config
     environment:
-      CONFIG_PATH: /config/config.yaml
+      RELY_AUTH_CONFIG_PATH: /config/config.yaml
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
       OTEL_METRICS_EXPORTER: otlp
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://prometheus:9090/api/v1/otlp/v1/metrics
