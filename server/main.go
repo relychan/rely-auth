@@ -16,6 +16,7 @@ import (
 	"github.com/relychan/gohttps"
 	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth"
+	"github.com/relychan/rely-auth/config"
 	"github.com/relychan/rely-auth/handler"
 )
 
@@ -29,7 +30,7 @@ func main() {
 }
 
 func runServer() error {
-	envVars, err := GetEnvironment()
+	envVars, err := config.LoadServerConfig()
 	if err != nil {
 		return err
 	}
@@ -49,19 +50,23 @@ func runServer() error {
 		return err
 	}
 
-	defer func() {
-		stop()
-		goutils.CatchWarnContextErrorFunc(ts.Shutdown)
-	}()
-
-	authManager, err := InitAuthManager(&envVars, ts)
+	authManager, err := config.InitAuthManager(envVars.GetConfigPath(), ts)
 	if err != nil {
+		goutils.CatchWarnContextErrorFunc(ts.Shutdown)
+		stop()
+
 		return err
 	}
 
-	router := setupRouter(&envVars, authManager, ts)
+	defer func() {
+		goutils.CatchWarnErrorFunc(authManager.Close)
+		goutils.CatchWarnContextErrorFunc(ts.Shutdown)
+		stop()
+	}()
 
-	err = gohttps.ListenAndServe(ctx, router, envVars.Server)
+	router := setupRouter(envVars, authManager, ts)
+
+	err = gohttps.ListenAndServe(ctx, router, &envVars.Server)
 	if err != nil {
 		return fmt.Errorf("failed to serve http server: %w", err)
 	}
@@ -70,11 +75,11 @@ func runServer() error {
 }
 
 func setupRouter(
-	envVars *Environment,
+	envVars *config.RelyAuthServerConfig,
 	authManager *auth.RelyAuthManager,
 	exporters *gotel.OTelExporters,
 ) *chi.Mux {
-	router := gohttps.NewRouter(envVars.Server, exporters.Logger)
+	router := gohttps.NewRouter(&envVars.Server, exporters.Logger)
 	router.Use(
 		gotel.NewTracingMiddleware(
 			exporters,

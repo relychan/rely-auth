@@ -1,8 +1,9 @@
-package main
+// Package config defines configurations for the auth server.
+package config
 
 import (
-	"errors"
 	"fmt"
+	"os"
 	"slices"
 
 	"github.com/caarlos0/env/v11"
@@ -14,25 +15,42 @@ import (
 	"github.com/relychan/rely-auth/auth/authmode"
 )
 
-var errConfigPathRequired = errors.New("config path is required")
-
-// Environment holds information of required environment variables.
-type Environment struct {
+// RelyAuthServerConfig holds information of required configurations to run the auth server.
+type RelyAuthServerConfig struct {
 	Server    gohttps.ServerConfig
 	Telemetry gotel.OTLPConfig
 
-	ConfigPath string `env:"CONFIG_PATH" envDefault:"/app/config.yaml"`
+	ConfigPath string `env:"RELY_AUTH_CONFIG_PATH" envDefault:"/etc/rely-auth/auth.yaml"`
 }
 
-// GetEnvironment loads and parses environment variables.
-func GetEnvironment() (Environment, error) {
-	result, err := env.ParseAs[Environment]()
-	if err != nil {
-		return result, fmt.Errorf("failed to parse environment variables: %w", err)
+// GetConfigPath returns the auth config path.
+func (rlsc RelyAuthServerConfig) GetConfigPath() string {
+	if rlsc.ConfigPath != "" {
+		return rlsc.ConfigPath
 	}
 
-	if result.ConfigPath == "" {
-		return result, errConfigPathRequired
+	return "/etc/rely-auth/auth.yaml"
+}
+
+// LoadServerConfig loads and parses configurations for [RelyAuthServerConfig].
+func LoadServerConfig() (*RelyAuthServerConfig, error) {
+	var result *RelyAuthServerConfig
+
+	var err error
+
+	serverConfigPath := os.Getenv("RELY_AUTH_SERVER_CONFIG_PATH")
+	if serverConfigPath != "" {
+		result, err = goutils.ReadJSONOrYAMLFile[RelyAuthServerConfig](serverConfigPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load RELY_AUTH_SERVER_CONFIG_PATH: %w", err)
+		}
+	} else {
+		result = &RelyAuthServerConfig{}
+	}
+
+	err = env.Parse(result)
+	if err != nil {
+		return result, fmt.Errorf("failed to load environment variables for server config: %w", err)
 	}
 
 	if result.Telemetry.ServiceName == "" {
@@ -44,10 +62,10 @@ func GetEnvironment() (Environment, error) {
 
 // InitAuthManager initializes the auth manager from config.
 func InitAuthManager(
-	environment *Environment,
+	configPath string,
 	exporters *gotel.OTelExporters,
 ) (*auth.RelyAuthManager, error) {
-	authConfig, err := goutils.ReadJSONOrYAMLFile[auth.RelyAuthConfig](environment.ConfigPath)
+	authConfig, err := goutils.ReadJSONOrYAMLFile[auth.RelyAuthConfig](configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load auth config: %w", err)
 	}

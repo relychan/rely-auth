@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/hasura/gotel"
-	"github.com/relychan/gohttps"
+	"github.com/relychan/gohttps/httputils"
 	"github.com/relychan/rely-auth/auth"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"go.opentelemetry.io/otel/codes"
@@ -38,7 +38,7 @@ func (handler *HasuraGraphQLEngineAuthHookHandler) Get(w http.ResponseWriter, r 
 func (handler *HasuraGraphQLEngineAuthHookHandler) Post(w http.ResponseWriter, r *http.Request) {
 	span := trace.SpanFromContext(r.Context())
 
-	body, decoded := gohttps.DecodeRequestBody[authmode.AuthenticateRequestData](w, r, span)
+	body, decoded := httputils.DecodeRequestBody[authmode.AuthenticateRequestData](w, r, span)
 	if !decoded {
 		return
 	}
@@ -85,7 +85,7 @@ func (handler *HasuraGraphQLEngineAuthHookHandler) handle(
 		return
 	}
 
-	err = gohttps.WriteResponseJSON(w, http.StatusOK, serializedVariables)
+	err = httputils.WriteResponseJSON(w, http.StatusOK, serializedVariables)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)

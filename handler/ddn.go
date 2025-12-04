@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/hasura/gotel"
-	"github.com/relychan/gohttps"
+	"github.com/relychan/gohttps/httputils"
 	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth"
 	"github.com/relychan/rely-auth/auth/authmode"
@@ -41,7 +41,7 @@ func (handler *HasuraDDNAuthHookHandler) Get(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = gohttps.WriteResponseJSON(w, http.StatusOK, sessionVariables)
+	err = httputils.WriteResponseJSON(w, http.StatusOK, sessionVariables)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)
@@ -56,7 +56,7 @@ func (handler *HasuraDDNAuthHookHandler) Post(w http.ResponseWriter, r *http.Req
 	span := trace.SpanFromContext(ctx)
 	logger := gotel.GetRequestLogger(r)
 
-	body, decoded := gohttps.DecodeRequestBody[authmode.AuthenticateRequestData](w, r, span)
+	body, decoded := httputils.DecodeRequestBody[authmode.AuthenticateRequestData](w, r, span)
 	if !decoded {
 		return
 	}
@@ -80,7 +80,7 @@ func (handler *HasuraDDNAuthHookHandler) Post(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = gohttps.WriteResponseJSON(w, http.StatusOK, sessionVariables)
+	err = httputils.WriteResponseJSON(w, http.StatusOK, sessionVariables)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)

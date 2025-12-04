@@ -15,6 +15,7 @@ import (
 	"github.com/hasura/gotel"
 	"github.com/relychan/rely-auth/auth"
 	"github.com/relychan/rely-auth/auth/authmode"
+	"github.com/relychan/rely-auth/config"
 	"go.opentelemetry.io/otel"
 	"gotest.tools/v3/assert"
 )
@@ -277,10 +278,10 @@ func runRequest[T any](t *testing.T, requestURL string, method string, body auth
 }
 
 func initTestServer(t *testing.T, configPath string) (*httptest.Server, *auth.RelyAuthManager) {
-	t.Setenv("CONFIG_PATH", configPath)
+	t.Setenv("RELY_AUTH_CONFIG_PATH", configPath)
 	t.Setenv("JWT_KEY", "NTNv7j0TuYARvmNMmWXo6fKvM4o6nvxyz")
 
-	envVars, err := GetEnvironment()
+	envVars, err := config.LoadServerConfig()
 	assert.NilError(t, err)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
@@ -297,10 +298,10 @@ func initTestServer(t *testing.T, configPath string) (*httptest.Server, *auth.Re
 		},
 	}
 
-	authManager, err := InitAuthManager(&envVars, exporters)
+	authManager, err := config.InitAuthManager(envVars.GetConfigPath(), exporters)
 	assert.NilError(t, err)
 
-	router := setupRouter(&envVars, authManager, exporters)
+	router := setupRouter(envVars, authManager, exporters)
 
 	return httptest.NewServer(router), authManager
 }
