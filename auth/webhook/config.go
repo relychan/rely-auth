@@ -70,7 +70,7 @@ func (RelyAuthWebhookConfig) GetMode() authmode.AuthMode {
 }
 
 // JSONSchema is used to generate a custom jsonschema.
-func (j RelyAuthWebhookConfig) JSONSchema() *jsonschema.Schema {
+func (RelyAuthWebhookConfig) JSONSchema() *jsonschema.Schema {
 	envStringRef := "#/$defs/EnvString"
 	authHeadersConfigRef := "#/$defs/WebhookAuthHeadersConfig"
 
