@@ -97,8 +97,6 @@ func (RelyAuthWebhookConfig) JSONSchema() *jsonschema.Schema {
 		Ref:         "#/$defs/WebhookAuthCustomResponseConfig",
 	})
 
-	// // Configurations for request headers and transformed request body to be sent to the auth hook.
-	// CustomRequest *WebhookAuthCustomRequestConfig `json:"customRequest,omitempty" yaml:"customRequest,omitempty"`
 	// get webhook properties
 	getHeadersConfig := orderedmap.New[string, *jsonschema.Schema]()
 	getHeadersConfig.Set("headers", &jsonschema.Schema{

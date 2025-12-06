@@ -173,7 +173,7 @@
             },
             "jwkFromUrl": {
               "$ref": "#/$defs/EnvString",
-              "description": "An URL where a provider publishes their JWKs (JSON Web Keys - which are used for signing the JWTs). The URL must publish the JWKs in the standard format as described in the RFC 7517 specification."
+              "description": "A URL where a provider publishes their JWKs (JSON Web Keys - which are used for signing the JWTs). The URL must publish the JWKs in the standard format as described in the RFC 7517 specification."
             }
           },
           "type": "object",

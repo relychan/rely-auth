@@ -126,7 +126,7 @@ func (JWTKey) JSONSchema() *jsonschema.Schema {
 	jwkFromURLProps := orderedmap.New[string, *jsonschema.Schema]()
 	jwkFromURLProps.Set("algorithm", algorithmProp)
 	jwkFromURLProps.Set("jwkFromUrl", &jsonschema.Schema{
-		Description: "An URL where a provider publishes their JWKs (JSON Web Keys - which are used for signing the JWTs). The URL must publish the JWKs in the standard format as described in the RFC 7517 specification.", //nolint:lll
+		Description: "A URL where a provider publishes their JWKs (JSON Web Keys - which are used for signing the JWTs). The URL must publish the JWKs in the standard format as described in the RFC 7517 specification.", //nolint:lll
 		Ref:         envStringRef,
 	})
 
