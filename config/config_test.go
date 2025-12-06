@@ -87,7 +87,7 @@ server:
 	config, err := LoadServerConfig()
 	assert.NilError(t, err)
 	assert.Assert(t, config != nil)
-	// ConfigPath will use the default value from envDefault tag
+	// ConfigPath will use the default value as handled by GetConfigPath()
 	assert.Equal(t, "/etc/rely-auth/auth.yaml", config.GetConfigPath())
 	// ServiceName will be set to default "rely-auth" if empty
 	assert.Equal(t, "rely-auth", config.Telemetry.ServiceName)
@@ -144,7 +144,7 @@ func TestLoadServerConfig_JSONFile(t *testing.T) {
 	config, err := LoadServerConfig()
 	assert.NilError(t, err)
 	assert.Assert(t, config != nil)
-	// ConfigPath will use the default value from envDefault tag
+	// ConfigPath will use the default value as handled by the GetConfigPath() method
 	assert.Equal(t, "/etc/rely-auth/auth.yaml", config.GetConfigPath())
 	// ServiceName will be set to default "rely-auth" if empty
 	assert.Equal(t, "rely-auth", config.Telemetry.ServiceName)
