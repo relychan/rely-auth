@@ -36,8 +36,8 @@ type RelyAuthJWTConfig struct {
 
 var _ authmode.RelyAuthDefinitionInterface = (*RelyAuthJWTConfig)(nil)
 
-// NewJWTAuthDefinition creates a new JWTAuthDefinition instance.
-func NewJWTAuthDefinition(key JWTKey, tokenLocation authscheme.TokenLocation) *RelyAuthJWTConfig {
+// NewRelyAuthJWTConfig creates a new JWTAuthDefinition instance.
+func NewRelyAuthJWTConfig(key JWTKey, tokenLocation authscheme.TokenLocation) *RelyAuthJWTConfig {
 	return &RelyAuthJWTConfig{
 		Key:           key,
 		TokenLocation: tokenLocation,

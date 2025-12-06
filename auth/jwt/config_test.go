@@ -149,7 +149,7 @@ func TestNewJWTAuthDefinition(t *testing.T) {
 		Name: "Authorization",
 	}
 
-	config := NewJWTAuthDefinition(key, tokenLocation)
+	config := NewRelyAuthJWTConfig(key, tokenLocation)
 	assert.Assert(t, config != nil)
 	assert.Equal(t, key, config.Key)
 	assert.DeepEqual(t, tokenLocation, config.TokenLocation)

@@ -42,9 +42,16 @@ func (rac RelyAuthConfig) Validate() error {
 	return nil
 }
 
-// RelyAuthDefinition contains authentication configurations for an auth mode.
+// RelyAuthDefinition wraps authentication configurations for an auth mode.
 type RelyAuthDefinition struct {
 	authmode.RelyAuthDefinitionInterface `yaml:",inline"`
+}
+
+// NewRelyAuthDefinition creates a new [RelyAuthDefinition] instance.
+func NewRelyAuthDefinition[T authmode.RelyAuthDefinitionInterface](inner T) RelyAuthDefinition {
+	return RelyAuthDefinition{
+		RelyAuthDefinitionInterface: inner,
+	}
 }
 
 type rawRelyAuthDefinition struct {
