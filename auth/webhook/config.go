@@ -5,11 +5,13 @@ import (
 	"net/http"
 
 	"github.com/hasura/goenvconf"
+	"github.com/invopop/jsonschema"
 	"github.com/relychan/gohttpc/httpconfig"
 	"github.com/relychan/gotransform"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmode"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
 // RelyAuthWebhookConfig contains the configuration schema for webhook authentication.
@@ -67,10 +69,97 @@ func (RelyAuthWebhookConfig) GetMode() authmode.AuthMode {
 	return authmode.AuthModeWebhook
 }
 
+// JSONSchema is used to generate a custom jsonschema.
+func (RelyAuthWebhookConfig) JSONSchema() *jsonschema.Schema {
+	envStringRef := "#/$defs/EnvString"
+	authHeadersConfigRef := "#/$defs/WebhookAuthHeadersConfig"
+
+	commonProps := orderedmap.New[string, *jsonschema.Schema]()
+	commonProps.Set("mode", &jsonschema.Schema{
+		Type:        "string",
+		Description: "Authentication mode which is always webhook",
+		Enum:        []any{authmode.AuthModeWebhook},
+	})
+	commonProps.Set("description", &jsonschema.Schema{
+		Type:        "string",
+		Description: "Brief description of the auth config",
+	})
+	commonProps.Set("url", &jsonschema.Schema{
+		Description: "The URL of the authentication webhook",
+		Ref:         envStringRef,
+	})
+	commonProps.Set("httpClient", &jsonschema.Schema{
+		Description: "Configurations for the HTTP client",
+		Ref:         "https://raw.githubusercontent.com/relychan/gorestly/refs/heads/main/jsonschema/gorestly.schema.json",
+	})
+	commonProps.Set("customResponse", &jsonschema.Schema{
+		Description: "The configuration for transforming response bodies",
+		Ref:         "#/$defs/WebhookAuthCustomResponseConfig",
+	})
+
+	// get webhook properties
+	getHeadersConfig := orderedmap.New[string, *jsonschema.Schema]()
+	getHeadersConfig.Set("headers", &jsonschema.Schema{
+		Ref: authHeadersConfigRef,
+	})
+
+	getProps := orderedmap.New[string, *jsonschema.Schema]()
+	getProps.Set("method", &jsonschema.Schema{
+		Type:        "string",
+		Description: "GET webhook method",
+		Enum:        []any{http.MethodGet},
+	})
+	getProps.Set("customRequest", &jsonschema.Schema{
+		Description: "Configurations for request headers and transformed request body to be sent to the auth hook",
+		Type:        "object",
+		Properties:  getHeadersConfig,
+	})
+
+	// post webhook properties
+	postWebhookConfig := orderedmap.New[string, *jsonschema.Schema]()
+	postWebhookConfig.Set("headers", &jsonschema.Schema{
+		Ref: authHeadersConfigRef,
+	})
+
+	postWebhookConfig.Set("body", &jsonschema.Schema{
+		Ref: "https://raw.githubusercontent.com/relychan/gotransform/refs/heads/main/jsonschema/gotransform.schema.json",
+	})
+
+	postProps := orderedmap.New[string, *jsonschema.Schema]()
+	postProps.Set("method", &jsonschema.Schema{
+		Type:        "string",
+		Description: "POST webhook method",
+		Enum:        []any{http.MethodPost},
+	})
+	postProps.Set("customRequest", &jsonschema.Schema{
+		Description: "Configurations for request headers and transformed request body to be sent to the auth hook",
+		Type:        "object",
+		Properties:  postWebhookConfig,
+	})
+
+	return &jsonschema.Schema{
+		OneOf: []*jsonschema.Schema{
+			{
+				Type:       "object",
+				Properties: getProps,
+			},
+			{
+				Type:       "object",
+				Properties: postProps,
+			},
+		},
+		Type:       "object",
+		Properties: commonProps,
+		Required:   []string{"mode", "url", "method"},
+	}
+}
+
 // WebhookAuthCustomRequestConfig represents the configuration for request headers and transformed request body to be sent to the auth hook.
 type WebhookAuthCustomRequestConfig struct {
-	Headers *WebhookAuthHeadersConfig              `json:"headers,omitempty" yaml:"headers,omitempty"`
-	Body    *gotransform.TemplateTransformerConfig `json:"body,omitempty"    yaml:"body,omitempty"`
+	// The configuration to transform request headers.
+	Headers *WebhookAuthHeadersConfig `json:"headers,omitempty" yaml:"headers,omitempty"`
+	// The configuration to transform request body.
+	Body *gotransform.TemplateTransformerConfig `json:"body,omitempty"    yaml:"body,omitempty"`
 }
 
 // WebhookAuthHeadersConfig is the configuration for the headers to be sent to the auth hook.
@@ -83,5 +172,6 @@ type WebhookAuthHeadersConfig struct {
 
 // WebhookAuthCustomResponseConfig is the configuration for transforming response bodies.
 type WebhookAuthCustomResponseConfig struct {
+	// The template to transform the response body.
 	Body *gotransform.TemplateTransformerConfig `json:"response,omitempty" yaml:"response,omitempty"`
 }

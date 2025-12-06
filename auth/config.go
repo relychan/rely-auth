@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/invopop/jsonschema"
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/relychan/rely-auth/auth/jwt"
@@ -42,9 +43,16 @@ func (rac RelyAuthConfig) Validate() error {
 	return nil
 }
 
-// RelyAuthDefinition contains authentication configurations for an auth mode.
+// RelyAuthDefinition wraps authentication configurations for an auth mode.
 type RelyAuthDefinition struct {
 	authmode.RelyAuthDefinitionInterface `yaml:",inline"`
+}
+
+// NewRelyAuthDefinition creates a new [RelyAuthDefinition] instance.
+func NewRelyAuthDefinition[T authmode.RelyAuthDefinitionInterface](inner T) RelyAuthDefinition {
+	return RelyAuthDefinition{
+		RelyAuthDefinitionInterface: inner,
+	}
 }
 
 type rawRelyAuthDefinition struct {
@@ -136,4 +144,24 @@ func (j RelyAuthDefinition) Validate() error {
 	}
 
 	return j.RelyAuthDefinitionInterface.Validate()
+}
+
+// JSONSchema defines a custom definition for JSON schema.
+func (RelyAuthDefinition) JSONSchema() *jsonschema.Schema {
+	return &jsonschema.Schema{
+		OneOf: []*jsonschema.Schema{
+			{
+				Ref: "#/$defs/RelyAuthAPIKeyConfig",
+			},
+			{
+				Ref: "#/$defs/RelyAuthJWTConfig",
+			},
+			{
+				Ref: "#/$defs/RelyAuthNoAuthConfig",
+			},
+			{
+				Ref: "#/$defs/RelyAuthWebhookConfig",
+			},
+		},
+	}
 }

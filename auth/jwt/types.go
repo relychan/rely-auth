@@ -6,6 +6,8 @@ import (
 	"slices"
 
 	"github.com/go-jose/go-jose/v4"
+	"github.com/invopop/jsonschema"
+	"github.com/relychan/goutils"
 )
 
 var (
@@ -69,6 +71,15 @@ func (j JWTClaimsFormat) Validate() error {
 	}
 
 	return nil
+}
+
+// JSONSchema defines a custom definition for JSON schema.
+func (JWTClaimsFormat) JSONSchema() *jsonschema.Schema {
+	return &jsonschema.Schema{
+		Type:        "string",
+		Description: "The format in which JWT claims will be present",
+		Enum:        goutils.ToAnySlice(GetSupportedJWTClaimsFormats()),
+	}
 }
 
 // GetSupportedJWTClaimsFormats get the list of supported JWT claims formats.

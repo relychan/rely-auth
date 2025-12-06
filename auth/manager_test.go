@@ -17,14 +17,12 @@ import (
 func TestNewRelyAuthManager(t *testing.T) {
 	config := &RelyAuthConfig{
 		Definitions: []RelyAuthDefinition{
-			{
-				RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
-					Mode: authmode.AuthModeNoAuth,
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("anonymous"),
-					},
+			NewRelyAuthDefinition(&noauth.RelyAuthNoAuthConfig{
+				Mode: authmode.AuthModeNoAuth,
+				SessionVariables: map[string]goenvconf.EnvAny{
+					"x-hasura-role": goenvconf.NewEnvAnyValue("anonymous"),
 				},
-			},
+			}),
 		},
 	}
 
