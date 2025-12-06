@@ -10,7 +10,7 @@ require (
 	github.com/hasura/gotel v0.4.5
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
 	github.com/relychan/gohttpc v0.0.0-20251202175427-82ba88e9d657
-	github.com/relychan/gohttps v0.0.0-20251205182317-9efd58c7c4f3
+	github.com/relychan/gohttps v0.0.0-20251206085650-5f2727ade1fa
 	github.com/relychan/gotransform v0.0.0-20251115070005-4e3c3650c419
 	github.com/relychan/goutils v0.0.0-20251126052335-b9b7ec5a4db1
 	go.opentelemetry.io/otel v1.38.0
