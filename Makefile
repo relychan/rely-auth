@@ -15,3 +15,8 @@ lint:
 .PHONY: lint-fix
 lint-fix:
 	golangci-lint run --fix
+
+.PHONY: build-jsonschema
+build-jsonschema:
+	cd jsonschema && go run .
+

@@ -19,6 +19,16 @@
         }
       ]
     },
+    "AuthMode": {
+      "type": "string",
+      "enum": [
+        "apiKey",
+        "jwt",
+        "webhook",
+        "noAuth"
+      ],
+      "description": "Authentication mode enum"
+    },
     "EnvAny": {
       "anyOf": [
         {
@@ -96,17 +106,20 @@
     "JWTClaimsConfig": {
       "properties": {
         "namespace": {
-          "$ref": "#/$defs/JWTClaimsNamespace"
+          "$ref": "#/$defs/JWTClaimsNamespace",
+          "description": "Used when all of JWT claims are present in a single object within the decoded JWT."
         },
         "locations": {
           "additionalProperties": {
             "$ref": "#/$defs/FieldMappingEntryConfig"
           },
-          "type": "object"
+          "type": "object",
+          "description": "Can be used when JWT claims are not all present in the single object,\nbut individual claims are provided a JSON pointer within the decoded JWT and optionally a default value."
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "description": "JWTClaimsConfig represents the claims config. Either specified via claims mappings or namespace."
     },
     "JWTClaimsFormat": {
       "type": "string",
@@ -114,16 +127,17 @@
         "Json",
         "StringifiedJson"
       ],
-      "description": "the format in which JWT claims will be present."
+      "description": "The format in which JWT claims will be present"
     },
     "JWTClaimsNamespace": {
       "properties": {
         "location": {
-          "type": "string"
+          "type": "string",
+          "description": "Path to lookup the Hasura claims within the decoded claims."
         },
         "claimsFormat": {
           "$ref": "#/$defs/JWTClaimsFormat",
-          "description": "The format in which JWT claims will be present"
+          "description": "Format in which the Hasura claims will be present."
         }
       },
       "additionalProperties": false,
@@ -131,7 +145,8 @@
       "required": [
         "location",
         "claimsFormat"
-      ]
+      ],
+      "description": "JWTClaimsNamespace is used when all of JWT claims are present in a single object within the decoded JWT."
     },
     "JWTKey": {
       "oneOf": [
@@ -177,7 +192,7 @@
         "EdDSA",
         "HS256",
         "HS384",
-        "ES512",
+        "HS512",
         "PS256",
         "PS384",
         "PS512",
@@ -204,25 +219,27 @@
           "type": "string"
         },
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identity of the auth config.\nIf not set, ID will be the index of the array."
         },
         "mode": {
-          "type": "string",
-          "enum": [
-            "apiKey"
-          ]
+          "$ref": "#/$defs/AuthMode",
+          "description": "Authentication mode which is always apiKey."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "Brief description of the auth config."
         },
         "sessionVariables": {
           "additionalProperties": {
             "$ref": "#/$defs/EnvAny"
           },
-          "type": "object"
+          "type": "object",
+          "description": "Custom session variables for this auth mode."
         },
         "value": {
-          "$ref": "#/$defs/EnvString"
+          "$ref": "#/$defs/EnvString",
+          "description": "Value of the static API key to be compared."
         }
       },
       "additionalProperties": false,
@@ -233,25 +250,29 @@
         "mode",
         "sessionVariables",
         "value"
-      ]
+      ],
+      "description": "RelyAuthAPIKeyConfig contains configurations for HTTP authentication with static secrets."
     },
     "RelyAuthConfig": {
       "properties": {
         "settings": {
-          "$ref": "#/$defs/RelyAuthSettings"
+          "$ref": "#/$defs/RelyAuthSettings",
+          "description": "Global settings of the auth config."
         },
         "definitions": {
           "items": {
             "$ref": "#/$defs/RelyAuthDefinition"
           },
-          "type": "array"
+          "type": "array",
+          "description": "List of authenticator configurations."
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
         "definitions"
-      ]
+      ],
+      "description": "RelyAuthConfig is the data structure for authentication configurations."
     },
     "RelyAuthDefinition": {
       "oneOf": [
@@ -272,37 +293,43 @@
     "RelyAuthJWTConfig": {
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identity of the auth config.\nIf not set, ID will be the index of the array."
         },
         "mode": {
-          "type": "string",
-          "enum": [
-            "jwt"
-          ]
+          "$ref": "#/$defs/AuthMode",
+          "description": "Authentication mode which is always jwt."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "Brief description of the auth config."
         },
         "audience": {
           "items": {
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "description": "Validation to check that the aud field is a member of the audience received, otherwise will throw error.\nRequired if there are many JWT auth configurations."
         },
         "issuer": {
-          "type": "string"
+          "type": "string",
+          "description": "Validation to check that the iss field is a member of the iss received, otherwise will throw error.\nRequired if there are many JWT auth configurations."
         },
         "allowedSkew": {
-          "type": "integer"
+          "type": "integer",
+          "description": "The allowed leeway (in seconds) to the exp validation to account for clock skew."
         },
         "tokenLocation": {
-          "$ref": "#/$defs/TokenLocation"
+          "$ref": "#/$defs/TokenLocation",
+          "description": "Source of the JWT authentication token."
         },
         "key": {
-          "$ref": "#/$defs/JWTKey"
+          "$ref": "#/$defs/JWTKey",
+          "description": "Information of the JWT key to verify the token."
         },
         "claimsConfig": {
-          "$ref": "#/$defs/JWTClaimsConfig"
+          "$ref": "#/$defs/JWTClaimsConfig",
+          "description": "Configuration to describe how and where the engine should look for the claims within the decoded token.\nYou can vary the format and location of the claims."
         }
       },
       "additionalProperties": false,
@@ -312,24 +339,25 @@
         "tokenLocation",
         "key",
         "claimsConfig"
-      ]
+      ],
+      "description": "RelyAuthJWTConfig according to which the incoming JWT will be verified and decoded to extract the session variable claims."
     },
     "RelyAuthNoAuthConfig": {
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identity of the auth config.\nIf not set, ID will be the index of the array."
         },
         "mode": {
-          "type": "string",
-          "enum": [
-            "noAuth"
-          ]
+          "$ref": "#/$defs/AuthMode",
+          "description": "Authentication mode which is always noAuth."
         },
         "sessionVariables": {
           "additionalProperties": {
             "$ref": "#/$defs/EnvAny"
           },
-          "type": "object"
+          "type": "object",
+          "description": "Custom session variables for this auth mode."
         }
       },
       "additionalProperties": false,
@@ -337,16 +365,19 @@
       "required": [
         "mode",
         "sessionVariables"
-      ]
+      ],
+      "description": "RelyAuthNoAuthConfig contains the definition config for unauthenticated users."
     },
     "RelyAuthSettings": {
       "properties": {
         "strict": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Strict mode, when enabled will return HTTP 401 if the token is found but unauthorized.\nIt won't fallback to the noAuth mode."
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "description": "RelyAuthSettings holds global settings for the authenticators."
     },
     "RelyAuthWebhookConfig": {
       "oneOf": [
@@ -428,6 +459,18 @@
         "method"
       ]
     },
+    "TemplateTransformerConfig": {
+      "properties": {
+        "TemplateTransformerConfig": {
+          "$ref": "#/$defs/TemplateTransformerConfig"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "TemplateTransformerConfig"
+      ]
+    },
     "TokenLocation": {
       "properties": {
         "in": {
@@ -455,29 +498,31 @@
     "WebhookAuthCustomResponseConfig": {
       "properties": {
         "response": {
-          "additionalProperties": {
-            "$ref": "#/$defs/FieldMappingEntryConfig"
-          },
-          "type": "object"
+          "$ref": "#/$defs/TemplateTransformerConfig",
+          "description": "The template to transform the response body."
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "description": "WebhookAuthCustomResponseConfig is the configuration for transforming response bodies."
     },
     "WebhookAuthHeadersConfig": {
       "properties": {
         "forward": {
-          "$ref": "#/$defs/AllOrListString"
+          "$ref": "#/$defs/AllOrListString",
+          "description": "The headers to be forwarded from the client request."
         },
         "additional": {
           "additionalProperties": {
             "$ref": "#/$defs/FieldMappingEntryStringConfig"
           },
-          "type": "object"
+          "type": "object",
+          "description": "The additional headers to be sent to the auth hook."
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "description": "WebhookAuthHeadersConfig is the configuration for the headers to be sent to the auth hook."
     }
   }
 }

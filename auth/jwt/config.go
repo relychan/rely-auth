@@ -3,9 +3,11 @@ package jwt
 import (
 	"github.com/go-jose/go-jose/v4"
 	"github.com/hasura/goenvconf"
+	"github.com/invopop/jsonschema"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/rely-auth/auth/authmode"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
 // RelyAuthJWTConfig according to which the incoming JWT will be verified and decoded to extract the session variable claims.
@@ -105,6 +107,43 @@ type JWTKey struct {
 	JWKFromURL *goenvconf.EnvString `json:"jwkFromUrl,omitempty" yaml:"jwkFromUrl,omitempty"`
 	// Inline value of the key to use for decoding the JWT.
 	Key *goenvconf.EnvString `json:"key,omitempty" yaml:"key,omitempty"`
+}
+
+// JSONSchema defines a custom definition for JSON schema.
+func (JWTKey) JSONSchema() *jsonschema.Schema {
+	envStringRef := "#/$defs/EnvString"
+	algorithmProp := &jsonschema.Schema{
+		Ref: "#/$defs/JWTSignatureAlgorithm",
+	}
+
+	keyProps := orderedmap.New[string, *jsonschema.Schema]()
+	keyProps.Set("algorithm", algorithmProp)
+	keyProps.Set("key", &jsonschema.Schema{
+		Description: "Inline value of the key to use for decoding the JWT",
+		Ref:         envStringRef,
+	})
+
+	jwkFromURLProps := orderedmap.New[string, *jsonschema.Schema]()
+	jwkFromURLProps.Set("algorithm", algorithmProp)
+	jwkFromURLProps.Set("jwkFromUrl", &jsonschema.Schema{
+		Description: "An URL where a provider publishes their JWKs (JSON Web Keys - which are used for signing the JWTs). The URL must publish the JWKs in the standard format as described in the RFC 7517 specification.", //nolint:lll
+		Ref:         envStringRef,
+	})
+
+	return &jsonschema.Schema{
+		OneOf: []*jsonschema.Schema{
+			{
+				Type:       "object",
+				Required:   []string{"algorithm", "key"},
+				Properties: keyProps,
+			},
+			{
+				Type:       "object",
+				Properties: jwkFromURLProps,
+				Required:   []string{"jwkFromUrl"},
+			},
+		},
+	}
 }
 
 // Validate if the current instance is valid.

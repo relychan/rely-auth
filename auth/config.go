@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/invopop/jsonschema"
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/relychan/rely-auth/auth/jwt"
@@ -143,4 +144,24 @@ func (j RelyAuthDefinition) Validate() error {
 	}
 
 	return j.RelyAuthDefinitionInterface.Validate()
+}
+
+// JSONSchema defines a custom definition for JSON schema.
+func (RelyAuthDefinition) JSONSchema() *jsonschema.Schema {
+	return &jsonschema.Schema{
+		OneOf: []*jsonschema.Schema{
+			{
+				Ref: "#/$defs/RelyAuthAPIKeyConfig",
+			},
+			{
+				Ref: "#/$defs/RelyAuthJWTConfig",
+			},
+			{
+				Ref: "#/$defs/RelyAuthNoAuthConfig",
+			},
+			{
+				Ref: "#/$defs/RelyAuthWebhookConfig",
+			},
+		},
+	}
 }
