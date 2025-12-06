@@ -77,7 +77,7 @@ func TestLoadServerConfig_FromFile(t *testing.T) {
 
 	configContent := `
 server:
-  logLevel: debug
+  logLevel: DEBUG
 `
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
 	assert.NilError(t, err)
@@ -87,10 +87,11 @@ server:
 	config, err := LoadServerConfig()
 	assert.NilError(t, err)
 	assert.Assert(t, config != nil)
-	// ConfigPath will use the default value from envDefault tag
-	assert.Equal(t, "/etc/rely-auth/auth.yaml", config.ConfigPath)
+	// ConfigPath will use the default value as handled by GetConfigPath()
+	assert.Equal(t, "/etc/rely-auth/auth.yaml", config.GetConfigPath())
 	// ServiceName will be set to default "rely-auth" if empty
 	assert.Equal(t, "rely-auth", config.Telemetry.ServiceName)
+	assert.Equal(t, "DEBUG", config.Server.LogLevel)
 }
 
 func TestLoadServerConfig_InvalidFile(t *testing.T) {
@@ -107,7 +108,7 @@ func TestLoadServerConfig_EnvOverridesFile(t *testing.T) {
 
 	configContent := `
 server:
-  logLevel: info
+  logLevel: WARN
 `
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
 	assert.NilError(t, err)
@@ -122,6 +123,7 @@ server:
 	assert.Equal(t, "/env/auth.yaml", config.ConfigPath)
 	// Service name will be set to default "rely-auth" if empty
 	assert.Equal(t, "rely-auth", config.Telemetry.ServiceName)
+	assert.Equal(t, "WARN", config.Server.LogLevel)
 }
 
 func TestLoadServerConfig_JSONFile(t *testing.T) {
@@ -142,8 +144,8 @@ func TestLoadServerConfig_JSONFile(t *testing.T) {
 	config, err := LoadServerConfig()
 	assert.NilError(t, err)
 	assert.Assert(t, config != nil)
-	// ConfigPath will use the default value from envDefault tag
-	assert.Equal(t, "/etc/rely-auth/auth.yaml", config.ConfigPath)
+	// ConfigPath will use the default value as handled by the GetConfigPath() method
+	assert.Equal(t, "/etc/rely-auth/auth.yaml", config.GetConfigPath())
 	// ServiceName will be set to default "rely-auth" if empty
 	assert.Equal(t, "rely-auth", config.Telemetry.ServiceName)
 }
