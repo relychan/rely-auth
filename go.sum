@@ -44,8 +44,8 @@ github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 h1:NmZ1PKzSTQbuGHw9DGPFomqkkLW
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3/go.mod h1:zQrxl1YP88HQlA6i9c63DSVPFklWpGX4OWAc9bFuaH4=
 github.com/hasura/goenvconf v0.3.0 h1:8Ky4LBTn1j08DQNBfPXeX6bEj3MiH276Rb9GxZxBGlo=
 github.com/hasura/goenvconf v0.3.0/go.mod h1:mj6eef7yeb8K79e8nI4iCY7ImEydpkSCIiNsU3H5iBA=
-github.com/hasura/gotel v0.4.4 h1:AatUfLzbKe1uA6XkP7QoImuQ7RL7lfPq8uw2RFD1rSY=
-github.com/hasura/gotel v0.4.4/go.mod h1:IeLmxpIKyPm0o1s72meDCTZQnGhXitGQ2yQnMRDZHRM=
+github.com/hasura/gotel v0.4.5 h1:4rVws6aeDjHct54SdWDw8mfdsYVgU6EOK9WOvo4AfX0=
+github.com/hasura/gotel v0.4.5/go.mod h1:JipKf+MCNA9RWHaxPGDG/T6j2pMlDF4xB6hr3HxZBBA=
 github.com/huandu/xstrings v1.5.0 h1:2ag3IFq9ZDANvthTwTiqSSZLjDc+BedvHPAp5tJy2TI=
 github.com/huandu/xstrings v1.5.0/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/influxdata/tdigest v0.0.1 h1:XpFptwYmnEKUqmkcDjrzffswZ3nvNeevbUSLPP/ZzIY=
@@ -84,6 +84,8 @@ github.com/relychan/gohttpc v0.0.0-20251202175427-82ba88e9d657 h1:H07W88w5GnYaaz
 github.com/relychan/gohttpc v0.0.0-20251202175427-82ba88e9d657/go.mod h1:HF8ga1DYk38ODewQR3LqkERNPFnbl1l+1e+vdcF4+AQ=
 github.com/relychan/gohttps v0.0.0-20251204080558-d04a9540dfa9 h1:VZXyEBabGZrEtISUoADSsXfBRk3JjlIbRCx0XyFK6Fc=
 github.com/relychan/gohttps v0.0.0-20251204080558-d04a9540dfa9/go.mod h1:uVSHzT4+JCl9pR3ZqkO1X1I6BNNJiUFnnVDbXOoCYIw=
+github.com/relychan/gohttps v0.0.0-20251205182317-9efd58c7c4f3 h1:Y8P4T0eCf2HU4R0yovPdWwGvA45WSKjtgiOldZd/C4c=
+github.com/relychan/gohttps v0.0.0-20251205182317-9efd58c7c4f3/go.mod h1:J4ZyZSHr4oGeFlxn+VgYKZ4r5hzZfnoj+yg+1py/UMM=
 github.com/relychan/gotransform v0.0.0-20251115070005-4e3c3650c419 h1:w0XVlW5EO0dc7bfnvnRQi0vSl9nxL3uR1A4v+hJRHEU=
 github.com/relychan/gotransform v0.0.0-20251115070005-4e3c3650c419/go.mod h1:DEPsPetiBNQYIwYfS0hXxS4rfH8BCeTlQqJsG1AZ6vg=
 github.com/relychan/goutils v0.0.0-20251126052335-b9b7ec5a4db1 h1:LsT/oV5mfBEOO5rNIfuPId5yAIjk4dsbXGcwTWAMEMc=

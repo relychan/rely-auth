@@ -1,16 +1,16 @@
 module github.com/relychan/rely-auth
 
-go 1.25.4
+go 1.25.5
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-jose/go-jose/v4 v4.1.3
 	github.com/hasura/goenvconf v0.3.0
-	github.com/hasura/gotel v0.4.4
+	github.com/hasura/gotel v0.4.5
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
 	github.com/relychan/gohttpc v0.0.0-20251202175427-82ba88e9d657
-	github.com/relychan/gohttps v0.0.0-20251204080558-d04a9540dfa9
+	github.com/relychan/gohttps v0.0.0-20251205182317-9efd58c7c4f3
 	github.com/relychan/gotransform v0.0.0-20251115070005-4e3c3650c419
 	github.com/relychan/goutils v0.0.0-20251126052335-b9b7ec5a4db1
 	go.opentelemetry.io/otel v1.38.0
