@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/hasura/goenvconf"
-	"github.com/relychan/gohttpc"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"gotest.tools/v3/assert"
 )
@@ -27,7 +26,7 @@ func TestWebhookAuthenticator_Authenticate_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	config := RelyAuthWebhookConfig{
+	config := &RelyAuthWebhookConfig{
 		ID:     "test-webhook",
 		Mode:   authmode.AuthModeWebhook,
 		URL:    goenvconf.NewEnvStringValue(server.URL),
@@ -37,8 +36,7 @@ func TestWebhookAuthenticator_Authenticate_Success(t *testing.T) {
 		},
 	}
 
-	httpClient := gohttpc.NewClient()
-	authenticator, err := NewWebhookAuthenticator(config, httpClient)
+	authenticator, err := NewWebhookAuthenticator(context.TODO(), config)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -63,7 +61,7 @@ func TestWebhookAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 	}))
 	defer server.Close()
 
-	config := RelyAuthWebhookConfig{
+	config := &RelyAuthWebhookConfig{
 		Mode:   authmode.AuthModeWebhook,
 		URL:    goenvconf.NewEnvStringValue(server.URL),
 		Method: http.MethodGet,
@@ -72,8 +70,7 @@ func TestWebhookAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 		},
 	}
 
-	httpClient := gohttpc.NewClient()
-	authenticator, err := NewWebhookAuthenticator(config, httpClient)
+	authenticator, err := NewWebhookAuthenticator(context.TODO(), config)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -92,7 +89,7 @@ func TestWebhookAuthenticator_Authenticate_EmptyBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	config := RelyAuthWebhookConfig{
+	config := &RelyAuthWebhookConfig{
 		Mode:   authmode.AuthModeWebhook,
 		URL:    goenvconf.NewEnvStringValue(server.URL),
 		Method: http.MethodGet,
@@ -101,8 +98,7 @@ func TestWebhookAuthenticator_Authenticate_EmptyBody(t *testing.T) {
 		},
 	}
 
-	httpClient := gohttpc.NewClient()
-	authenticator, err := NewWebhookAuthenticator(config, httpClient)
+	authenticator, err := NewWebhookAuthenticator(context.TODO(), config)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -113,7 +109,7 @@ func TestWebhookAuthenticator_Authenticate_EmptyBody(t *testing.T) {
 }
 
 func TestWebhookAuthenticator_Mode(t *testing.T) {
-	config := RelyAuthWebhookConfig{
+	config := &RelyAuthWebhookConfig{
 		Mode:   authmode.AuthModeWebhook,
 		URL:    goenvconf.NewEnvStringValue("http://example.com"),
 		Method: http.MethodGet,
@@ -122,8 +118,7 @@ func TestWebhookAuthenticator_Mode(t *testing.T) {
 		},
 	}
 
-	httpClient := gohttpc.NewClient()
-	authenticator, err := NewWebhookAuthenticator(config, httpClient)
+	authenticator, err := NewWebhookAuthenticator(context.TODO(), config)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -139,7 +134,7 @@ func TestWebhookAuthenticator_Reload(t *testing.T) {
 	}))
 	defer server.Close()
 
-	config := RelyAuthWebhookConfig{
+	config := &RelyAuthWebhookConfig{
 		Mode:   authmode.AuthModeWebhook,
 		URL:    goenvconf.NewEnvStringValue(server.URL),
 		Method: http.MethodGet,
@@ -148,8 +143,7 @@ func TestWebhookAuthenticator_Reload(t *testing.T) {
 		},
 	}
 
-	httpClient := gohttpc.NewClient()
-	authenticator, err := NewWebhookAuthenticator(config, httpClient)
+	authenticator, err := NewWebhookAuthenticator(context.TODO(), config)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -170,14 +164,13 @@ func TestWebhookAuthenticator_GET_Method(t *testing.T) {
 	}))
 	defer server.Close()
 
-	config := RelyAuthWebhookConfig{
+	config := &RelyAuthWebhookConfig{
 		Mode:   authmode.AuthModeWebhook,
 		URL:    goenvconf.NewEnvStringValue(server.URL),
 		Method: http.MethodGet,
 	}
 
-	httpClient := gohttpc.NewClient()
-	authenticator, err := NewWebhookAuthenticator(config, httpClient)
+	authenticator, err := NewWebhookAuthenticator(context.TODO(), config)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 

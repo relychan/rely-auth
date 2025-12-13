@@ -50,7 +50,7 @@ func runServer() error {
 		return err
 	}
 
-	authManager, err := config.InitAuthManager(envVars.GetConfigPath(), ts)
+	authManager, err := config.InitAuthManager(ctx, envVars.GetConfigPath(), ts)
 	if err != nil {
 		goutils.CatchWarnContextErrorFunc(ts.Shutdown)
 		stop()

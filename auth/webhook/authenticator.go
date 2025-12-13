@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"sync"
 
 	"github.com/relychan/gohttpc"
 	"github.com/relychan/gohttpc/httpconfig"
@@ -24,10 +23,10 @@ import (
 
 // WebhookAuthenticator implements the authenticator with API key.
 type WebhookAuthenticator struct {
-	config     RelyAuthWebhookConfig
+	config     *RelyAuthWebhookConfig
 	httpClient *gohttpc.Client
+	opts       []gohttpc.ClientOption
 	url        string
-	mu         sync.RWMutex
 
 	customRequest  customWebhookRequestConfig
 	customResponse customWebhookResponseConfig
@@ -39,15 +38,16 @@ var _ authmode.RelyAuthenticator = (*WebhookAuthenticator)(nil)
 
 // NewWebhookAuthenticator creates a webhook authenticator instance.
 func NewWebhookAuthenticator(
-	config RelyAuthWebhookConfig,
-	httpClient *gohttpc.Client,
+	ctx context.Context,
+	config *RelyAuthWebhookConfig,
+	opts ...gohttpc.ClientOption,
 ) (*WebhookAuthenticator, error) {
 	result := &WebhookAuthenticator{
-		config:     config,
-		httpClient: httpClient,
+		config: config,
+		opts:   opts,
 	}
 
-	err := result.doReload()
+	err := result.doReload(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -70,10 +70,7 @@ func (wa *WebhookAuthenticator) Authenticate(
 
 	span.SetAttributes(attribute.String("auth.mode", string(wa.config.GetMode())))
 
-	wa.mu.RLock()
 	req := wa.httpClient.R(wa.config.Method, wa.url)
-	wa.mu.RUnlock()
-
 	result := authmode.AuthenticatedOutput{
 		ID: wa.config.ID,
 	}
@@ -119,14 +116,11 @@ func (wa *WebhookAuthenticator) Close() error {
 }
 
 // Reload credentials of the authenticator.
-func (wa *WebhookAuthenticator) Reload(_ context.Context) error {
-	wa.mu.Lock()
-	defer wa.mu.Unlock()
-
-	return wa.doReload()
+func (*WebhookAuthenticator) Reload(_ context.Context) error {
+	return nil
 }
 
-func (wa *WebhookAuthenticator) doReload() error {
+func (wa *WebhookAuthenticator) doReload(ctx context.Context) error {
 	endpoint, err := wa.config.URL.Get()
 	if err != nil {
 		return err
@@ -164,7 +158,7 @@ func (wa *WebhookAuthenticator) doReload() error {
 		httpConfig = &httpconfig.HTTPClientConfig{}
 	}
 
-	httpClient, err := httpconfig.NewClientFromConfig(*httpConfig)
+	httpClient, err := httpconfig.NewClientFromConfig(ctx, httpConfig, wa.opts...)
 	if err != nil {
 		return err
 	}

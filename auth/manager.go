@@ -31,13 +31,13 @@ type RelyAuthManager struct {
 
 	settings              *authmode.RelyAuthSettings
 	authenticators        []authmode.RelyAuthenticator
-	httpClient            *gohttpc.Client
 	requestDuration       metric.Float64Histogram
 	authModeTotalRequests metric.Int64Counter
 }
 
 // NewRelyAuthManager creates a new RelyAuthManager instance from config.
 func NewRelyAuthManager(
+	ctx context.Context,
 	config *RelyAuthConfig,
 	options ...RelyAuthManagerOption,
 ) (*RelyAuthManager, error) {
@@ -49,15 +49,13 @@ func NewRelyAuthManager(
 		opt(&opts)
 	}
 
-	httpClient := opts.HTTPClient
-
-	if httpClient == nil {
+	if opts.HTTPClient == nil {
 		clientOptions := []gohttpc.ClientOption{
 			gohttpc.WithLogger(opts.Logger.With("type", "auth-client")),
 			gohttpc.WithTimeout(time.Minute),
 		}
 
-		httpClient = gohttpc.NewClient(clientOptions...)
+		opts.HTTPClient = gohttpc.NewClient(clientOptions...)
 	}
 
 	if opts.Meter == nil {
@@ -65,9 +63,8 @@ func NewRelyAuthManager(
 	}
 
 	manager := RelyAuthManager{
-		options:    opts,
-		settings:   &authmode.RelyAuthSettings{},
-		httpClient: httpClient,
+		options:  opts,
+		settings: &authmode.RelyAuthSettings{},
 	}
 
 	var err error
@@ -106,7 +103,7 @@ func NewRelyAuthManager(
 		return nil, err
 	}
 
-	return &manager, manager.init(config)
+	return &manager, manager.init(ctx, config)
 }
 
 // Authenticate validates and authenticates the token from the auth webhook request.
@@ -221,7 +218,7 @@ func (am *RelyAuthManager) Close() error {
 	}
 }
 
-func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
+func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) error {
 	authModes := authmode.GetSupportedAuthModes()
 	definitions := config.Definitions
 
@@ -250,7 +247,7 @@ func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := apikey.NewAPIKeyAuthenticator(*def)
+			authenticator, err := apikey.NewAPIKeyAuthenticator(def)
 			if err != nil {
 				return fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
 			}
@@ -262,7 +259,7 @@ func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
 			}
 
 			if jwtAuth == nil {
-				authenticator, err := jwt.NewJWTAuthenticator(nil, am.httpClient)
+				authenticator, err := jwt.NewJWTAuthenticator(nil, am.options.HTTPClient)
 				if err != nil {
 					return err
 				}
@@ -280,7 +277,7 @@ func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := webhook.NewWebhookAuthenticator(*def, am.httpClient)
+			authenticator, err := webhook.NewWebhookAuthenticator(ctx, def)
 			if err != nil {
 				return fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}
