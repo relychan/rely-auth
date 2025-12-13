@@ -25,7 +25,6 @@ import (
 type WebhookAuthenticator struct {
 	config     *RelyAuthWebhookConfig
 	httpClient *gohttpc.Client
-	opts       []gohttpc.ClientOption
 	url        string
 
 	customRequest  customWebhookRequestConfig
@@ -44,10 +43,9 @@ func NewWebhookAuthenticator(
 ) (*WebhookAuthenticator, error) {
 	result := &WebhookAuthenticator{
 		config: config,
-		opts:   opts,
 	}
 
-	err := result.doReload(ctx)
+	err := result.doReload(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +118,7 @@ func (*WebhookAuthenticator) Reload(_ context.Context) error {
 	return nil
 }
 
-func (wa *WebhookAuthenticator) doReload(ctx context.Context) error {
+func (wa *WebhookAuthenticator) doReload(ctx context.Context, opts []gohttpc.ClientOption) error {
 	endpoint, err := wa.config.URL.Get()
 	if err != nil {
 		return err
@@ -158,7 +156,7 @@ func (wa *WebhookAuthenticator) doReload(ctx context.Context) error {
 		httpConfig = &httpconfig.HTTPClientConfig{}
 	}
 
-	httpClient, err := httpconfig.NewClientFromConfig(ctx, httpConfig, wa.opts...)
+	httpClient, err := httpconfig.NewClientFromConfig(ctx, httpConfig, opts...)
 	if err != nil {
 		return err
 	}
