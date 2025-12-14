@@ -26,7 +26,7 @@ func TestAPIKeyAuthenticator(t *testing.T) {
 		Scheme: "bearer",
 	}, goenvconf.NewEnvStringVariable("API_KEY"), sessionVariables)
 
-	authenticator, err := NewAPIKeyAuthenticator(*config)
+	authenticator, err := NewAPIKeyAuthenticator(config)
 	assert.NilError(t, err)
 
 	for range 10 {
@@ -41,11 +41,6 @@ func TestAPIKeyAuthenticator(t *testing.T) {
 			time.Sleep(time.Millisecond)
 		}()
 	}
-
-	for range 10 {
-		assert.NilError(t, authenticator.Reload(context.Background()))
-		time.Sleep(time.Millisecond)
-	}
 }
 
 func TestAPIKeyAuthenticator_Unauthorized(t *testing.T) {
@@ -58,7 +53,7 @@ func TestAPIKeyAuthenticator_Unauthorized(t *testing.T) {
 		Scheme: "bearer",
 	}, goenvconf.NewEnvStringVariable("API_KEY"), map[string]goenvconf.EnvAny{})
 
-	authenticator, err := NewAPIKeyAuthenticator(*config)
+	authenticator, err := NewAPIKeyAuthenticator(config)
 	assert.NilError(t, err)
 
 	// Test with wrong key
@@ -84,7 +79,7 @@ func TestAPIKeyAuthenticator_Mode(t *testing.T) {
 		Name: "X-API-Key",
 	}, goenvconf.NewEnvStringVariable("API_KEY"), map[string]goenvconf.EnvAny{})
 
-	authenticator, err := NewAPIKeyAuthenticator(*config)
+	authenticator, err := NewAPIKeyAuthenticator(config)
 	assert.NilError(t, err)
 
 	assert.Equal(t, authmode.AuthModeAPIKey, authenticator.Mode())
@@ -98,7 +93,7 @@ func TestAPIKeyAuthenticator_Close(t *testing.T) {
 		Name: "X-API-Key",
 	}, goenvconf.NewEnvStringVariable("API_KEY"), map[string]goenvconf.EnvAny{})
 
-	authenticator, err := NewAPIKeyAuthenticator(*config)
+	authenticator, err := NewAPIKeyAuthenticator(config)
 	assert.NilError(t, err)
 
 	err = authenticator.Close()

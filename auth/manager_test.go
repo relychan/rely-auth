@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc/authc/authscheme"
@@ -26,7 +27,7 @@ func TestNewRelyAuthManager(t *testing.T) {
 		},
 	}
 
-	manager, err := NewRelyAuthManager(config)
+	manager, err := NewRelyAuthManager(context.TODO(), config)
 	assert.NilError(t, err)
 	assert.Assert(t, manager != nil)
 
@@ -48,7 +49,7 @@ func TestRelyAuthManager_Authenticate_NoAuth(t *testing.T) {
 		},
 	}
 
-	manager, err := NewRelyAuthManager(config)
+	manager, err := NewRelyAuthManager(context.TODO(), config)
 	assert.NilError(t, err)
 	defer manager.Close()
 
@@ -83,7 +84,7 @@ func TestRelyAuthManager_Authenticate_APIKey(t *testing.T) {
 		},
 	}
 
-	manager, err := NewRelyAuthManager(config)
+	manager, err := NewRelyAuthManager(context.TODO(), config)
 	assert.NilError(t, err)
 	defer manager.Close()
 
@@ -137,7 +138,7 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 		},
 	}
 
-	manager, err := NewRelyAuthManager(config)
+	manager, err := NewRelyAuthManager(context.TODO(), config)
 	assert.NilError(t, err)
 	defer manager.Close()
 
@@ -184,7 +185,7 @@ func TestRelyAuthManager_Authenticate_StrictMode(t *testing.T) {
 		},
 	}
 
-	manager, err := NewRelyAuthManager(config)
+	manager, err := NewRelyAuthManager(context.TODO(), config)
 	assert.NilError(t, err)
 	defer manager.Close()
 
@@ -211,7 +212,7 @@ func TestRelyAuthManager_Reload(t *testing.T) {
 		},
 	}
 
-	manager, err := NewRelyAuthManager(config)
+	manager, err := NewRelyAuthManager(context.TODO(), config)
 	assert.NilError(t, err)
 	defer manager.Close()
 
@@ -233,7 +234,7 @@ func TestRelyAuthManager_WithOptions(t *testing.T) {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	manager, err := NewRelyAuthManager(config, WithLogger(logger))
+	manager, err := NewRelyAuthManager(context.TODO(), config, authmode.WithLogger(logger))
 	assert.NilError(t, err)
 	assert.Assert(t, manager != nil)
 
@@ -280,7 +281,7 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 		},
 	}
 
-	manager, err := NewRelyAuthManager(config)
+	manager, err := NewRelyAuthManager(context.TODO(), config)
 	assert.NilError(t, err)
 	defer manager.Close()
 
@@ -305,4 +306,15 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 	assert.DeepEqual(t, map[string]any{
 		"x-hasura-role": "service2",
 	}, result)
+}
+
+func TestRelyAuthManager_RefreshProcess(t *testing.T) {
+	manager, err := NewRelyAuthManager(context.TODO(), &RelyAuthConfig{})
+	assert.NilError(t, err)
+	defer manager.Close()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	manager.startReloadProcess(ctx, 1)
 }

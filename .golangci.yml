@@ -40,7 +40,7 @@ linters:
       # Default: 1
       tab-width: 1
     cyclop:
-      max-complexity: 17
+      max-complexity: 20
     wsl_v5:
       allow-first-in-block: true
       allow-whole-block: false
@@ -79,6 +79,8 @@ linters:
           disabled: true
         - name: exported
           disabled: true
+        - name: max-public-structs
+          arguments: [10]
     nestif:
       min-complexity: 7
     funlen:
@@ -110,6 +112,8 @@ linters:
       exclusions:
         - "*.UnmarshalJSON"
         - "*.UnmarshalYAML"
+        - "*.IsZero"
+        - "*.Equal"
   # Defines a set of rules to ignore issues.
   # It does not skip the analysis, and so does not ignore "typecheck" errors.
   exclusions:

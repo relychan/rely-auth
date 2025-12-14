@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"slices"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/hasura/gotel"
@@ -27,37 +28,30 @@ import (
 
 // RelyAuthManager manages multiple authentication strategies to verify HTTP requests.
 type RelyAuthManager struct {
-	options relyAuthManagerOptions
-
+	options               authmode.RelyAuthenticatorOptions
 	settings              *authmode.RelyAuthSettings
 	authenticators        []authmode.RelyAuthenticator
-	httpClient            *gohttpc.Client
 	requestDuration       metric.Float64Histogram
 	authModeTotalRequests metric.Int64Counter
+	stopChan              chan (struct{})
+	mu                    sync.Mutex
 }
 
 // NewRelyAuthManager creates a new RelyAuthManager instance from config.
 func NewRelyAuthManager(
+	ctx context.Context,
 	config *RelyAuthConfig,
-	options ...RelyAuthManagerOption,
+	options ...authmode.RelyAuthenticatorOption,
 ) (*RelyAuthManager, error) {
-	opts := relyAuthManagerOptions{
-		Logger: slog.Default(),
-	}
+	opts := authmode.NewRelyAuthenticatorOptions(options...)
 
-	for _, opt := range options {
-		opt(&opts)
-	}
-
-	httpClient := opts.HTTPClient
-
-	if httpClient == nil {
+	if opts.HTTPClient == nil {
 		clientOptions := []gohttpc.ClientOption{
 			gohttpc.WithLogger(opts.Logger.With("type", "auth-client")),
 			gohttpc.WithTimeout(time.Minute),
 		}
 
-		httpClient = gohttpc.NewClient(clientOptions...)
+		opts.HTTPClient = gohttpc.NewClient(clientOptions...)
 	}
 
 	if opts.Meter == nil {
@@ -65,9 +59,9 @@ func NewRelyAuthManager(
 	}
 
 	manager := RelyAuthManager{
-		options:    opts,
-		settings:   &authmode.RelyAuthSettings{},
-		httpClient: httpClient,
+		options:  opts,
+		settings: &authmode.RelyAuthSettings{},
+		stopChan: make(chan struct{}),
 	}
 
 	var err error
@@ -106,7 +100,16 @@ func NewRelyAuthManager(
 		return nil, err
 	}
 
-	return &manager, manager.init(config)
+	hasJWK, err := manager.init(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	if hasJWK && manager.settings.ReloadInterval > 0 {
+		go manager.startReloadProcess(ctx, manager.settings.ReloadInterval)
+	}
+
+	return &manager, nil
 }
 
 // Authenticate validates and authenticates the token from the auth webhook request.
@@ -202,7 +205,18 @@ func (am *RelyAuthManager) Reload(ctx context.Context) error {
 
 // Close terminates all underlying authenticator resources.
 func (am *RelyAuthManager) Close() error {
+	am.mu.Lock()
+	defer am.mu.Unlock()
+
+	// already closed. Exit
+	if am.stopChan == nil {
+		return nil
+	}
+
 	var errs []error
+
+	close(am.stopChan)
+	am.stopChan = nil
 
 	for _, au := range am.authenticators {
 		err := au.Close()
@@ -221,7 +235,7 @@ func (am *RelyAuthManager) Close() error {
 	}
 }
 
-func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
+func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) (bool, error) {
 	authModes := authmode.GetSupportedAuthModes()
 	definitions := config.Definitions
 
@@ -250,9 +264,9 @@ func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := apikey.NewAPIKeyAuthenticator(*def)
+			authenticator, err := apikey.NewAPIKeyAuthenticator(def)
 			if err != nil {
-				return fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
+				return false, fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
 			}
 
 			am.authenticators = append(am.authenticators, authenticator)
@@ -262,27 +276,27 @@ func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
 			}
 
 			if jwtAuth == nil {
-				authenticator, err := jwt.NewJWTAuthenticator(nil, am.httpClient)
+				authenticator, err := jwt.NewJWTAuthenticator(ctx, nil, am.options)
 				if err != nil {
-					return err
+					return false, err
 				}
 
 				jwtAuth = authenticator
 				am.authenticators = append(am.authenticators, authenticator)
 			}
 
-			err := jwtAuth.Add(*def)
+			err := jwtAuth.Add(ctx, *def)
 			if err != nil {
-				return fmt.Errorf("failed to create JWT auth %s: %w", def.ID, err)
+				return false, fmt.Errorf("failed to create JWT auth %s: %w", def.ID, err)
 			}
 		case *webhook.RelyAuthWebhookConfig:
 			if def.ID == "" {
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := webhook.NewWebhookAuthenticator(*def, am.httpClient)
+			authenticator, err := webhook.NewWebhookAuthenticator(ctx, def, am.options)
 			if err != nil {
-				return fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
+				return false, fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}
 
 			am.authenticators = append(am.authenticators, authenticator)
@@ -291,44 +305,47 @@ func (am *RelyAuthManager) init(config *RelyAuthConfig) error {
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := noauth.NewNoAuth(*def)
+			authenticator, err := noauth.NewNoAuth(ctx, def, am.options)
 			if err != nil {
-				return fmt.Errorf("failed to create noAuth: %w", err)
+				return false, fmt.Errorf("failed to create noAuth: %w", err)
 			}
 
 			am.authenticators = append(am.authenticators, authenticator)
 		}
 	}
 
-	return nil
+	return jwtAuth != nil && jwtAuth.HasJWK(), nil
 }
 
-type relyAuthManagerOptions struct {
-	Meter      metric.Meter
-	Logger     *slog.Logger
-	HTTPClient *gohttpc.Client
-}
+func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterval int) {
+	ticker := time.NewTicker(time.Duration(reloadInterval) * time.Minute)
+	defer ticker.Stop()
 
-// RelyAuthManagerOption abstracts a function to modify auth manager options.
-type RelyAuthManagerOption func(*relyAuthManagerOptions)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-am.stopChan:
+			return
+		case <-ticker.C:
+			var isStop bool
 
-// WithLogger sets the logger to auth manager options.
-func WithLogger(logger *slog.Logger) RelyAuthManagerOption {
-	return func(ramo *relyAuthManagerOptions) {
-		ramo.Logger = logger
-	}
-}
+			am.mu.Lock()
+			isStop = am.stopChan == nil
+			am.mu.Unlock()
 
-// WithMeter sets the meter to auth manager options.
-func WithMeter(meter metric.Meter) RelyAuthManagerOption {
-	return func(ramo *relyAuthManagerOptions) {
-		ramo.Meter = meter
-	}
-}
+			if isStop {
+				return
+			}
 
-// WithHTTPClient sets the HTTP client to auth manager options.
-func WithHTTPClient(client *gohttpc.Client) RelyAuthManagerOption {
-	return func(ramo *relyAuthManagerOptions) {
-		ramo.HTTPClient = client
+			err := am.Reload(ctx)
+			if err != nil {
+				am.options.Logger.Error(
+					"failed to reload auth credentials",
+					slog.String("type", "auth-refresh-log"),
+					slog.String("error", err.Error()),
+				)
+			}
+		}
 	}
 }

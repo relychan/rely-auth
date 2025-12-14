@@ -1,6 +1,7 @@
-# yaml-language-server: $schema=../../docs/auth.schema.json
+# yaml-language-server: $schema=../../jsonschema/auth.schema.json
 settings:
   strict: true
+  reloadInterval: 0
 definitions:
   - mode: jwt
     tokenLocation:

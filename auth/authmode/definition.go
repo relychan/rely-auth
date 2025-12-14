@@ -4,6 +4,11 @@ package authmode
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
+
+	"github.com/hasura/goenvconf"
+	"github.com/relychan/gohttpc"
+	"go.opentelemetry.io/otel/metric"
 )
 
 // AuthenticateRequestData contains the request body of the auth hook request.
@@ -50,4 +55,63 @@ type RelyAuthDefinitionInterface interface {
 	GetMode() AuthMode
 	// Validate if the current instance is valid.
 	Validate() error
+}
+
+// RelyAuthenticatorOptions define common options for the authenticator.
+type RelyAuthenticatorOptions struct {
+	CustomEnvGetter func(ctx context.Context) goenvconf.GetEnvFunc
+	Meter           metric.Meter
+	Logger          *slog.Logger
+	HTTPClient      *gohttpc.Client
+}
+
+// NewRelyAuthenticatorOptions creates a new [RelyAuthenticatorOptions] instance.
+func NewRelyAuthenticatorOptions(options ...RelyAuthenticatorOption) RelyAuthenticatorOptions {
+	result := RelyAuthenticatorOptions{
+		CustomEnvGetter: goenvconf.OSEnvGetter,
+		Logger:          slog.Default(),
+	}
+
+	for _, opt := range options {
+		opt(&result)
+	}
+
+	return result
+}
+
+// RelyAuthenticatorOption abstracts a function to modify [RelyAuthenticatorOptions].
+type RelyAuthenticatorOption func(*RelyAuthenticatorOptions)
+
+// WithLogger sets the logger to auth manager options.
+func WithLogger(logger *slog.Logger) RelyAuthenticatorOption {
+	return func(ramo *RelyAuthenticatorOptions) {
+		ramo.Logger = logger
+	}
+}
+
+// WithMeter sets the meter to auth manager options.
+func WithMeter(meter metric.Meter) RelyAuthenticatorOption {
+	return func(ramo *RelyAuthenticatorOptions) {
+		ramo.Meter = meter
+	}
+}
+
+// WithHTTPClient sets the HTTP client to auth manager options.
+func WithHTTPClient(client *gohttpc.Client) RelyAuthenticatorOption {
+	return func(ramo *RelyAuthenticatorOptions) {
+		ramo.HTTPClient = client
+	}
+}
+
+// WithCustomEnvGetter returns a function to set the GetEnvFunc getter to [RelyAuthenticatorOptions].
+func WithCustomEnvGetter(
+	getter func(ctx context.Context) goenvconf.GetEnvFunc,
+) RelyAuthenticatorOption {
+	return func(ramo *RelyAuthenticatorOptions) {
+		if getter == nil {
+			return
+		}
+
+		ramo.CustomEnvGetter = getter
+	}
 }

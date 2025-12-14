@@ -19,20 +19,40 @@ var (
 	ErrMalformedTransformedResponseBody = errors.New("malformed response body. Expected a map")
 )
 
-type customWebhookResponseConfig struct {
+// CustomWebhookResponseConfig represents a custom webhook response config.
+type CustomWebhookResponseConfig struct {
 	Body gotransform.TemplateTransformer
 }
 
-type customWebhookRequestConfig struct {
-	Headers *customWebhookAuthHeadersConfig
+// Equal checks if the target value is equal.
+func (cwr CustomWebhookResponseConfig) Equal(target CustomWebhookResponseConfig) bool {
+	return gotransform.EqualTemplateTransformer(cwr.Body, target.Body)
+}
+
+// CustomWebhookRequestConfig represents a custom webhook request config.
+type CustomWebhookRequestConfig struct {
+	Headers *CustomWebhookAuthHeadersConfig
 	Body    gotransform.TemplateTransformer
 }
 
-type customWebhookAuthHeadersConfig struct {
+// Equal checks if the target value is equal.
+func (cwr CustomWebhookRequestConfig) Equal(target CustomWebhookRequestConfig) bool {
+	return gotransform.EqualTemplateTransformer(cwr.Body, target.Body) &&
+		goutils.EqualPtr(cwr.Headers, target.Headers)
+}
+
+// CustomWebhookAuthHeadersConfig represents a custom webhook auth header config.
+type CustomWebhookAuthHeadersConfig struct {
 	// The headers to be forwarded from the client request.
 	Forward *goutils.AllOrListString
 	// The additional headers to be sent to the auth hook.
 	Additional map[string]jmes.FieldMappingEntryString
+}
+
+// Equal checks if the target value is equal.
+func (cwr CustomWebhookAuthHeadersConfig) Equal(target CustomWebhookAuthHeadersConfig) bool {
+	return goutils.EqualPtr(cwr.Forward, target.Forward) &&
+		goutils.EqualMap(cwr.Additional, target.Additional, true)
 }
 
 // If the webhook uses GET, the following headers will be ignored.

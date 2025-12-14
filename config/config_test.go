@@ -188,7 +188,7 @@ definitions:
 
 	exporters := newTestExporters()
 
-	manager, err := InitAuthManager(authConfigPath, exporters)
+	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
 	assert.NilError(t, err)
 	assert.Assert(t, manager != nil)
 	defer manager.Close()
@@ -197,7 +197,7 @@ definitions:
 func TestInitAuthManager_InvalidConfigPath(t *testing.T) {
 	exporters := newTestExporters()
 
-	_, err := InitAuthManager("/nonexistent/auth.yaml", exporters)
+	_, err := InitAuthManager(context.TODO(), "/nonexistent/auth.yaml", exporters)
 	assert.ErrorContains(t, err, "failed to load auth config")
 }
 
@@ -215,7 +215,7 @@ definitions:
 
 	exporters := newTestExporters()
 
-	_, err = InitAuthManager(authConfigPath, exporters)
+	_, err = InitAuthManager(context.TODO(), authConfigPath, exporters)
 	assert.ErrorContains(t, err, "failed to load auth config")
 }
 
@@ -245,7 +245,7 @@ definitions:
 
 	exporters := newTestExporters()
 
-	manager, err := InitAuthManager(authConfigPath, exporters)
+	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
 	assert.NilError(t, err)
 	assert.Assert(t, manager != nil)
 	defer manager.Close()
@@ -270,7 +270,7 @@ definitions:
 
 	exporters := newTestExporters()
 
-	manager, err := InitAuthManager(authConfigPath, exporters)
+	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
 	assert.NilError(t, err)
 	assert.Assert(t, manager != nil)
 	defer manager.Close()
@@ -314,7 +314,7 @@ definitions:
 
 	exporters := newTestExporters()
 
-	manager, err := InitAuthManager(authConfigPath, exporters)
+	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
 	assert.NilError(t, err)
 	assert.Assert(t, manager != nil)
 	defer manager.Close()
@@ -343,7 +343,7 @@ definitions:
 
 	exporters := newTestExporters()
 
-	manager, err := InitAuthManager(authConfigPath, exporters)
+	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
 	assert.NilError(t, err)
 	assert.Assert(t, manager != nil)
 	defer manager.Close()
@@ -376,7 +376,7 @@ func TestInitAuthManager_JSONConfig(t *testing.T) {
 
 	exporters := newTestExporters()
 
-	manager, err := InitAuthManager(authConfigPath, exporters)
+	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
 	assert.NilError(t, err)
 	assert.Assert(t, manager != nil)
 	defer manager.Close()

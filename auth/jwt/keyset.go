@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/ecdsa"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
+	"github.com/hasura/goenvconf"
 	"github.com/jmespath-community/go-jmespath"
 	"github.com/relychan/gohttpc"
 	"github.com/relychan/gotransform/jmes"
@@ -56,7 +58,12 @@ type JWTKeySet struct {
 }
 
 // NewJWTKeySet creates a new JWT key set from the configuration.
-func NewJWTKeySet(config *RelyAuthJWTConfig, httpClient *gohttpc.Client) (*JWTKeySet, error) {
+func NewJWTKeySet(
+	ctx context.Context,
+	config *RelyAuthJWTConfig,
+	options authmode.RelyAuthenticatorOptions,
+) (*JWTKeySet, error) {
+	httpClient := options.HTTPClient
 	if httpClient == nil {
 		httpClient = gohttpc.NewClient()
 	}
@@ -67,9 +74,31 @@ func NewJWTKeySet(config *RelyAuthJWTConfig, httpClient *gohttpc.Client) (*JWTKe
 		inflight:   &singleflight.Group{},
 	}
 
-	err := result.doReload(context.Background())
+	err := result.init(ctx, options)
 
 	return &result, err
+}
+
+// Equal checks if the target value is equal.
+func (j *JWTKeySet) Equal(target *JWTKeySet) bool {
+	j.mu.RLock()
+	defer j.mu.RUnlock()
+
+	if !goutils.EqualPtr(j.config, target.config) {
+		return false
+	}
+
+	if j.config.Key.Key != nil && !j.config.Key.Key.IsZero() {
+		if j.config.Key.Algorithm == jose.HS256 ||
+			j.config.Key.Algorithm == jose.HS384 ||
+			j.config.Key.Algorithm == jose.HS512 {
+			return bytes.Equal(j.hmacKey, target.hmacKey)
+		}
+
+		return reflect.DeepEqual(j.publicKey, target.publicKey)
+	}
+
+	return j.jwksURL == target.jwksURL
 }
 
 // GetConfig get config of the current keyset.
@@ -79,6 +108,9 @@ func (j *JWTKeySet) GetConfig() *RelyAuthJWTConfig {
 
 // Close handles the resources cleaning.
 func (j *JWTKeySet) Close() error {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+
 	if j.httpClient != nil {
 		return j.httpClient.Close()
 	}
@@ -88,6 +120,9 @@ func (j *JWTKeySet) Close() error {
 
 // GetSignatureAlgorithms get signature algorithms of the keyset.
 func (j *JWTKeySet) GetSignatureAlgorithms() []jose.SignatureAlgorithm {
+	j.mu.RLock()
+	defer j.mu.RUnlock()
+
 	result := make([]jose.SignatureAlgorithm, 0, len(j.cachedKeys))
 
 	for _, key := range j.cachedKeys {
@@ -114,13 +149,19 @@ func (j *JWTKeySet) VerifySignature(
 	ctx context.Context,
 	sig *jose.JSONWebSignature,
 ) ([]byte, error) {
+	j.mu.RLock()
+	cachedKeys := j.cachedKeys
+	publicKey := j.publicKey
+	hmacKey := j.hmacKey
+	j.mu.RUnlock()
+
 	switch {
-	case len(j.cachedKeys) > 0:
+	case len(cachedKeys) > 0:
 		return j.verifyJWKs(ctx, sig)
-	case j.publicKey != nil:
-		return sig.Verify(j.publicKey)
-	case len(j.hmacKey) > 0:
-		return sig.Verify(j.hmacKey)
+	case publicKey != nil:
+		return sig.Verify(publicKey)
+	case len(hmacKey) > 0:
+		return sig.Verify(hmacKey)
 	default:
 		return nil, goutils.NewUnauthorizedError()
 	}
@@ -174,15 +215,18 @@ func (j *JWTKeySet) TransformClaims(rawBytes []byte) (map[string]any, error) {
 
 // Reload credentials of the authenticator.
 func (j *JWTKeySet) Reload(ctx context.Context) error {
-	j.mu.Lock()
-	defer j.mu.Unlock()
+	_, err := j.keysFromRemote(ctx)
 
-	return j.doReload(ctx)
+	return err
 }
 
-func (j *JWTKeySet) doReload(ctx context.Context) error {
+func (j *JWTKeySet) init(ctx context.Context, options authmode.RelyAuthenticatorOptions) error {
+	getEnvFunc := options.CustomEnvGetter(ctx)
 	// load locations
-	locations, err := jmes.EvaluateObjectFieldMappingEntries(j.config.ClaimsConfig.Locations)
+	locations, err := jmes.EvaluateObjectFieldMappingEntries(
+		j.config.ClaimsConfig.Locations,
+		getEnvFunc,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to get location value: %w", err)
 	}
@@ -190,32 +234,27 @@ func (j *JWTKeySet) doReload(ctx context.Context) error {
 	j.locations = locations
 
 	if j.config.Key.Key != nil {
-		return j.reloadJWTKey()
+		return j.initJWTKey(getEnvFunc)
 	}
 
 	if j.config.Key.JWKFromURL == nil {
 		return ErrJWTAuthKeyRequired
 	}
 
-	jwksURL, err := j.config.Key.JWKFromURL.Get()
+	jwksURL, err := j.config.Key.JWKFromURL.GetCustom(getEnvFunc)
 	if err != nil {
 		return err
 	}
 
-	// update keys only if JWKs URL is changed.
-	if j.jwksURL != jwksURL {
-		j.jwksURL = jwksURL
+	j.jwksURL = jwksURL
+	// fetch JSON web key to validate if the JWK URL is valid.
+	_, err = j.keysFromRemote(ctx)
 
-		_, err := j.updateKeys(ctx)
-
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (j *JWTKeySet) reloadJWTKey() error {
-	rawKey, err := j.config.Key.Key.Get()
+func (j *JWTKeySet) initJWTKey(getEnvFunc goenvconf.GetEnvFunc) error {
+	rawKey, err := j.config.Key.Key.GetCustom(getEnvFunc)
 	if err != nil {
 		return err
 	}

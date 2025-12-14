@@ -2,6 +2,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"slices"
@@ -64,6 +65,7 @@ func LoadServerConfig() (*RelyAuthServerConfig, error) {
 
 // InitAuthManager initializes the auth manager from config.
 func InitAuthManager(
+	ctx context.Context,
 	configPath string,
 	exporters *gotel.OTelExporters,
 ) (*auth.RelyAuthManager, error) {
@@ -86,9 +88,10 @@ func InitAuthManager(
 	}
 
 	manager, err := auth.NewRelyAuthManager(
+		ctx,
 		authConfig,
-		auth.WithLogger(exporters.Logger),
-		auth.WithMeter(exporters.Meter),
+		authmode.WithLogger(exporters.Logger),
+		authmode.WithMeter(exporters.Meter),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create auth manager: %w", err)

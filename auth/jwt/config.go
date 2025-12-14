@@ -6,6 +6,7 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/gotransform/jmes"
+	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmode"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
@@ -51,6 +52,31 @@ func (RelyAuthJWTConfig) GetMode() authmode.AuthMode {
 	return authmode.AuthModeJWT
 }
 
+// IsZero if the current instance is empty.
+func (j RelyAuthJWTConfig) IsZero() bool {
+	return j.ID == "" &&
+		j.Mode == "" &&
+		j.Description == "" &&
+		len(j.Audience) == 0 &&
+		j.Issuer == "" &&
+		j.AllowedSkew == 0 &&
+		j.TokenLocation.IsZero() &&
+		j.Key.IsZero() &&
+		j.ClaimsConfig.IsZero()
+}
+
+// Equal checks if the target value is equal.
+func (j RelyAuthJWTConfig) Equal(target RelyAuthJWTConfig) bool {
+	return j.ID == target.ID &&
+		j.Mode == target.Mode &&
+		goutils.EqualSliceSorted(j.Audience, target.Audience) &&
+		j.Issuer == target.Issuer &&
+		j.AllowedSkew == target.AllowedSkew &&
+		j.TokenLocation.Equal(target.TokenLocation) &&
+		j.Key.Equal(target.Key) &&
+		j.ClaimsConfig.Equal(target.ClaimsConfig)
+}
+
 // Validate if the current instance is valid.
 func (j RelyAuthJWTConfig) Validate() error {
 	err := j.ClaimsConfig.Validate()
@@ -80,6 +106,18 @@ type JWTClaimsConfig struct {
 	Locations map[string]jmes.FieldMappingEntryConfig `json:"locations,omitempty" yaml:"locations,omitempty"`
 }
 
+// IsZero if the current instance is empty.
+func (j JWTClaimsConfig) IsZero() bool {
+	return (j.Namespace == nil || j.Namespace.IsZero()) &&
+		len(j.Locations) == 0
+}
+
+// Equal checks if the target value is equal.
+func (j JWTClaimsConfig) Equal(target JWTClaimsConfig) bool {
+	return goutils.EqualPtr(j.Namespace, target.Namespace) &&
+		goutils.EqualMap(j.Locations, target.Locations, true)
+}
+
 // Validate if the current instance is valid.
 func (j JWTClaimsConfig) Validate() error {
 	if j.Namespace == nil && len(j.Locations) == 0 {
@@ -107,6 +145,20 @@ type JWTKey struct {
 	JWKFromURL *goenvconf.EnvString `json:"jwkFromUrl,omitempty" yaml:"jwkFromUrl,omitempty"`
 	// Inline value of the key to use for decoding the JWT.
 	Key *goenvconf.EnvString `json:"key,omitempty" yaml:"key,omitempty"`
+}
+
+// IsZero if the current instance is empty.
+func (j JWTKey) IsZero() bool {
+	return j.Algorithm == "" &&
+		(j.JWKFromURL == nil || j.JWKFromURL.IsZero()) &&
+		(j.Key == nil || j.Key.IsZero())
+}
+
+// Equal checks if the target value is equal.
+func (j JWTKey) Equal(target JWTKey) bool {
+	return j.Algorithm == target.Algorithm &&
+		goutils.EqualPtr(j.JWKFromURL, target.JWKFromURL) &&
+		goutils.EqualPtr(j.Key, target.Key)
 }
 
 // JSONSchema defines a custom definition for JSON schema.
@@ -173,6 +225,17 @@ type JWTClaimsNamespace struct {
 	Location string `json:"location" yaml:"location"`
 	// Format in which the Hasura claims will be present.
 	ClaimsFormat JWTClaimsFormat `json:"claimsFormat" jsonschema:"enum=Json,enum=StringifiedJson" yaml:"claimsFormat"`
+}
+
+// IsZero if the current instance is empty.
+func (j JWTClaimsNamespace) IsZero() bool {
+	return j.Location == "" && j.ClaimsFormat == ""
+}
+
+// Equal checks if the target value is equal.
+func (j JWTClaimsNamespace) Equal(target JWTClaimsNamespace) bool {
+	return j.Location == target.Location &&
+		j.ClaimsFormat == target.ClaimsFormat
 }
 
 // Validate if the current instance is valid.
