@@ -47,7 +47,7 @@ func NewAPIKeyAuthenticator(config *RelyAuthAPIKeyConfig) (*APIKeyAuthenticator,
 	sessionVariables := make(map[string]any)
 
 	for key, envValue := range config.SessionVariables {
-		value, err := envValue.Get()
+		v, err := envValue.Get()
 		if err != nil {
 			return nil, fmt.Errorf(
 				"auth mode: %s; id: %s; error: failed to load session variable %s: %w",
@@ -58,7 +58,7 @@ func NewAPIKeyAuthenticator(config *RelyAuthAPIKeyConfig) (*APIKeyAuthenticator,
 			)
 		}
 
-		sessionVariables[key] = value
+		sessionVariables[key] = v
 	}
 
 	result := &APIKeyAuthenticator{
