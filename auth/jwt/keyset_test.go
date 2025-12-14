@@ -32,7 +32,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(&config, nil)
+		keyset, err := NewJWTKeySet(&config, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
 		rawClaims := `{
@@ -80,7 +80,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(&config, nil)
+		keyset, err := NewJWTKeySet(&config, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
 		rawClaims := `{

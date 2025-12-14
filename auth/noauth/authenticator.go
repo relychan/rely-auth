@@ -19,16 +19,21 @@ type NoAuth struct {
 var _ authmode.RelyAuthenticator = (*NoAuth)(nil)
 
 // NewNoAuth creates an API key authenticator instance.
-func NewNoAuth(config RelyAuthNoAuthConfig) (*NoAuth, error) {
+func NewNoAuth(
+	ctx context.Context,
+	config *RelyAuthNoAuthConfig,
+	options authmode.RelyAuthenticatorOptions,
+) (*NoAuth, error) {
 	result := &NoAuth{
 		id: config.ID,
 	}
 
 	mode := result.Mode()
 	sessionVariables := make(map[string]any)
+	getEnvFunc := options.CustomEnvGetter(ctx)
 
 	for key, envValue := range config.SessionVariables {
-		value, err := envValue.Get()
+		value, err := envValue.GetCustom(getEnvFunc)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"auth mode: %s; id: %s; error: failed to load session variable %s: %w",

@@ -27,8 +27,7 @@ import (
 
 // RelyAuthManager manages multiple authentication strategies to verify HTTP requests.
 type RelyAuthManager struct {
-	options relyAuthManagerOptions
-
+	options               authmode.RelyAuthenticatorOptions
 	settings              *authmode.RelyAuthSettings
 	authenticators        []authmode.RelyAuthenticator
 	requestDuration       metric.Float64Histogram
@@ -39,15 +38,9 @@ type RelyAuthManager struct {
 func NewRelyAuthManager(
 	ctx context.Context,
 	config *RelyAuthConfig,
-	options ...RelyAuthManagerOption,
+	options ...authmode.RelyAuthenticatorOption,
 ) (*RelyAuthManager, error) {
-	opts := relyAuthManagerOptions{
-		Logger: slog.Default(),
-	}
-
-	for _, opt := range options {
-		opt(&opts)
-	}
+	opts := authmode.NewRelyAuthenticatorOptions(options...)
 
 	if opts.HTTPClient == nil {
 		clientOptions := []gohttpc.ClientOption{
@@ -259,7 +252,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 			}
 
 			if jwtAuth == nil {
-				authenticator, err := jwt.NewJWTAuthenticator(nil, am.options.HTTPClient)
+				authenticator, err := jwt.NewJWTAuthenticator(nil, am.options)
 				if err != nil {
 					return err
 				}
@@ -277,7 +270,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := webhook.NewWebhookAuthenticator(ctx, def)
+			authenticator, err := webhook.NewWebhookAuthenticator(ctx, def, am.options)
 			if err != nil {
 				return fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}
@@ -288,7 +281,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := noauth.NewNoAuth(*def)
+			authenticator, err := noauth.NewNoAuth(ctx, def, am.options)
 			if err != nil {
 				return fmt.Errorf("failed to create noAuth: %w", err)
 			}
@@ -298,34 +291,4 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 	}
 
 	return nil
-}
-
-type relyAuthManagerOptions struct {
-	Meter      metric.Meter
-	Logger     *slog.Logger
-	HTTPClient *gohttpc.Client
-}
-
-// RelyAuthManagerOption abstracts a function to modify auth manager options.
-type RelyAuthManagerOption func(*relyAuthManagerOptions)
-
-// WithLogger sets the logger to auth manager options.
-func WithLogger(logger *slog.Logger) RelyAuthManagerOption {
-	return func(ramo *relyAuthManagerOptions) {
-		ramo.Logger = logger
-	}
-}
-
-// WithMeter sets the meter to auth manager options.
-func WithMeter(meter metric.Meter) RelyAuthManagerOption {
-	return func(ramo *relyAuthManagerOptions) {
-		ramo.Meter = meter
-	}
-}
-
-// WithHTTPClient sets the HTTP client to auth manager options.
-func WithHTTPClient(client *gohttpc.Client) RelyAuthManagerOption {
-	return func(ramo *relyAuthManagerOptions) {
-		ramo.HTTPClient = client
-	}
 }

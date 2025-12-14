@@ -90,8 +90,8 @@ func InitAuthManager(
 	manager, err := auth.NewRelyAuthManager(
 		ctx,
 		authConfig,
-		auth.WithLogger(exporters.Logger),
-		auth.WithMeter(exporters.Meter),
+		authmode.WithLogger(exporters.Logger),
+		authmode.WithMeter(exporters.Meter),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create auth manager: %w", err)

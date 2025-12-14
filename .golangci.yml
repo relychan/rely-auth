@@ -79,6 +79,8 @@ linters:
           disabled: true
         - name: exported
           disabled: true
+        - name: max-public-structs
+          arguments: [10]
     nestif:
       min-complexity: 7
     funlen:

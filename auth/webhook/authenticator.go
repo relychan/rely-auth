@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc"
 	"github.com/relychan/gohttpc/httpconfig"
 	"github.com/relychan/gotransform"
@@ -40,7 +41,7 @@ var _ authmode.RelyAuthenticator = (*WebhookAuthenticator)(nil)
 func NewWebhookAuthenticator(
 	ctx context.Context,
 	config *RelyAuthWebhookConfig,
-	opts ...gohttpc.ClientOption,
+	opts authmode.RelyAuthenticatorOptions,
 ) (*WebhookAuthenticator, error) {
 	result := &WebhookAuthenticator{
 		id:     config.ID,
@@ -133,9 +134,11 @@ func (*WebhookAuthenticator) Reload(_ context.Context) error {
 func (wa *WebhookAuthenticator) init(
 	ctx context.Context,
 	config *RelyAuthWebhookConfig,
-	opts []gohttpc.ClientOption,
+	options authmode.RelyAuthenticatorOptions,
 ) error {
-	endpoint, err := config.URL.Get()
+	getEnvFunc := options.CustomEnvGetter(ctx)
+
+	endpoint, err := config.URL.GetCustom(getEnvFunc)
 	if err != nil {
 		return err
 	}
@@ -146,7 +149,7 @@ func (wa *WebhookAuthenticator) init(
 
 	wa.url = endpoint
 
-	err = wa.reloadCustomRequest(config)
+	err = wa.initCustomRequest(config, getEnvFunc)
 	if err != nil {
 		return err
 	}
@@ -155,6 +158,7 @@ func (wa *WebhookAuthenticator) init(
 		body, err := gotransform.NewTransformerFromConfig(
 			fmt.Sprintf("auth_webhook_%s_response_body", config.ID),
 			*config.CustomResponse.Body,
+			getEnvFunc,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to resolve transformed response config: %w", err)
@@ -165,21 +169,16 @@ func (wa *WebhookAuthenticator) init(
 
 	httpConfig := config.HTTPClient
 	if httpConfig == nil {
-		if wa.httpClient != nil {
-			return nil
-		}
-
 		httpConfig = &httpconfig.HTTPClientConfig{}
 	}
 
-	httpClient, err := httpconfig.NewClientFromConfig(ctx, httpConfig, opts...)
+	httpClient, err := httpconfig.NewClientFromConfig(
+		ctx,
+		httpConfig,
+		gohttpc.WithCustomEnvGetter(options.CustomEnvGetter),
+	)
 	if err != nil {
 		return err
-	}
-
-	// close the old http client before setting the new client.
-	if wa.httpClient != nil {
-		_ = wa.httpClient.Close()
 	}
 
 	wa.httpClient = httpClient
@@ -187,13 +186,16 @@ func (wa *WebhookAuthenticator) init(
 	return nil
 }
 
-func (wa *WebhookAuthenticator) reloadCustomRequest(config *RelyAuthWebhookConfig) error {
+func (wa *WebhookAuthenticator) initCustomRequest(
+	config *RelyAuthWebhookConfig,
+	getEnvFunc goenvconf.GetEnvFunc,
+) error {
 	if config.CustomRequest == nil {
 		return nil
 	}
 
 	if config.CustomRequest.Headers != nil {
-		requestHeaders, err := NewCustomWebhookAuthHeadersConfig(config.CustomRequest.Headers)
+		requestHeaders, err := NewCustomWebhookAuthHeadersConfig(config.CustomRequest.Headers, getEnvFunc)
 		if err != nil {
 			return err
 		}
@@ -205,6 +207,7 @@ func (wa *WebhookAuthenticator) reloadCustomRequest(config *RelyAuthWebhookConfi
 		body, err := gotransform.NewTransformerFromConfig(
 			fmt.Sprintf("auth_webhook_%s_request_body", config.ID),
 			*config.CustomRequest.Body,
+			getEnvFunc,
 		)
 		if err != nil {
 			return err

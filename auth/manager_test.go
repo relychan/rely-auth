@@ -233,7 +233,7 @@ func TestRelyAuthManager_WithOptions(t *testing.T) {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	manager, err := NewRelyAuthManager(context.TODO(), config, WithLogger(logger))
+	manager, err := NewRelyAuthManager(context.TODO(), config, authmode.WithLogger(logger))
 	assert.NilError(t, err)
 	assert.Assert(t, manager != nil)
 

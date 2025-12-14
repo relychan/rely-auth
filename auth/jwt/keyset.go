@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/ecdsa"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
+	"github.com/hasura/goenvconf"
 	"github.com/jmespath-community/go-jmespath"
 	"github.com/relychan/gohttpc"
 	"github.com/relychan/gotransform/jmes"
@@ -50,26 +52,51 @@ type JWTKeySet struct {
 	// cached locations after resolving environment variables
 	locations map[string]jmes.FieldMappingEntry
 
-	httpClient *gohttpc.Client
+	httpClient      *gohttpc.Client
+	customEnvGetter func(ctx context.Context) goenvconf.GetEnvFunc
 
 	mu sync.RWMutex
 }
 
 // NewJWTKeySet creates a new JWT key set from the configuration.
-func NewJWTKeySet(config *RelyAuthJWTConfig, httpClient *gohttpc.Client) (*JWTKeySet, error) {
+func NewJWTKeySet(config *RelyAuthJWTConfig, options authmode.RelyAuthenticatorOptions) (*JWTKeySet, error) {
+	httpClient := options.HTTPClient
 	if httpClient == nil {
 		httpClient = gohttpc.NewClient()
 	}
 
 	result := JWTKeySet{
-		config:     config,
-		httpClient: httpClient,
-		inflight:   &singleflight.Group{},
+		config:          config,
+		httpClient:      httpClient,
+		customEnvGetter: options.CustomEnvGetter,
+		inflight:        &singleflight.Group{},
 	}
 
 	err := result.doReload(context.Background())
 
 	return &result, err
+}
+
+// Equal checks if the target value is equal.
+func (j *JWTKeySet) Equal(target *JWTKeySet) bool {
+	j.mu.RLock()
+	defer j.mu.RUnlock()
+
+	if !goutils.EqualPtr(j.config, target.config) {
+		return false
+	}
+
+	if j.config.Key.Key != nil && !j.config.Key.Key.IsZero() {
+		if j.config.Key.Algorithm == jose.HS256 ||
+			j.config.Key.Algorithm == jose.HS384 ||
+			j.config.Key.Algorithm == jose.HS512 {
+			return bytes.Equal(j.hmacKey, target.hmacKey)
+		}
+
+		return reflect.DeepEqual(j.publicKey, target.publicKey)
+	}
+
+	return j.jwksURL == target.jwksURL
 }
 
 // GetConfig get config of the current keyset.
@@ -181,8 +208,9 @@ func (j *JWTKeySet) Reload(ctx context.Context) error {
 }
 
 func (j *JWTKeySet) doReload(ctx context.Context) error {
+	getEnvFunc := j.customEnvGetter(ctx)
 	// load locations
-	locations, err := jmes.EvaluateObjectFieldMappingEntries(j.config.ClaimsConfig.Locations)
+	locations, err := jmes.EvaluateObjectFieldMappingEntries(j.config.ClaimsConfig.Locations, getEnvFunc)
 	if err != nil {
 		return fmt.Errorf("failed to get location value: %w", err)
 	}
@@ -190,14 +218,14 @@ func (j *JWTKeySet) doReload(ctx context.Context) error {
 	j.locations = locations
 
 	if j.config.Key.Key != nil {
-		return j.reloadJWTKey()
+		return j.reloadJWTKey(getEnvFunc)
 	}
 
 	if j.config.Key.JWKFromURL == nil {
 		return ErrJWTAuthKeyRequired
 	}
 
-	jwksURL, err := j.config.Key.JWKFromURL.Get()
+	jwksURL, err := j.config.Key.JWKFromURL.GetCustom(getEnvFunc)
 	if err != nil {
 		return err
 	}
@@ -214,8 +242,8 @@ func (j *JWTKeySet) doReload(ctx context.Context) error {
 	return nil
 }
 
-func (j *JWTKeySet) reloadJWTKey() error {
-	rawKey, err := j.config.Key.Key.Get()
+func (j *JWTKeySet) reloadJWTKey(getEnvFunc goenvconf.GetEnvFunc) error {
+	rawKey, err := j.config.Key.Key.GetCustom(getEnvFunc)
 	if err != nil {
 		return err
 	}

@@ -15,13 +15,13 @@ func TestNoAuth_Authenticate(t *testing.T) {
 		"x-hasura-allowed-roles": goenvconf.NewEnvAnyValue([]string{"anonymous"}),
 	}
 
-	config := RelyAuthNoAuthConfig{
+	config := &RelyAuthNoAuthConfig{
 		ID:               "test-noauth",
 		Mode:             authmode.AuthModeNoAuth,
 		SessionVariables: sessionVariables,
 	}
 
-	authenticator, err := NewNoAuth(config)
+	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	assert.Equal(t, authmode.AuthModeNoAuth, authenticator.Mode())
 
@@ -38,14 +38,14 @@ func TestNoAuth_Authenticate(t *testing.T) {
 }
 
 func TestNoAuth_Reload(t *testing.T) {
-	config := RelyAuthNoAuthConfig{
+	config := &RelyAuthNoAuthConfig{
 		Mode: authmode.AuthModeNoAuth,
 		SessionVariables: map[string]goenvconf.EnvAny{
 			"x-hasura-role": goenvconf.NewEnvAnyValue("guest"),
 		},
 	}
 
-	authenticator, err := NewNoAuth(config)
+	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	// Test reload
@@ -61,12 +61,12 @@ func TestNoAuth_Reload(t *testing.T) {
 }
 
 func TestNoAuth_Close(t *testing.T) {
-	config := RelyAuthNoAuthConfig{
+	config := &RelyAuthNoAuthConfig{
 		Mode:             authmode.AuthModeNoAuth,
 		SessionVariables: map[string]goenvconf.EnvAny{},
 	}
 
-	authenticator, err := NewNoAuth(config)
+	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	// Test close
@@ -75,14 +75,14 @@ func TestNoAuth_Close(t *testing.T) {
 }
 
 func TestNoAuth_ConcurrentAccess(t *testing.T) {
-	config := RelyAuthNoAuthConfig{
+	config := &RelyAuthNoAuthConfig{
 		Mode: authmode.AuthModeNoAuth,
 		SessionVariables: map[string]goenvconf.EnvAny{
 			"x-hasura-role": goenvconf.NewEnvAnyValue("user"),
 		},
 	}
 
-	authenticator, err := NewNoAuth(config)
+	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	// Test concurrent authentication and reload

@@ -12,7 +12,6 @@ import (
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/hasura/goenvconf"
-	"github.com/relychan/gohttpc"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/goutils"
@@ -51,8 +50,7 @@ func TestNewJWTAuthenticator(t *testing.T) {
 		},
 	}
 
-	httpClient := gohttpc.NewClient()
-	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, httpClient)
+	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	assert.Assert(t, authenticator != nil)
 	defer authenticator.Close()
@@ -78,7 +76,7 @@ func TestJWTAuthenticator_Mode(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, nil)
+	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -111,7 +109,7 @@ func TestJWTAuthenticator_Authenticate_HMAC(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, nil)
+	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -161,7 +159,7 @@ func TestJWTAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, nil)
+	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -211,7 +209,7 @@ func TestJWTAuthenticator_Authenticate_RSA(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, nil)
+	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -265,7 +263,7 @@ func TestJWTAuthenticator_Authenticate_WithIssuerValidation(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, nil)
+	authenticator, err := NewJWTAuthenticator([]RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 

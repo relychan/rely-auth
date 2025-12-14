@@ -100,6 +100,8 @@ github.com/relychan/gotransform v0.0.0-20251214055750-801ee85d1102 h1:n303Blkq2h
 github.com/relychan/gotransform v0.0.0-20251214055750-801ee85d1102/go.mod h1:eKRqPVRyIKkIhF3/UEXeUo5rDlbGSv7P7D4p7MzESso=
 github.com/relychan/gotransform v0.0.0-20251214102938-97380a6c9c0f h1:GXNNTk5mnzibHrGnlE9siagVF4CR2nvfl+4PMIjmZOw=
 github.com/relychan/gotransform v0.0.0-20251214102938-97380a6c9c0f/go.mod h1:eKRqPVRyIKkIhF3/UEXeUo5rDlbGSv7P7D4p7MzESso=
+github.com/relychan/gotransform v0.0.0-20251214152200-6dcd174d5492 h1:T/F+VqI6OXFCcSE88IqFL9dr7hWxgCs6K7hSXz64mGA=
+github.com/relychan/gotransform v0.0.0-20251214152200-6dcd174d5492/go.mod h1:eKRqPVRyIKkIhF3/UEXeUo5rDlbGSv7P7D4p7MzESso=
 github.com/relychan/goutils v0.0.0-20251213144555-58fea62853f9 h1:hQCDEvviXy7bdbUdbcTcghxu/uzzjeJpqSBzic+RJNY=
 github.com/relychan/goutils v0.0.0-20251213144555-58fea62853f9/go.mod h1:EujSfQanq+VjRhVkUEek+WtsIvmnrVMHgmrdIe1FnxM=
 github.com/relychan/goutils v0.0.0-20251214041200-32a7303a1452 h1:QnyqLILv4ypAnBq4cn8xsn9zXX+WB1rMQ+AhfifDEtw=

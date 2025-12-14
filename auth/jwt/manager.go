@@ -23,8 +23,8 @@ var tracer = otel.Tracer("rely-auth/authenticator/jwt")
 
 // JWTAuthenticator implements the authenticator with JWT key.
 type JWTAuthenticator struct {
-	keySets    map[string][]*JWTKeySet
-	httpClient *gohttpc.Client
+	keySets map[string][]*JWTKeySet
+	options authmode.RelyAuthenticatorOptions
 }
 
 var _ authmode.RelyAuthenticator = (*JWTAuthenticator)(nil)
@@ -32,14 +32,18 @@ var _ authmode.RelyAuthenticator = (*JWTAuthenticator)(nil)
 // NewJWTAuthenticator creates a JWT authenticator instance.
 func NewJWTAuthenticator(
 	configs []RelyAuthJWTConfig,
-	httpClient *gohttpc.Client,
+	options authmode.RelyAuthenticatorOptions,
 ) (*JWTAuthenticator, error) {
 	result := &JWTAuthenticator{
-		httpClient: httpClient,
+		options: options,
+	}
+
+	if options.HTTPClient == nil {
+		options.HTTPClient = gohttpc.NewClient()
 	}
 
 	for _, config := range configs {
-		err := result.doAdd(config)
+		err := result.Add(config)
 		if err != nil {
 			return nil, err
 		}
@@ -73,6 +77,42 @@ func (ja *JWTAuthenticator) Close() error {
 	return nil
 }
 
+// Equal checks if the target value is equal.
+func (ja JWTAuthenticator) Equal(target JWTAuthenticator) bool {
+	if ja.keySets == nil && target.keySets == nil {
+		return true
+	}
+
+	if len(ja.keySets) != len(target.keySets) {
+		return false
+	}
+
+	for groupKey, groupLeft := range ja.keySets {
+		groupRight, ok := target.keySets[groupKey]
+		if !ok {
+			return false
+		}
+
+		if len(groupLeft) != len(groupRight) {
+			return false
+		}
+
+		if len(groupLeft) == 0 {
+			continue
+		}
+
+		for i, ksLeft := range groupLeft {
+			ksRight := groupRight[i]
+
+			if !ksLeft.Equal(ksRight) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (ja *JWTAuthenticator) Authenticate(
 	ctx context.Context,
@@ -97,10 +137,6 @@ func (ja *JWTAuthenticator) Reload(ctx context.Context) error {
 
 // Add a new JWT authenticator from config.
 func (ja *JWTAuthenticator) Add(config RelyAuthJWTConfig) error {
-	return ja.doAdd(config)
-}
-
-func (ja *JWTAuthenticator) doAdd(config RelyAuthJWTConfig) error {
 	tokenLocation, err := authmode.ValidateTokenLocation(config.TokenLocation)
 	if err != nil {
 		return err
@@ -119,7 +155,7 @@ func (ja *JWTAuthenticator) doAdd(config RelyAuthJWTConfig) error {
 		ja.keySets = map[string][]*JWTKeySet{}
 	}
 
-	keySet, err := NewJWTKeySet(&config, ja.httpClient)
+	keySet, err := NewJWTKeySet(&config, ja.options)
 	if err != nil {
 		return err
 	}

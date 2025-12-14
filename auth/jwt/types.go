@@ -60,6 +60,16 @@ var enumValueJWTClaimsFormats = []JWTClaimsFormat{
 	JWTClaimsFormatStringifiedJSON,
 }
 
+// IsZero if the current instance is empty.
+func (j JWTClaimsFormat) IsZero() bool {
+	return j == ""
+}
+
+// Equal checks if the target value is equal.
+func (j JWTClaimsFormat) Equal(target JWTClaimsFormat) bool {
+	return j == target
+}
+
 // Validate checks if the value is valid.
 func (j JWTClaimsFormat) Validate() error {
 	if !slices.Contains(enumValueJWTClaimsFormats, j) {
