@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"slices"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/hasura/gotel"
@@ -33,6 +34,7 @@ type RelyAuthManager struct {
 	requestDuration       metric.Float64Histogram
 	authModeTotalRequests metric.Int64Counter
 	stopChan              chan (struct{})
+	mu                    sync.Mutex
 }
 
 // NewRelyAuthManager creates a new RelyAuthManager instance from config.
@@ -203,12 +205,18 @@ func (am *RelyAuthManager) Reload(ctx context.Context) error {
 
 // Close terminates all underlying authenticator resources.
 func (am *RelyAuthManager) Close() error {
+	am.mu.Lock()
+	defer am.mu.Unlock()
+
+	// already closed. Exit
+	if am.stopChan == nil {
+		return nil
+	}
+
 	var errs []error
 
-	if am.stopChan != nil {
-		close(am.stopChan)
-		am.stopChan = nil
-	}
+	close(am.stopChan)
+	am.stopChan = nil
 
 	for _, au := range am.authenticators {
 		err := au.Close()
@@ -311,16 +319,13 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) (bo
 
 func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterval int) {
 	ticker := time.NewTicker(time.Duration(reloadInterval) * time.Minute)
+	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			ticker.Stop()
-
 			return
 		case <-am.stopChan:
-			ticker.Stop()
-
 			return
 		case <-ticker.C:
 			err := am.Reload(ctx)
