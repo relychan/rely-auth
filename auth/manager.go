@@ -328,6 +328,16 @@ func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterva
 		case <-am.stopChan:
 			return
 		case <-ticker.C:
+			var isStop bool
+
+			am.mu.Lock()
+			isStop = am.stopChan == nil
+			am.mu.Unlock()
+
+			if isStop {
+				return
+			}
+
 			err := am.Reload(ctx)
 			if err != nil {
 				am.options.Logger.Error(
