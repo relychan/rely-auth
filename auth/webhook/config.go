@@ -69,6 +69,28 @@ func (RelyAuthWebhookConfig) GetMode() authmode.AuthMode {
 	return authmode.AuthModeWebhook
 }
 
+// IsZero if the current instance is empty.
+func (j RelyAuthWebhookConfig) IsZero() bool {
+	return j.Mode == "" &&
+		j.Method == "" &&
+		j.URL.IsZero() &&
+		j.Description == "" &&
+		j.ID == "" &&
+		(j.CustomRequest == nil || j.CustomRequest.IsZero()) &&
+		(j.CustomResponse == nil || j.CustomResponse.IsZero()) &&
+		(j.HTTPClient == nil || j.HTTPClient.IsZero())
+}
+
+// Equal checks if the target value is equal.
+func (j RelyAuthWebhookConfig) Equal(target RelyAuthWebhookConfig) bool {
+	return j.Mode == target.Mode &&
+		j.Method == target.Method &&
+		j.URL.Equal(target.URL) &&
+		goutils.EqualPtr(j.CustomRequest, target.CustomRequest) &&
+		goutils.EqualPtr(j.CustomResponse, target.CustomResponse) &&
+		goutils.EqualPtr(j.HTTPClient, target.HTTPClient)
+}
+
 // JSONSchema is used to generate a custom jsonschema.
 func (RelyAuthWebhookConfig) JSONSchema() *jsonschema.Schema {
 	envStringRef := "#/$defs/EnvString"
@@ -162,6 +184,18 @@ type WebhookAuthCustomRequestConfig struct {
 	Body *gotransform.TemplateTransformerConfig `json:"body,omitempty"    yaml:"body,omitempty"`
 }
 
+// IsZero if the current instance is empty.
+func (wa WebhookAuthCustomRequestConfig) IsZero() bool {
+	return (wa.Headers == nil || wa.Headers.IsZero()) &&
+		(wa.Body == nil || wa.Body.IsZero())
+}
+
+// Equal checks if the target value is equal.
+func (wa WebhookAuthCustomRequestConfig) Equal(target WebhookAuthCustomRequestConfig) bool {
+	return goutils.EqualPtr(wa.Headers, target.Headers) &&
+		goutils.EqualPtr(wa.Body, target.Body)
+}
+
 // WebhookAuthHeadersConfig is the configuration for the headers to be sent to the auth hook.
 type WebhookAuthHeadersConfig struct {
 	// The headers to be forwarded from the client request.
@@ -170,8 +204,30 @@ type WebhookAuthHeadersConfig struct {
 	Additional map[string]jmes.FieldMappingEntryStringConfig `json:"additional,omitempty" yaml:"additional,omitempty"`
 }
 
+// IsZero if the current instance is empty.
+func (wa WebhookAuthHeadersConfig) IsZero() bool {
+	return (wa.Forward == nil || wa.Forward.IsZero()) &&
+		len(wa.Additional) == 0
+}
+
+// Equal checks if the target value is equal.
+func (wa WebhookAuthHeadersConfig) Equal(target WebhookAuthHeadersConfig) bool {
+	return goutils.EqualPtr(wa.Forward, target.Forward) &&
+		goutils.EqualMap(wa.Additional, target.Additional, true)
+}
+
 // WebhookAuthCustomResponseConfig is the configuration for transforming response bodies.
 type WebhookAuthCustomResponseConfig struct {
 	// The template to transform the response body.
 	Body *gotransform.TemplateTransformerConfig `json:"response,omitempty" yaml:"response,omitempty"`
+}
+
+// IsZero if the current instance is empty.
+func (wa WebhookAuthCustomResponseConfig) IsZero() bool {
+	return wa.Body == nil || wa.Body.IsZero()
+}
+
+// Equal checks if the target value is equal.
+func (wa WebhookAuthCustomResponseConfig) Equal(target WebhookAuthCustomResponseConfig) bool {
+	return goutils.EqualPtr(wa.Body, target.Body)
 }

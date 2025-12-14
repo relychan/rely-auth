@@ -14,14 +14,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func newCustomWebhookAuthHeadersConfig(
+func NewCustomWebhookAuthHeadersConfig(
 	input *WebhookAuthHeadersConfig,
-) (*customWebhookAuthHeadersConfig, error) {
+) (*CustomWebhookAuthHeadersConfig, error) {
 	if input == nil {
-		return &customWebhookAuthHeadersConfig{}, nil
+		return &CustomWebhookAuthHeadersConfig{}, nil
 	}
 
-	result := customWebhookAuthHeadersConfig{
+	result := CustomWebhookAuthHeadersConfig{
 		Forward: input.Forward,
 	}
 

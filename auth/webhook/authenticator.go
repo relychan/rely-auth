@@ -23,12 +23,13 @@ import (
 
 // WebhookAuthenticator implements the authenticator with API key.
 type WebhookAuthenticator struct {
-	config     *RelyAuthWebhookConfig
+	id         string
+	method     string
 	httpClient *gohttpc.Client
 	url        string
 
-	customRequest  customWebhookRequestConfig
-	customResponse customWebhookResponseConfig
+	customRequest  CustomWebhookRequestConfig
+	customResponse CustomWebhookResponseConfig
 }
 
 var tracer = otel.Tracer("rely-auth/auth/webhook")
@@ -42,10 +43,11 @@ func NewWebhookAuthenticator(
 	opts ...gohttpc.ClientOption,
 ) (*WebhookAuthenticator, error) {
 	result := &WebhookAuthenticator{
-		config: config,
+		id:     config.ID,
+		method: config.Method,
 	}
 
-	err := result.doReload(ctx, opts)
+	err := result.init(ctx, config, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +60,16 @@ func (*WebhookAuthenticator) Mode() authmode.AuthMode {
 	return authmode.AuthModeWebhook
 }
 
+// Equal checks if the target value is equal.
+func (wa WebhookAuthenticator) Equal(target WebhookAuthenticator) bool {
+	return wa.id == target.id &&
+		wa.method == target.method &&
+		wa.url == target.url &&
+		wa.customRequest.Equal(target.customRequest) &&
+		wa.customResponse.Equal(target.customResponse) &&
+		wa.httpClient == target.httpClient
+}
+
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (wa *WebhookAuthenticator) Authenticate(
 	ctx context.Context,
@@ -66,11 +78,11 @@ func (wa *WebhookAuthenticator) Authenticate(
 	ctx, span := tracer.Start(ctx, "Webhook", trace.WithSpanKind(trace.SpanKindInternal))
 	defer span.End()
 
-	span.SetAttributes(attribute.String("auth.mode", string(wa.config.GetMode())))
+	span.SetAttributes(attribute.String("auth.mode", string(wa.Mode())))
 
-	req := wa.httpClient.R(wa.config.Method, wa.url)
+	req := wa.httpClient.R(wa.method, wa.url)
 	result := authmode.AuthenticatedOutput{
-		ID: wa.config.ID,
+		ID: wa.id,
 	}
 
 	err := wa.transformRequest(req.Request, body)
@@ -118,8 +130,12 @@ func (*WebhookAuthenticator) Reload(_ context.Context) error {
 	return nil
 }
 
-func (wa *WebhookAuthenticator) doReload(ctx context.Context, opts []gohttpc.ClientOption) error {
-	endpoint, err := wa.config.URL.Get()
+func (wa *WebhookAuthenticator) init(
+	ctx context.Context,
+	config *RelyAuthWebhookConfig,
+	opts []gohttpc.ClientOption,
+) error {
+	endpoint, err := config.URL.Get()
 	if err != nil {
 		return err
 	}
@@ -130,15 +146,15 @@ func (wa *WebhookAuthenticator) doReload(ctx context.Context, opts []gohttpc.Cli
 
 	wa.url = endpoint
 
-	err = wa.reloadCustomRequest()
+	err = wa.reloadCustomRequest(config)
 	if err != nil {
 		return err
 	}
 
-	if wa.config.CustomResponse != nil && wa.config.CustomResponse.Body != nil {
+	if config.CustomResponse != nil && config.CustomResponse.Body != nil {
 		body, err := gotransform.NewTransformerFromConfig(
-			fmt.Sprintf("auth_webhook_%s_response_body", wa.config.ID),
-			*wa.config.CustomResponse.Body,
+			fmt.Sprintf("auth_webhook_%s_response_body", config.ID),
+			*config.CustomResponse.Body,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to resolve transformed response config: %w", err)
@@ -147,7 +163,7 @@ func (wa *WebhookAuthenticator) doReload(ctx context.Context, opts []gohttpc.Cli
 		wa.customResponse.Body = body
 	}
 
-	httpConfig := wa.config.HTTPClient
+	httpConfig := config.HTTPClient
 	if httpConfig == nil {
 		if wa.httpClient != nil {
 			return nil
@@ -171,13 +187,13 @@ func (wa *WebhookAuthenticator) doReload(ctx context.Context, opts []gohttpc.Cli
 	return nil
 }
 
-func (wa *WebhookAuthenticator) reloadCustomRequest() error {
-	if wa.config.CustomRequest == nil {
+func (wa *WebhookAuthenticator) reloadCustomRequest(config *RelyAuthWebhookConfig) error {
+	if config.CustomRequest == nil {
 		return nil
 	}
 
-	if wa.config.CustomRequest.Headers != nil {
-		requestHeaders, err := newCustomWebhookAuthHeadersConfig(wa.config.CustomRequest.Headers)
+	if config.CustomRequest.Headers != nil {
+		requestHeaders, err := NewCustomWebhookAuthHeadersConfig(config.CustomRequest.Headers)
 		if err != nil {
 			return err
 		}
@@ -185,10 +201,10 @@ func (wa *WebhookAuthenticator) reloadCustomRequest() error {
 		wa.customRequest.Headers = requestHeaders
 	}
 
-	if wa.config.CustomRequest.Body != nil {
+	if config.CustomRequest.Body != nil {
 		body, err := gotransform.NewTransformerFromConfig(
-			fmt.Sprintf("auth_webhook_%s_request_body", wa.config.ID),
-			*wa.config.CustomRequest.Body,
+			fmt.Sprintf("auth_webhook_%s_request_body", config.ID),
+			*config.CustomRequest.Body,
 		)
 		if err != nil {
 			return err
@@ -246,7 +262,7 @@ func (wa *WebhookAuthenticator) transformRequest(
 	// forwarded headers will have the higher priority
 	wa.forwardRequestHeaders(req, requestData)
 
-	if wa.config.Method == http.MethodGet {
+	if wa.method == http.MethodGet {
 		return nil
 	}
 

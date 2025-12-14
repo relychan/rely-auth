@@ -78,10 +78,67 @@ func (ja *JWTAuthenticator) Authenticate(
 	ctx context.Context,
 	body authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
+	return Authenticate(ctx, body, ja.keySets)
+}
+
+// Reload credentials of the authenticator.
+func (ja *JWTAuthenticator) Reload(ctx context.Context) error {
+	for _, group := range ja.keySets {
+		for _, keySet := range group {
+			err := keySet.Reload(ctx)
+			if err != nil {
+				slog.Warn(err.Error())
+			}
+		}
+	}
+
+	return nil
+}
+
+// Add a new JWT authenticator from config.
+func (ja *JWTAuthenticator) Add(config RelyAuthJWTConfig) error {
+	return ja.doAdd(config)
+}
+
+func (ja *JWTAuthenticator) doAdd(config RelyAuthJWTConfig) error {
+	tokenLocation, err := authmode.ValidateTokenLocation(config.TokenLocation)
+	if err != nil {
+		return err
+	}
+
+	config.TokenLocation = tokenLocation
+
+	groupKey := strings.Join([]string{
+		string(tokenLocation.In),
+		tokenLocation.Name,
+		tokenLocation.Scheme,
+	},
+		":")
+
+	if ja.keySets == nil {
+		ja.keySets = map[string][]*JWTKeySet{}
+	}
+
+	keySet, err := NewJWTKeySet(&config, ja.httpClient)
+	if err != nil {
+		return err
+	}
+
+	ja.keySets[groupKey] = append(ja.keySets[groupKey], keySet)
+
+	return nil
+}
+
+// Authenticate validates and authenticates the token from the auth webhook request.
+func Authenticate(
+	ctx context.Context,
+	body authmode.AuthenticateRequestData,
+	keySets map[string][]*JWTKeySet,
+) (authmode.AuthenticatedOutput, error) {
 	_, span := tracer.Start(ctx, "JWT")
 	defer span.End()
 
-	for _, group := range ja.keySets {
+	for _, group := range keySets {
 		output := authmode.AuthenticatedOutput{}
 		tokenLocation := group[0].GetConfig().TokenLocation
 
@@ -150,52 +207,4 @@ func (ja *JWTAuthenticator) Authenticate(
 	span.SetStatus(codes.Error, "unauthorized")
 
 	return authmode.AuthenticatedOutput{}, goutils.NewUnauthorizedError()
-}
-
-// Reload credentials of the authenticator.
-func (ja *JWTAuthenticator) Reload(ctx context.Context) error {
-	for _, group := range ja.keySets {
-		for _, keySet := range group {
-			err := keySet.Reload(ctx)
-			if err != nil {
-				slog.Warn(err.Error())
-			}
-		}
-	}
-
-	return nil
-}
-
-// Add a new JWT authenticator from config.
-func (ja *JWTAuthenticator) Add(config RelyAuthJWTConfig) error {
-	return ja.doAdd(config)
-}
-
-func (ja *JWTAuthenticator) doAdd(config RelyAuthJWTConfig) error {
-	tokenLocation, err := authmode.ValidateTokenLocation(config.TokenLocation)
-	if err != nil {
-		return err
-	}
-
-	config.TokenLocation = tokenLocation
-
-	groupKey := strings.Join([]string{
-		string(tokenLocation.In),
-		tokenLocation.Name,
-		tokenLocation.Scheme,
-	},
-		":")
-
-	if ja.keySets == nil {
-		ja.keySets = map[string][]*JWTKeySet{}
-	}
-
-	keySet, err := NewJWTKeySet(&config, ja.httpClient)
-	if err != nil {
-		return err
-	}
-
-	ja.keySets[groupKey] = append(ja.keySets[groupKey], keySet)
-
-	return nil
 }

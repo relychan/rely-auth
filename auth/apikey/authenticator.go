@@ -71,6 +71,14 @@ func NewAPIKeyAuthenticator(config *RelyAuthAPIKeyConfig) (*APIKeyAuthenticator,
 	return result, nil
 }
 
+// Equal checks if the target value is equal.
+func (aka APIKeyAuthenticator) Equal(target APIKeyAuthenticator) bool {
+	return aka.id == target.id &&
+		aka.tokenLocation.Equal(target.tokenLocation) &&
+		aka.value == target.value &&
+		goutils.EqualMap(aka.sessionVariables, target.sessionVariables, true)
+}
+
 // Mode returns the auth mode of the current authenticator.
 func (*APIKeyAuthenticator) Mode() authmode.AuthMode {
 	return authmode.AuthModeAPIKey
