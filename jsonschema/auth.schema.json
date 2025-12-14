@@ -373,6 +373,12 @@
         "strict": {
           "type": "boolean",
           "description": "Strict mode, when enabled will return HTTP 401 if the token is found but unauthorized.\nIt won't fallback to the noAuth mode."
+        },
+        "reloadInterval": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The interval in minutes to reload JSON web keys from the remote URL.\nIf the value is zero or negative, disabled the process.",
+          "default": 0
         }
       },
       "additionalProperties": false,
