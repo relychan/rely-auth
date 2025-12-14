@@ -59,7 +59,10 @@ type JWTKeySet struct {
 }
 
 // NewJWTKeySet creates a new JWT key set from the configuration.
-func NewJWTKeySet(config *RelyAuthJWTConfig, options authmode.RelyAuthenticatorOptions) (*JWTKeySet, error) {
+func NewJWTKeySet(
+	config *RelyAuthJWTConfig,
+	options authmode.RelyAuthenticatorOptions,
+) (*JWTKeySet, error) {
 	httpClient := options.HTTPClient
 	if httpClient == nil {
 		httpClient = gohttpc.NewClient()
@@ -210,7 +213,10 @@ func (j *JWTKeySet) Reload(ctx context.Context) error {
 func (j *JWTKeySet) doReload(ctx context.Context) error {
 	getEnvFunc := j.customEnvGetter(ctx)
 	// load locations
-	locations, err := jmes.EvaluateObjectFieldMappingEntries(j.config.ClaimsConfig.Locations, getEnvFunc)
+	locations, err := jmes.EvaluateObjectFieldMappingEntries(
+		j.config.ClaimsConfig.Locations,
+		getEnvFunc,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to get location value: %w", err)
 	}

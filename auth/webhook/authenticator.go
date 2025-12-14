@@ -195,7 +195,10 @@ func (wa *WebhookAuthenticator) initCustomRequest(
 	}
 
 	if config.CustomRequest.Headers != nil {
-		requestHeaders, err := NewCustomWebhookAuthHeadersConfig(config.CustomRequest.Headers, getEnvFunc)
+		requestHeaders, err := NewCustomWebhookAuthHeadersConfig(
+			config.CustomRequest.Headers,
+			getEnvFunc,
+		)
 		if err != nil {
 			return err
 		}
