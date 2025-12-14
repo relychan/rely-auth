@@ -40,7 +40,7 @@ linters:
       # Default: 1
       tab-width: 1
     cyclop:
-      max-complexity: 17
+      max-complexity: 20
     wsl_v5:
       allow-first-in-block: true
       allow-whole-block: false

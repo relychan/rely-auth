@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc/authc/authscheme"
@@ -305,4 +306,15 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 	assert.DeepEqual(t, map[string]any{
 		"x-hasura-role": "service2",
 	}, result)
+}
+
+func TestRelyAuthManager_RefreshProcess(t *testing.T) {
+	manager, err := NewRelyAuthManager(context.TODO(), &RelyAuthConfig{})
+	assert.NilError(t, err)
+	defer manager.Close()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	manager.startReloadProcess(ctx, 1)
 }

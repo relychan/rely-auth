@@ -136,6 +136,19 @@ func (ja *JWTAuthenticator) Reload(ctx context.Context) error {
 	return nil
 }
 
+// HasJWK checks if at least 1 keyset has JWK url.
+func (ja *JWTAuthenticator) HasJWK() bool {
+	for _, group := range ja.keySets {
+		for _, key := range group {
+			if key.jwksURL != "" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // Add a new JWT authenticator from config.
 func (ja *JWTAuthenticator) Add(ctx context.Context, config RelyAuthJWTConfig) error {
 	tokenLocation, err := authmode.ValidateTokenLocation(config.TokenLocation)

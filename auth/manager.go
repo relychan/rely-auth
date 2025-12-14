@@ -32,6 +32,7 @@ type RelyAuthManager struct {
 	authenticators        []authmode.RelyAuthenticator
 	requestDuration       metric.Float64Histogram
 	authModeTotalRequests metric.Int64Counter
+	stopChan              chan (struct{})
 }
 
 // NewRelyAuthManager creates a new RelyAuthManager instance from config.
@@ -58,6 +59,7 @@ func NewRelyAuthManager(
 	manager := RelyAuthManager{
 		options:  opts,
 		settings: &authmode.RelyAuthSettings{},
+		stopChan: make(chan struct{}),
 	}
 
 	var err error
@@ -96,7 +98,16 @@ func NewRelyAuthManager(
 		return nil, err
 	}
 
-	return &manager, manager.init(ctx, config)
+	hasJWK, err := manager.init(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	if hasJWK && manager.settings.ReloadInterval > 0 {
+		go manager.startReloadProcess(ctx, manager.settings.ReloadInterval)
+	}
+
+	return &manager, nil
 }
 
 // Authenticate validates and authenticates the token from the auth webhook request.
@@ -194,6 +205,11 @@ func (am *RelyAuthManager) Reload(ctx context.Context) error {
 func (am *RelyAuthManager) Close() error {
 	var errs []error
 
+	if am.stopChan != nil {
+		close(am.stopChan)
+		am.stopChan = nil
+	}
+
 	for _, au := range am.authenticators {
 		err := au.Close()
 		if err != nil {
@@ -211,7 +227,7 @@ func (am *RelyAuthManager) Close() error {
 	}
 }
 
-func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) error {
+func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) (bool, error) {
 	authModes := authmode.GetSupportedAuthModes()
 	definitions := config.Definitions
 
@@ -242,7 +258,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 
 			authenticator, err := apikey.NewAPIKeyAuthenticator(def)
 			if err != nil {
-				return fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
+				return false, fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
 			}
 
 			am.authenticators = append(am.authenticators, authenticator)
@@ -254,7 +270,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 			if jwtAuth == nil {
 				authenticator, err := jwt.NewJWTAuthenticator(ctx, nil, am.options)
 				if err != nil {
-					return err
+					return false, err
 				}
 
 				jwtAuth = authenticator
@@ -263,7 +279,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 
 			err := jwtAuth.Add(ctx, *def)
 			if err != nil {
-				return fmt.Errorf("failed to create JWT auth %s: %w", def.ID, err)
+				return false, fmt.Errorf("failed to create JWT auth %s: %w", def.ID, err)
 			}
 		case *webhook.RelyAuthWebhookConfig:
 			if def.ID == "" {
@@ -272,7 +288,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 
 			authenticator, err := webhook.NewWebhookAuthenticator(ctx, def, am.options)
 			if err != nil {
-				return fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
+				return false, fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}
 
 			am.authenticators = append(am.authenticators, authenticator)
@@ -283,12 +299,38 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 
 			authenticator, err := noauth.NewNoAuth(ctx, def, am.options)
 			if err != nil {
-				return fmt.Errorf("failed to create noAuth: %w", err)
+				return false, fmt.Errorf("failed to create noAuth: %w", err)
 			}
 
 			am.authenticators = append(am.authenticators, authenticator)
 		}
 	}
 
-	return nil
+	return jwtAuth != nil && jwtAuth.HasJWK(), nil
+}
+
+func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterval int) {
+	ticker := time.NewTicker(time.Duration(reloadInterval) * time.Minute)
+
+	for {
+		select {
+		case <-ctx.Done():
+			ticker.Stop()
+
+			return
+		case <-am.stopChan:
+			ticker.Stop()
+
+			return
+		case <-ticker.C:
+			err := am.Reload(ctx)
+			if err != nil {
+				am.options.Logger.Error(
+					"failed to reload auth credentials",
+					slog.String("type", "auth-refresh-log"),
+					slog.String("error", err.Error()),
+				)
+			}
+		}
+	}
 }
