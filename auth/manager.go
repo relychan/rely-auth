@@ -252,7 +252,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 			}
 
 			if jwtAuth == nil {
-				authenticator, err := jwt.NewJWTAuthenticator(nil, am.options)
+				authenticator, err := jwt.NewJWTAuthenticator(ctx, nil, am.options)
 				if err != nil {
 					return err
 				}
@@ -261,7 +261,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) err
 				am.authenticators = append(am.authenticators, authenticator)
 			}
 
-			err := jwtAuth.Add(*def)
+			err := jwtAuth.Add(ctx, *def)
 			if err != nil {
 				return fmt.Errorf("failed to create JWT auth %s: %w", def.ID, err)
 			}

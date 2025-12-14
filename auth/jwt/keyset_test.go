@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"context"
 	"testing"
 
 	"github.com/go-jose/go-jose/v4"
@@ -32,7 +33,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(&config, authmode.NewRelyAuthenticatorOptions())
+		keyset, err := NewJWTKeySet(context.TODO(), &config, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
 		rawClaims := `{
@@ -80,7 +81,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(&config, authmode.NewRelyAuthenticatorOptions())
+		keyset, err := NewJWTKeySet(context.TODO(), &config, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
 		rawClaims := `{

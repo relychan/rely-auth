@@ -31,6 +31,7 @@ var _ authmode.RelyAuthenticator = (*JWTAuthenticator)(nil)
 
 // NewJWTAuthenticator creates a JWT authenticator instance.
 func NewJWTAuthenticator(
+	ctx context.Context,
 	configs []RelyAuthJWTConfig,
 	options authmode.RelyAuthenticatorOptions,
 ) (*JWTAuthenticator, error) {
@@ -43,7 +44,7 @@ func NewJWTAuthenticator(
 	}
 
 	for _, config := range configs {
-		err := result.Add(config)
+		err := result.Add(ctx, config)
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +137,7 @@ func (ja *JWTAuthenticator) Reload(ctx context.Context) error {
 }
 
 // Add a new JWT authenticator from config.
-func (ja *JWTAuthenticator) Add(config RelyAuthJWTConfig) error {
+func (ja *JWTAuthenticator) Add(ctx context.Context, config RelyAuthJWTConfig) error {
 	tokenLocation, err := authmode.ValidateTokenLocation(config.TokenLocation)
 	if err != nil {
 		return err
@@ -155,7 +156,7 @@ func (ja *JWTAuthenticator) Add(config RelyAuthJWTConfig) error {
 		ja.keySets = map[string][]*JWTKeySet{}
 	}
 
-	keySet, err := NewJWTKeySet(&config, ja.options)
+	keySet, err := NewJWTKeySet(ctx, &config, ja.options)
 	if err != nil {
 		return err
 	}
