@@ -27,11 +27,12 @@ import (
 
 // RelyAuthManager manages multiple authentication strategies to verify HTTP requests.
 type RelyAuthManager struct {
-	options        authmode.RelyAuthenticatorOptions
-	settings       *authmode.RelyAuthSettings
-	authenticators []authmode.RelyAuthenticator
-	stopChan       chan struct{}
-	mu             sync.Mutex
+	settings         *authmode.RelyAuthSettings
+	authenticators   []authmode.RelyAuthenticator
+	customAttributes []attribute.KeyValue
+	logger           *slog.Logger
+	stopChan         chan struct{}
+	mu               sync.Mutex
 }
 
 // NewRelyAuthManager creates a new RelyAuthManager instance from config.
@@ -52,14 +53,15 @@ func NewRelyAuthManager(
 	}
 
 	manager := RelyAuthManager{
-		options:  opts,
-		settings: &authmode.RelyAuthSettings{},
-		stopChan: make(chan struct{}),
+		settings:         &authmode.RelyAuthSettings{},
+		stopChan:         make(chan struct{}),
+		logger:           opts.Logger,
+		customAttributes: opts.CustomAttributes,
 	}
 
 	var err error
 
-	hasJWK, err := manager.init(ctx, config)
+	hasJWK, err := manager.init(ctx, config, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +73,16 @@ func NewRelyAuthManager(
 	return &manager, nil
 }
 
+// Settings return settings of the manager.
+func (am *RelyAuthManager) Settings() *authmode.RelyAuthSettings {
+	return am.settings
+}
+
+// Authenticators return authenticators of the manager.
+func (am *RelyAuthManager) Authenticators() []authmode.RelyAuthenticator {
+	return am.authenticators
+}
+
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (am *RelyAuthManager) Authenticate(
 	ctx context.Context,
@@ -78,6 +90,10 @@ func (am *RelyAuthManager) Authenticate(
 ) (map[string]any, error) {
 	ctx, span := tracer.Start(ctx, "Authenticate", trace.WithSpanKind(trace.SpanKindInternal))
 	defer span.End()
+
+	if len(am.customAttributes) > 0 {
+		span.SetAttributes(am.customAttributes...)
+	}
 
 	startTime := time.Now()
 	metrics := GetRelyAuthMetrics()
@@ -104,7 +120,9 @@ func (am *RelyAuthManager) Authenticate(
 			metrics.RequestDuration.Record(
 				ctx,
 				latency,
-				metric.WithAttributeSet(attribute.NewSet(authStatusSuccessAttribute)),
+				metric.WithAttributeSet(
+					attribute.NewSet(append(am.customAttributes, authStatusSuccessAttribute)...,
+					)),
 			)
 
 			span.SetAttributes(authModeAttr, authIDAttr)
@@ -113,7 +131,13 @@ func (am *RelyAuthManager) Authenticate(
 				ctx,
 				1,
 				metric.WithAttributeSet(
-					attribute.NewSet(authStatusSuccessAttribute, authModeAttr, authIDAttr),
+					attribute.NewSet(
+						append(
+							am.customAttributes,
+							authStatusSuccessAttribute,
+							authModeAttr,
+							authIDAttr,
+						)...),
 				),
 			)
 
@@ -138,7 +162,9 @@ func (am *RelyAuthManager) Authenticate(
 	metrics.RequestDuration.Record(
 		ctx,
 		latency,
-		metric.WithAttributeSet(attribute.NewSet(authStatusFailedAttribute)),
+		metric.WithAttributeSet(
+			attribute.NewSet(append(am.customAttributes, authStatusFailedAttribute)...),
+		),
 	)
 	span.SetStatus(codes.Error, "authentication failed")
 
@@ -195,7 +221,11 @@ func (am *RelyAuthManager) Close() error {
 	}
 }
 
-func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) (bool, error) {
+func (am *RelyAuthManager) init(
+	ctx context.Context,
+	config *RelyAuthConfig,
+	options authmode.RelyAuthenticatorOptions,
+) (bool, error) {
 	authModes := authmode.GetSupportedAuthModes()
 	definitions := config.Definitions
 
@@ -224,7 +254,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) (bo
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := apikey.NewAPIKeyAuthenticator(ctx, def, am.options)
+			authenticator, err := apikey.NewAPIKeyAuthenticator(ctx, def, options)
 			if err != nil {
 				return false, fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
 			}
@@ -236,7 +266,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) (bo
 			}
 
 			if jwtAuth == nil {
-				authenticator, err := jwt.NewJWTAuthenticator(ctx, nil, am.options)
+				authenticator, err := jwt.NewJWTAuthenticator(ctx, nil, options)
 				if err != nil {
 					return false, err
 				}
@@ -254,7 +284,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) (bo
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := webhook.NewWebhookAuthenticator(ctx, def, am.options)
+			authenticator, err := webhook.NewWebhookAuthenticator(ctx, def, options)
 			if err != nil {
 				return false, fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}
@@ -265,7 +295,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) (bo
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := noauth.NewNoAuth(ctx, def, am.options)
+			authenticator, err := noauth.NewNoAuth(ctx, def, options)
 			if err != nil {
 				return false, fmt.Errorf("failed to create noAuth: %w", err)
 			}
@@ -300,7 +330,7 @@ func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterva
 
 			err := am.Reload(ctx)
 			if err != nil {
-				am.options.Logger.Error(
+				am.logger.Error(
 					"failed to reload auth credentials",
 					slog.String("type", "auth-refresh-log"),
 					slog.String("error", err.Error()),

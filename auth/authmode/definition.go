@@ -9,6 +9,7 @@ import (
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc"
 	"github.com/relychan/goutils"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // AuthenticateRequestData contains the request body of the auth hook request.
@@ -61,9 +62,10 @@ type RelyAuthDefinitionInterface interface {
 
 // RelyAuthenticatorOptions define common options for the authenticator.
 type RelyAuthenticatorOptions struct {
-	CustomEnvGetter func(ctx context.Context) goenvconf.GetEnvFunc
-	Logger          *slog.Logger
-	HTTPClient      *gohttpc.Client
+	CustomEnvGetter  func(ctx context.Context) goenvconf.GetEnvFunc
+	Logger           *slog.Logger
+	HTTPClient       *gohttpc.Client
+	CustomAttributes []attribute.KeyValue
 }
 
 // NewRelyAuthenticatorOptions creates a new [RelyAuthenticatorOptions] instance.
@@ -103,6 +105,13 @@ func WithLogger(logger *slog.Logger) RelyAuthenticatorOption {
 func WithHTTPClient(client *gohttpc.Client) RelyAuthenticatorOption {
 	return func(ramo *RelyAuthenticatorOptions) {
 		ramo.HTTPClient = client
+	}
+}
+
+// WithCustomAttributes sets custom trace and metrics attributes to auth manager options.
+func WithCustomAttributes(attrs []attribute.KeyValue) RelyAuthenticatorOption {
+	return func(ramo *RelyAuthenticatorOptions) {
+		ramo.CustomAttributes = attrs
 	}
 }
 
