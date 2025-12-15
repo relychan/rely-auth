@@ -58,7 +58,7 @@ func NewRelyAuthMetrics(meter metric.Meter) (*RelyAuthMetrics, error) {
 	return metrics, nil
 }
 
-var globalAuthMetrics = defaultClientMetrics()
+var globalAuthMetrics = defaultAuthMetrics()
 
 // GetRelyAuthMetrics gets the global [RelyAuthMetrics] instance.
 func GetRelyAuthMetrics() *RelyAuthMetrics {
@@ -79,7 +79,7 @@ var noopRelyAuthMetrics = RelyAuthMetrics{
 	RequestDuration:       noop.Float64Histogram{},
 }
 
-func defaultClientMetrics() *atomic.Pointer[RelyAuthMetrics] {
+func defaultAuthMetrics() *atomic.Pointer[RelyAuthMetrics] {
 	value := atomic.Pointer[RelyAuthMetrics]{}
 
 	value.Store(&noopRelyAuthMetrics)
