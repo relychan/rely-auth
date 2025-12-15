@@ -19,7 +19,6 @@ import (
 	"github.com/relychan/rely-auth/auth/jwt"
 	"github.com/relychan/rely-auth/auth/noauth"
 	"github.com/relychan/rely-auth/auth/webhook"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
@@ -28,13 +27,11 @@ import (
 
 // RelyAuthManager manages multiple authentication strategies to verify HTTP requests.
 type RelyAuthManager struct {
-	options               authmode.RelyAuthenticatorOptions
-	settings              *authmode.RelyAuthSettings
-	authenticators        []authmode.RelyAuthenticator
-	requestDuration       metric.Float64Histogram
-	authModeTotalRequests metric.Int64Counter
-	stopChan              chan (struct{})
-	mu                    sync.Mutex
+	options        authmode.RelyAuthenticatorOptions
+	settings       *authmode.RelyAuthSettings
+	authenticators []authmode.RelyAuthenticator
+	stopChan       chan struct{}
+	mu             sync.Mutex
 }
 
 // NewRelyAuthManager creates a new RelyAuthManager instance from config.
@@ -54,10 +51,6 @@ func NewRelyAuthManager(
 		opts.HTTPClient = gohttpc.NewClient(clientOptions...)
 	}
 
-	if opts.Meter == nil {
-		opts.Meter = otel.Meter("rely_auth")
-	}
-
 	manager := RelyAuthManager{
 		options:  opts,
 		settings: &authmode.RelyAuthSettings{},
@@ -65,40 +58,6 @@ func NewRelyAuthManager(
 	}
 
 	var err error
-
-	manager.requestDuration, err = opts.Meter.Float64Histogram(
-		"rely_auth.request.duration",
-		metric.WithDescription("Duration of authentication requests."),
-		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(
-			0.005,
-			0.01,
-			0.025,
-			0.05,
-			0.075,
-			0.1,
-			0.25,
-			0.5,
-			0.75,
-			1,
-			2.5,
-			5,
-			7.5,
-			10,
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	manager.authModeTotalRequests, err = opts.Meter.Int64Counter(
-		"rely_auth.request_mode.total",
-		metric.WithDescription("Total number of successful auth mode requests."),
-		metric.WithUnit("{request}"),
-	)
-	if err != nil {
-		return nil, err
-	}
 
 	hasJWK, err := manager.init(ctx, config)
 	if err != nil {
@@ -121,6 +80,7 @@ func (am *RelyAuthManager) Authenticate(
 	defer span.End()
 
 	startTime := time.Now()
+	metrics := GetRelyAuthMetrics()
 
 	logger := gotel.GetLogger(ctx)
 
@@ -141,7 +101,7 @@ func (am *RelyAuthManager) Authenticate(
 			authModeAttr := attribute.String("auth.mode", string(authMode))
 			authIDAttr := attribute.String("auth.id", result.ID)
 
-			am.requestDuration.Record(
+			metrics.RequestDuration.Record(
 				ctx,
 				latency,
 				metric.WithAttributeSet(attribute.NewSet(authStatusSuccessAttribute)),
@@ -149,7 +109,7 @@ func (am *RelyAuthManager) Authenticate(
 
 			span.SetAttributes(authModeAttr, authIDAttr)
 
-			am.authModeTotalRequests.Add(
+			metrics.AuthModeTotalRequests.Add(
 				ctx,
 				1,
 				metric.WithAttributeSet(
@@ -175,7 +135,7 @@ func (am *RelyAuthManager) Authenticate(
 
 	latency := time.Since(startTime).Seconds()
 
-	am.requestDuration.Record(
+	metrics.RequestDuration.Record(
 		ctx,
 		latency,
 		metric.WithAttributeSet(attribute.NewSet(authStatusFailedAttribute)),
@@ -264,7 +224,7 @@ func (am *RelyAuthManager) init(ctx context.Context, config *RelyAuthConfig) (bo
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := apikey.NewAPIKeyAuthenticator(def)
+			authenticator, err := apikey.NewAPIKeyAuthenticator(ctx, def, am.options)
 			if err != nil {
 				return false, fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
 			}

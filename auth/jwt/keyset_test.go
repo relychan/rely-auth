@@ -657,7 +657,7 @@ func TestJWTKeySet_Reload(t *testing.T) {
 		},
 	}
 
-	keyset, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	keyset, err := NewJWTKeySet(context.TODO(), config, authmode.RelyAuthenticatorOptions{})
 	assert.NilError(t, err)
 	defer keyset.Close()
 

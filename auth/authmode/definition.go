@@ -8,7 +8,7 @@ import (
 
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc"
-	"go.opentelemetry.io/otel/metric"
+	"github.com/relychan/goutils"
 )
 
 // AuthenticateRequestData contains the request body of the auth hook request.
@@ -51,6 +51,8 @@ type RelyAuthenticator interface {
 
 // RelyAuthDefinitionInterface abstracts the interface of an auth mode definition.
 type RelyAuthDefinitionInterface interface {
+	goutils.IsZeroer
+
 	// GetMode returns the auth mode of the current config.
 	GetMode() AuthMode
 	// Validate if the current instance is valid.
@@ -60,7 +62,6 @@ type RelyAuthDefinitionInterface interface {
 // RelyAuthenticatorOptions define common options for the authenticator.
 type RelyAuthenticatorOptions struct {
 	CustomEnvGetter func(ctx context.Context) goenvconf.GetEnvFunc
-	Meter           metric.Meter
 	Logger          *slog.Logger
 	HTTPClient      *gohttpc.Client
 }
@@ -79,6 +80,15 @@ func NewRelyAuthenticatorOptions(options ...RelyAuthenticatorOption) RelyAuthent
 	return result
 }
 
+// GetEnvFunc return the get-env function. Default is OS environment.
+func (rao RelyAuthenticatorOptions) GetEnvFunc(ctx context.Context) goenvconf.GetEnvFunc {
+	if rao.CustomEnvGetter == nil {
+		return goenvconf.GetOSEnv
+	}
+
+	return rao.CustomEnvGetter(ctx)
+}
+
 // RelyAuthenticatorOption abstracts a function to modify [RelyAuthenticatorOptions].
 type RelyAuthenticatorOption func(*RelyAuthenticatorOptions)
 
@@ -86,13 +96,6 @@ type RelyAuthenticatorOption func(*RelyAuthenticatorOptions)
 func WithLogger(logger *slog.Logger) RelyAuthenticatorOption {
 	return func(ramo *RelyAuthenticatorOptions) {
 		ramo.Logger = logger
-	}
-}
-
-// WithMeter sets the meter to auth manager options.
-func WithMeter(meter metric.Meter) RelyAuthenticatorOption {
-	return func(ramo *RelyAuthenticatorOptions) {
-		ramo.Meter = meter
 	}
 }
 

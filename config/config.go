@@ -87,11 +87,18 @@ func InitAuthManager(
 		gohttpc.SetHTTPClientMetrics(httpClientMetrics)
 	}
 
+	// setup global metrics
+	authMetrics, err := auth.NewRelyAuthMetrics(exporters.Meter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup auth metrics: %w", err)
+	}
+
+	auth.SetRelyAuthMetrics(authMetrics)
+
 	manager, err := auth.NewRelyAuthManager(
 		ctx,
 		authConfig,
 		authmode.WithLogger(exporters.Logger),
-		authmode.WithMeter(exporters.Meter),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create auth manager: %w", err)
