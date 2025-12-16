@@ -422,7 +422,7 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewNoAuth(context.TODO(), config, authmode.RelyAuthenticatorOptions{})
 	assert.NilError(t, err)
 
 	t.Run("with headers", func(t *testing.T) {

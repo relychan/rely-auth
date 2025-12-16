@@ -475,7 +475,7 @@ func TestWebhookAuthenticator_ServerError(t *testing.T) {
 		Method: http.MethodGet,
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.RelyAuthenticatorOptions{})
 	assert.NilError(t, err)
 	defer authenticator.Close()
 

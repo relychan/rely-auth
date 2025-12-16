@@ -136,7 +136,7 @@ func (wa *WebhookAuthenticator) init(
 	config *RelyAuthWebhookConfig,
 	options authmode.RelyAuthenticatorOptions,
 ) error {
-	getEnvFunc := options.CustomEnvGetter(ctx)
+	getEnvFunc := options.GetEnvFunc(ctx)
 
 	endpoint, err := config.URL.GetCustom(getEnvFunc)
 	if err != nil {

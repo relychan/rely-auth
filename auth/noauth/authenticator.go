@@ -30,7 +30,7 @@ func NewNoAuth(
 
 	mode := result.Mode()
 	sessionVariables := make(map[string]any)
-	getEnvFunc := options.CustomEnvGetter(ctx)
+	getEnvFunc := options.GetEnvFunc(ctx)
 
 	for key, envValue := range config.SessionVariables {
 		value, err := envValue.GetCustom(getEnvFunc)

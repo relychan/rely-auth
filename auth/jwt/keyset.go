@@ -221,7 +221,7 @@ func (j *JWTKeySet) Reload(ctx context.Context) error {
 }
 
 func (j *JWTKeySet) init(ctx context.Context, options authmode.RelyAuthenticatorOptions) error {
-	getEnvFunc := options.CustomEnvGetter(ctx)
+	getEnvFunc := options.GetEnvFunc(ctx)
 	// load locations
 	locations, err := jmes.EvaluateObjectFieldMappingEntries(
 		j.config.ClaimsConfig.Locations,

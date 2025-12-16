@@ -27,15 +27,20 @@ type APIKeyAuthenticator struct {
 var _ authmode.RelyAuthenticator = (*APIKeyAuthenticator)(nil)
 
 // NewAPIKeyAuthenticator creates an API key authenticator instance.
-func NewAPIKeyAuthenticator(config *RelyAuthAPIKeyConfig) (*APIKeyAuthenticator, error) {
+func NewAPIKeyAuthenticator(
+	ctx context.Context,
+	config *RelyAuthAPIKeyConfig,
+	options authmode.RelyAuthenticatorOptions,
+) (*APIKeyAuthenticator, error) {
 	tokenLocation, err := authmode.ValidateTokenLocation(config.TokenLocation)
 	if err != nil {
 		return nil, err
 	}
 
 	config.TokenLocation = tokenLocation
+	getEnvFunc := options.GetEnvFunc(ctx)
 
-	value, err := config.Value.Get()
+	value, err := config.Value.GetCustom(getEnvFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +52,7 @@ func NewAPIKeyAuthenticator(config *RelyAuthAPIKeyConfig) (*APIKeyAuthenticator,
 	sessionVariables := make(map[string]any)
 
 	for key, envValue := range config.SessionVariables {
-		v, err := envValue.Get()
+		v, err := envValue.GetCustom(getEnvFunc)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"auth mode: %s; id: %s; error: failed to load session variable %s: %w",
