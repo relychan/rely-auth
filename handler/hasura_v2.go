@@ -6,7 +6,6 @@ import (
 
 	"github.com/hasura/gotel"
 	"github.com/relychan/gohttps/httputils"
-	"github.com/relychan/rely-auth/auth"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -14,15 +13,15 @@ import (
 
 // HasuraGraphQLEngineAuthHookHandler implements an HTTP handler for auth webhook of Hasura GraphQL Engine v1 and v2.
 type HasuraGraphQLEngineAuthHookHandler struct {
-	authManager *auth.RelyAuthManager
+	authenticator authmode.Authenticator
 }
 
 // NewHasuraGraphQLEngineAuthHookHandler creates a auth hook handler for Hasura GraphQL Engine v1 and v2.
 func NewHasuraGraphQLEngineAuthHookHandler(
-	authManager *auth.RelyAuthManager,
+	authenticator authmode.Authenticator,
 ) *HasuraGraphQLEngineAuthHookHandler {
 	return &HasuraGraphQLEngineAuthHookHandler{
-		authManager: authManager,
+		authenticator: authenticator,
 	}
 }
 
@@ -54,7 +53,7 @@ func (handler *HasuraGraphQLEngineAuthHookHandler) handle(
 ) {
 	logger := gotel.GetRequestLogger(r)
 
-	authOutput, err := handler.authManager.Authenticate(r.Context(), body)
+	authOutput, err := handler.authenticator.Authenticate(r.Context(), body)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)
