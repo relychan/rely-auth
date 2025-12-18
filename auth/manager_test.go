@@ -219,7 +219,7 @@ func TestRelyAuthManager_Reload(t *testing.T) {
 	assert.NilError(t, err)
 	defer manager.Close()
 
-	err = manager.authenticator.Reload(context.Background())
+	err = manager.Authenticator().Reload(context.Background())
 	assert.NilError(t, err)
 }
 
