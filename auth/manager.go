@@ -45,7 +45,7 @@ func NewRelyAuthManager(
 
 	manager := RelyAuthManager{
 		authenticator: &ComposedAuthenticator{
-			Settings:         &authmode.RelyAuthSettings{},
+			Settings:         authmode.RelyAuthSettings{},
 			CustomAttributes: opts.CustomAttributes,
 		},
 		stopChan: make(chan struct{}),
@@ -68,7 +68,7 @@ func NewRelyAuthManager(
 
 // Settings return settings of the manager.
 func (am *RelyAuthManager) Settings() *authmode.RelyAuthSettings {
-	return am.authenticator.Settings
+	return &am.authenticator.Settings
 }
 
 // Authenticator returns the internal [ComposedAuthenticator] instance.
@@ -121,7 +121,7 @@ func (am *RelyAuthManager) init(
 	})
 
 	if config.Settings != nil {
-		am.authenticator.Settings = config.Settings
+		am.authenticator.Settings = *config.Settings
 	}
 
 	var jwtAuth *jwt.JWTAuthenticator

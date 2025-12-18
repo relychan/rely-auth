@@ -34,14 +34,14 @@ func (handler *HasuraDDNAuthHookHandler) Get(w http.ResponseWriter, r *http.Requ
 
 	body := newAuthenticateGETBody(r)
 
-	sessionVariables, err := handler.authManager.Authenticate(ctx, *body)
+	authOutput, err := handler.authManager.Authenticate(ctx, *body)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
-	err = httputils.WriteResponseJSON(w, http.StatusOK, sessionVariables)
+	err = httputils.WriteResponseJSON(w, http.StatusOK, authOutput.SessionVariables)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)

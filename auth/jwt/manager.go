@@ -289,10 +289,5 @@ func verifyClaims(
 		return nil, err
 	}
 
-	verifiedBytes, err := key.VerifySignature(ctx, sig)
-	if err != nil {
-		return nil, err
-	}
-
-	return verifiedBytes, err
+	return key.VerifySignature(ctx, sig)
 }

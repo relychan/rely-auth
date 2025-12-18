@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/hasura/gotel"
@@ -18,9 +19,9 @@ import (
 
 var tracer = gotel.NewTracer("rely-auth")
 
-// ComposedAuthenticator presents an authenticator that composes a list of authenticators and authenticates fallback in order.
+// ComposedAuthenticator represents an authenticator that composes a list of authenticators and authenticates fallback in order.
 type ComposedAuthenticator struct {
-	Settings         *authmode.RelyAuthSettings
+	Settings         authmode.RelyAuthSettings
 	Authenticators   []authmode.RelyAuthenticator
 	CustomAttributes []attribute.KeyValue
 }
@@ -31,7 +32,7 @@ var _ authmode.RelyAuthenticator = (*ComposedAuthenticator)(nil)
 func NewComposedAuthenticator(authenticators []authmode.RelyAuthenticator) *ComposedAuthenticator {
 	return &ComposedAuthenticator{
 		Authenticators: authenticators,
-		Settings:       &authmode.RelyAuthSettings{},
+		Settings:       authmode.RelyAuthSettings{},
 	}
 }
 
@@ -118,7 +119,7 @@ func (a *ComposedAuthenticator) Authenticate(
 		))
 
 		if !authModeTokenNotFound {
-			attrs := a.CustomAttributes
+			attrs := slices.Clone(a.CustomAttributes)
 			attrs = append(
 				attrs,
 				authmetrics.AuthStatusFailedAttribute,
