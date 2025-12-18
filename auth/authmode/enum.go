@@ -9,10 +9,11 @@ import (
 type AuthMode string
 
 const (
-	AuthModeNoAuth  AuthMode = "noAuth"
-	AuthModeAPIKey  AuthMode = "apiKey"
-	AuthModeJWT     AuthMode = "jwt"
-	AuthModeWebhook AuthMode = "webhook"
+	AuthModeNoAuth   AuthMode = "noAuth"
+	AuthModeAPIKey   AuthMode = "apiKey"
+	AuthModeJWT      AuthMode = "jwt"
+	AuthModeWebhook  AuthMode = "webhook"
+	AuthModeComposed AuthMode = "composed"
 )
 
 var enumAuthModes = []AuthMode{AuthModeAPIKey, AuthModeJWT, AuthModeWebhook, AuthModeNoAuth}

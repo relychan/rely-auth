@@ -13,6 +13,7 @@ import (
 	"github.com/relychan/gohttps"
 	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth"
+	"github.com/relychan/rely-auth/auth/authmetrics"
 	"github.com/relychan/rely-auth/auth/authmode"
 )
 
@@ -88,12 +89,12 @@ func InitAuthManager(
 	}
 
 	// setup global metrics
-	authMetrics, err := auth.NewRelyAuthMetrics(exporters.Meter)
+	authMetrics, err := authmetrics.NewRelyAuthMetrics(exporters.Meter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup auth metrics: %w", err)
 	}
 
-	auth.SetRelyAuthMetrics(authMetrics)
+	authmetrics.SetRelyAuthMetrics(authMetrics)
 
 	manager, err := auth.NewRelyAuthManager(
 		ctx,

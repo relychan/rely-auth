@@ -1,4 +1,5 @@
-package auth
+// Package authmetrics defines global metrics and attributes for the auth service.
+package authmetrics
 
 import (
 	"sync/atomic"

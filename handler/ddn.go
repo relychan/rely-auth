@@ -34,14 +34,14 @@ func (handler *HasuraDDNAuthHookHandler) Get(w http.ResponseWriter, r *http.Requ
 
 	body := newAuthenticateGETBody(r)
 
-	sessionVariables, err := handler.authManager.Authenticate(ctx, *body)
+	authOutput, err := handler.authManager.Authenticate(ctx, *body)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
-	err = httputils.WriteResponseJSON(w, http.StatusOK, sessionVariables)
+	err = httputils.WriteResponseJSON(w, http.StatusOK, authOutput.SessionVariables)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)
@@ -61,7 +61,7 @@ func (handler *HasuraDDNAuthHookHandler) Post(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	sessionVariables, err := handler.authManager.Authenticate(ctx, *body)
+	authResult, err := handler.authManager.Authenticate(ctx, *body)
 	if err != nil {
 		span.SetStatus(codes.Error, "failed to authenticate")
 		span.RecordError(err)
@@ -71,7 +71,7 @@ func (handler *HasuraDDNAuthHookHandler) Post(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	hasuraRole, ok := sessionVariables[authmode.XHasuraRole]
+	hasuraRole, ok := authResult.SessionVariables[authmode.XHasuraRole]
 	if !ok || hasuraRole == nil || hasuraRole == "" {
 		span.SetStatus(codes.Error, "x-hasura-role session variable is empty")
 
@@ -80,7 +80,7 @@ func (handler *HasuraDDNAuthHookHandler) Post(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = httputils.WriteResponseJSON(w, http.StatusOK, sessionVariables)
+	err = httputils.WriteResponseJSON(w, http.StatusOK, authResult.SessionVariables)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)

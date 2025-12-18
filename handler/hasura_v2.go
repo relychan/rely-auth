@@ -54,7 +54,7 @@ func (handler *HasuraGraphQLEngineAuthHookHandler) handle(
 ) {
 	logger := gotel.GetRequestLogger(r)
 
-	sessionVariables, err := handler.authManager.Authenticate(r.Context(), *body)
+	authOutput, err := handler.authManager.Authenticate(r.Context(), *body)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)
@@ -65,7 +65,7 @@ func (handler *HasuraGraphQLEngineAuthHookHandler) handle(
 	}
 
 	serializedVariables, err := authmode.SerializeSessionVariablesHasuraGraphQLEngine(
-		sessionVariables,
+		authOutput.SessionVariables,
 	)
 	if err != nil {
 		span.SetStatus(codes.Error, "failed to serialize session variables")
