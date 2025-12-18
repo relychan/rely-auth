@@ -79,7 +79,7 @@ func (am *RelyAuthManager) Authenticator() *ComposedAuthenticator {
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (am *RelyAuthManager) Authenticate(
 	ctx context.Context,
-	body authmode.AuthenticateRequestData,
+	body *authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
 	return am.authenticator.Authenticate(ctx, body)
 }

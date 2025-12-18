@@ -74,7 +74,7 @@ func (wa WebhookAuthenticator) Equal(target WebhookAuthenticator) bool {
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (wa *WebhookAuthenticator) Authenticate(
 	ctx context.Context,
-	body authmode.AuthenticateRequestData,
+	body *authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
 	ctx, span := tracer.Start(ctx, "Webhook", trace.WithSpanKind(trace.SpanKindInternal))
 	defer span.End()
@@ -224,7 +224,7 @@ func (wa *WebhookAuthenticator) initCustomRequest(
 
 func (wa *WebhookAuthenticator) transformRequest(
 	req *gohttpc.Request,
-	requestData authmode.AuthenticateRequestData,
+	requestData *authmode.AuthenticateRequestData,
 ) error {
 	// original request body
 	originalRequest := map[string]any{
@@ -296,7 +296,7 @@ func (wa *WebhookAuthenticator) transformRequest(
 
 func (wa *WebhookAuthenticator) forwardRequestHeaders(
 	req *gohttpc.Request,
-	requestData authmode.AuthenticateRequestData,
+	requestData *authmode.AuthenticateRequestData,
 ) {
 	if wa.customRequest.Headers == nil || wa.customRequest.Headers.Forward == nil {
 		return

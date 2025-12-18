@@ -60,7 +60,7 @@ func (*NoAuth) Mode() authmode.AuthMode {
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (j *NoAuth) Authenticate(
 	_ context.Context,
-	_ authmode.AuthenticateRequestData,
+	_ *authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
 	result := authmode.AuthenticatedOutput{
 		ID:               j.id,

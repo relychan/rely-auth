@@ -102,7 +102,7 @@ func (*APIKeyAuthenticator) Close() error {
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (aka *APIKeyAuthenticator) Authenticate(
 	ctx context.Context,
-	body authmode.AuthenticateRequestData,
+	body *authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
 	_, span := tracer.Start(ctx, "APIKey")
 	defer span.End()
@@ -111,7 +111,7 @@ func (aka *APIKeyAuthenticator) Authenticate(
 		ID: aka.id,
 	}
 
-	rawToken, err := authmode.FindAuthTokenByLocation(&body, &aka.tokenLocation)
+	rawToken, err := authmode.FindAuthTokenByLocation(body, &aka.tokenLocation)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)

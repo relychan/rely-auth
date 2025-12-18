@@ -41,7 +41,7 @@ func TestWebhookAuthenticator_Authenticate_Success(t *testing.T) {
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer token123",
 		},
@@ -75,7 +75,7 @@ func TestWebhookAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
-	_, err = authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer invalid",
 		},
@@ -103,7 +103,7 @@ func TestWebhookAuthenticator_Authenticate_EmptyBody(t *testing.T) {
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
-	_, err = authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
 	assert.ErrorContains(t, err, ErrResponseBodyRequired.Error())
@@ -175,7 +175,7 @@ func TestWebhookAuthenticator_GET_Method(t *testing.T) {
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer token",
 		},
@@ -286,7 +286,7 @@ func TestWebhookAuthenticator_MalformedResponseJSON(t *testing.T) {
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
-	_, err = authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
 	assert.ErrorContains(t, err, "could not unmarshal as JSON")
@@ -479,7 +479,7 @@ func TestWebhookAuthenticator_ServerError(t *testing.T) {
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
-	_, err = authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
 	assert.ErrorContains(t, err, "500")
@@ -504,7 +504,7 @@ func TestWebhookAuthenticator_NonJSONResponse(t *testing.T) {
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
-	_, err = authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
 	assert.ErrorContains(t, err, "invalid character")
@@ -531,7 +531,7 @@ func TestWebhookAuthenticator_WithCustomHeaders(t *testing.T) {
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer token123",
 		},
@@ -568,7 +568,7 @@ func TestWebhookAuthenticator_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err = authenticator.Authenticate(ctx, authmode.AuthenticateRequestData{
+	_, err = authenticator.Authenticate(ctx, &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
 	// The error should be related to context cancellation

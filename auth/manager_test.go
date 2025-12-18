@@ -53,7 +53,7 @@ func TestRelyAuthManager_Authenticate_NoAuth(t *testing.T) {
 	assert.NilError(t, err)
 	defer manager.Close()
 
-	result, err := manager.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
 	assert.NilError(t, err)
@@ -90,7 +90,7 @@ func TestRelyAuthManager_Authenticate_APIKey(t *testing.T) {
 	defer manager.Close()
 
 	// Test successful authentication
-	result, err := manager.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": apiKey,
 		},
@@ -102,7 +102,7 @@ func TestRelyAuthManager_Authenticate_APIKey(t *testing.T) {
 	}, result)
 
 	// Test failed authentication
-	_, err = manager.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "wrong-key",
 		},
@@ -145,7 +145,7 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 	defer manager.Close()
 
 	// Test fallback to noAuth when no token provided
-	result, err := manager.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
 	assert.NilError(t, err)
@@ -193,7 +193,7 @@ func TestRelyAuthManager_Authenticate_StrictMode(t *testing.T) {
 	defer manager.Close()
 
 	// Test strict mode: should not fallback to noAuth when wrong token provided
-	_, err = manager.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "wrong-key",
 		},
@@ -289,7 +289,7 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 	defer manager.Close()
 
 	// Test first authenticator
-	result, err := manager.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"x-api-key-1": apiKey1,
 		},
@@ -302,7 +302,7 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 		}}, result)
 
 	// Test second authenticator
-	result, err = manager.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err = manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"x-api-key-2": apiKey2,
 		},

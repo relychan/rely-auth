@@ -43,7 +43,7 @@ type RelyAuthenticator interface {
 	// GetMode returns the auth mode of the current authenticator.
 	Mode() AuthMode
 	// Authenticate validates and authenticates the token from the auth webhook request.
-	Authenticate(ctx context.Context, body AuthenticateRequestData) (AuthenticatedOutput, error)
+	Authenticate(ctx context.Context, body *AuthenticateRequestData) (AuthenticatedOutput, error)
 	// Reload credentials of the authenticator.
 	Reload(ctx context.Context) error
 	// Close handles the resources cleaning.

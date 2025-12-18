@@ -119,7 +119,7 @@ func (ja JWTAuthenticator) Equal(target JWTAuthenticator) bool {
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (ja *JWTAuthenticator) Authenticate(
 	ctx context.Context,
-	body authmode.AuthenticateRequestData,
+	body *authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
 	return Authenticate(ctx, body, ja.keySets, ja.options)
 }
@@ -184,7 +184,7 @@ func (ja *JWTAuthenticator) Add(ctx context.Context, config RelyAuthJWTConfig) e
 // Authenticate validates and authenticates the token from the auth webhook request.
 func Authenticate(
 	ctx context.Context,
-	body authmode.AuthenticateRequestData,
+	body *authmode.AuthenticateRequestData,
 	keySets map[string][]*JWTKeySet,
 	options authmode.RelyAuthenticatorOptions,
 ) (authmode.AuthenticatedOutput, error) {
@@ -199,7 +199,7 @@ func Authenticate(
 		output := authmode.AuthenticatedOutput{}
 		tokenLocation := group[0].GetConfig().TokenLocation
 
-		rawToken, err := authmode.FindAuthTokenByLocation(&body, &tokenLocation)
+		rawToken, err := authmode.FindAuthTokenByLocation(body, &tokenLocation)
 		if err != nil {
 			// can not find token, skip this keyset
 			continue

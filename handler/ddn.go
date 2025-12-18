@@ -30,38 +30,34 @@ func NewHasuraDDNAuthHookHandler(authManager *auth.RelyAuthManager) *HasuraDDNAu
 func (handler *HasuraDDNAuthHookHandler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	span := trace.SpanFromContext(ctx)
-	logger := gotel.GetRequestLogger(r)
-
 	body := newAuthenticateGETBody(r)
 
-	authOutput, err := handler.authManager.Authenticate(ctx, *body)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	err = httputils.WriteResponseJSON(w, http.StatusOK, authOutput.SessionVariables)
-	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		span.RecordError(err)
-
-		logger.Error("failed to write response", slog.String("error", err.Error()))
-	}
+	handler.handle(w, r, body, span)
 }
 
 // Post handles the auth hook with POST method.
 func (handler *HasuraDDNAuthHookHandler) Post(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	span := trace.SpanFromContext(ctx)
-	logger := gotel.GetRequestLogger(r)
 
 	body, decoded := httputils.DecodeRequestBody[authmode.AuthenticateRequestData](w, r, span)
 	if !decoded {
 		return
 	}
 
-	authResult, err := handler.authManager.Authenticate(ctx, *body)
+	handler.handle(w, r, body, span)
+}
+
+func (handler *HasuraDDNAuthHookHandler) handle(
+	w http.ResponseWriter,
+	r *http.Request,
+	body *authmode.AuthenticateRequestData,
+	span trace.Span,
+) {
+	ctx := r.Context()
+	logger := gotel.GetRequestLogger(r)
+
+	authResult, err := handler.authManager.Authenticate(ctx, body)
 	if err != nil {
 		span.SetStatus(codes.Error, "failed to authenticate")
 		span.RecordError(err)
