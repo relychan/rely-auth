@@ -44,7 +44,7 @@ func (*ComposedAuthenticator) Mode() authmode.AuthMode {
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (a *ComposedAuthenticator) Authenticate(
 	ctx context.Context,
-	body authmode.AuthenticateRequestData,
+	body *authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
 	ctx, span := tracer.Start(ctx, "Authenticate", trace.WithSpanKind(trace.SpanKindInternal))
 	defer span.End()

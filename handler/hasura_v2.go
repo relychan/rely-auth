@@ -54,7 +54,7 @@ func (handler *HasuraGraphQLEngineAuthHookHandler) handle(
 ) {
 	logger := gotel.GetRequestLogger(r)
 
-	authOutput, err := handler.authManager.Authenticate(r.Context(), *body)
+	authOutput, err := handler.authManager.Authenticate(r.Context(), body)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)

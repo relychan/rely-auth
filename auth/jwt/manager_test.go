@@ -127,7 +127,7 @@ func TestJWTAuthenticator_Authenticate_HMAC(t *testing.T) {
 	token, err := jwt.Signed(signer).Claims(claims).Serialize()
 	assert.NilError(t, err)
 
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer " + token,
 		},
@@ -164,7 +164,7 @@ func TestJWTAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 	defer authenticator.Close()
 
 	// Test with invalid token
-	_, err = authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer invalid-token",
 		},
@@ -172,7 +172,7 @@ func TestJWTAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 	assert.Assert(t, err != nil)
 
 	// Test with missing token
-	_, err = authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
 	assert.Assert(t, err != nil)
@@ -227,7 +227,7 @@ func TestJWTAuthenticator_Authenticate_RSA(t *testing.T) {
 	token, err := jwt.Signed(signer).Claims(claims).Serialize()
 	assert.NilError(t, err)
 
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer " + token,
 		},
@@ -281,7 +281,7 @@ func TestJWTAuthenticator_Authenticate_WithIssuerValidation(t *testing.T) {
 	token, err := jwt.Signed(signer).Claims(claims).Serialize()
 	assert.NilError(t, err)
 
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer " + token,
 		},

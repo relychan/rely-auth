@@ -26,7 +26,7 @@ func TestNoAuth_Authenticate(t *testing.T) {
 	assert.Equal(t, authmode.AuthModeNoAuth, authenticator.Mode())
 
 	// Test authentication always succeeds
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
 	assert.NilError(t, err)
@@ -53,7 +53,7 @@ func TestNoAuth_Reload(t *testing.T) {
 	assert.NilError(t, err)
 
 	// Verify session variables are still correct after reload
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{})
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
 	assert.NilError(t, err)
 	assert.DeepEqual(t, map[string]any{
 		"x-hasura-role": "guest",
@@ -89,7 +89,7 @@ func TestNoAuth_ConcurrentAccess(t *testing.T) {
 	done := make(chan bool)
 	for i := 0; i < 10; i++ {
 		go func() {
-			_, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{})
+			_, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
 			assert.NilError(t, err)
 			done <- true
 		}()
@@ -333,7 +333,7 @@ func TestNewNoAuth_WithEnvironmentVariables(t *testing.T) {
 	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{})
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
 	assert.NilError(t, err)
 	assert.Equal(t, "test-env", result.ID)
 	assert.DeepEqual(t, map[string]any{
@@ -352,7 +352,7 @@ func TestNewNoAuth_EmptySessionVariables(t *testing.T) {
 	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{})
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
 	assert.NilError(t, err)
 	assert.Equal(t, "test-empty", result.ID)
 	assert.DeepEqual(t, map[string]any{}, result.SessionVariables)
@@ -380,7 +380,7 @@ func TestNewNoAuth_ComplexSessionVariables(t *testing.T) {
 	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{})
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
 	assert.NilError(t, err)
 	assert.Equal(t, "test-complex", result.ID)
 	assert.Equal(t, "admin", result.SessionVariables["x-hasura-role"])
@@ -405,7 +405,7 @@ func TestNewNoAuth_WithoutID(t *testing.T) {
 	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
-	result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{})
+	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
 	assert.NilError(t, err)
 	assert.Equal(t, "", result.ID)
 	assert.DeepEqual(t, map[string]any{
@@ -426,7 +426,7 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 	assert.NilError(t, err)
 
 	t.Run("with headers", func(t *testing.T) {
-		result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+		result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 			Headers: map[string]string{
 				"Authorization": "Bearer token",
 				"X-Custom":      "value",
@@ -440,7 +440,7 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 	})
 
 	t.Run("with URL", func(t *testing.T) {
-		result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+		result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 			URL: "/api/data?token=xyz789",
 			Headers: map[string]string{
 				"Cookie": "session=abc123",
@@ -454,7 +454,7 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 	})
 
 	t.Run("with request body", func(t *testing.T) {
-		result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+		result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 			Headers: map[string]string{
 				"Content-Type": "application/json",
 			},

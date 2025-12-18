@@ -31,7 +31,7 @@ func TestAPIKeyAuthenticator(t *testing.T) {
 
 	for range 10 {
 		go func() {
-			result, err := authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+			result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 				Headers: map[string]string{
 					"authorization": "Bearer " + apiKey,
 				},
@@ -57,7 +57,7 @@ func TestAPIKeyAuthenticator_Unauthorized(t *testing.T) {
 	assert.NilError(t, err)
 
 	// Test with wrong key
-	_, err = authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer wrong-key",
 		},
@@ -65,7 +65,7 @@ func TestAPIKeyAuthenticator_Unauthorized(t *testing.T) {
 	assert.ErrorContains(t, err, "Unauthorized")
 
 	// Test with missing header
-	_, err = authenticator.Authenticate(context.Background(), authmode.AuthenticateRequestData{
+	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
 	assert.ErrorContains(t, err, authmode.ErrAuthTokenNotFound.Error())
