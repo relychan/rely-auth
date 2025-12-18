@@ -8,7 +8,6 @@ import (
 	"github.com/hasura/gotel"
 	"github.com/relychan/gohttps/httputils"
 	"github.com/relychan/goutils"
-	"github.com/relychan/rely-auth/auth"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -16,13 +15,13 @@ import (
 
 // HasuraDDNAuthHookHandler implements HTTP handlers for Hasura DDN auth webhook.
 type HasuraDDNAuthHookHandler struct {
-	authManager *auth.RelyAuthManager
+	authenticator authmode.Authenticator
 }
 
 // NewHasuraDDNAuthHookHandler creates a ddn auth hook handler instance.
-func NewHasuraDDNAuthHookHandler(authManager *auth.RelyAuthManager) *HasuraDDNAuthHookHandler {
+func NewHasuraDDNAuthHookHandler(authenticator authmode.Authenticator) *HasuraDDNAuthHookHandler {
 	return &HasuraDDNAuthHookHandler{
-		authManager: authManager,
+		authenticator: authenticator,
 	}
 }
 
@@ -57,7 +56,7 @@ func (handler *HasuraDDNAuthHookHandler) handle(
 	ctx := r.Context()
 	logger := gotel.GetRequestLogger(r)
 
-	authResult, err := handler.authManager.Authenticate(ctx, body)
+	authResult, err := handler.authenticator.Authenticate(ctx, body)
 	if err != nil {
 		span.SetStatus(codes.Error, "failed to authenticate")
 		span.RecordError(err)

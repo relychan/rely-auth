@@ -38,12 +38,18 @@ type AuthenticatedOutput struct {
 	SessionVariables map[string]any
 }
 
-// RelyAuthenticator abstracts the authenticator for the auth webhook.
-type RelyAuthenticator interface {
-	// GetMode returns the auth mode of the current authenticator.
-	Mode() AuthMode
+// Authenticator abstracts an authenticator struct for the Authenticate method.
+type Authenticator interface {
 	// Authenticate validates and authenticates the token from the auth webhook request.
 	Authenticate(ctx context.Context, body *AuthenticateRequestData) (AuthenticatedOutput, error)
+}
+
+// RelyAuthenticator abstracts the authenticator for the auth webhook.
+type RelyAuthenticator interface {
+	Authenticator
+
+	// GetMode returns the auth mode of the current authenticator.
+	Mode() AuthMode
 	// Reload credentials of the authenticator.
 	Reload(ctx context.Context) error
 	// Close handles the resources cleaning.
