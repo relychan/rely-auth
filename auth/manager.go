@@ -3,7 +3,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -11,28 +10,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hasura/gotel"
 	"github.com/relychan/gohttpc"
-	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/relychan/rely-auth/auth/jwt"
 	"github.com/relychan/rely-auth/auth/noauth"
 	"github.com/relychan/rely-auth/auth/webhook"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/trace"
 )
 
 // RelyAuthManager manages multiple authentication strategies to verify HTTP requests.
 type RelyAuthManager struct {
-	settings         *authmode.RelyAuthSettings
-	authenticators   []authmode.RelyAuthenticator
-	customAttributes []attribute.KeyValue
-	logger           *slog.Logger
-	stopChan         chan struct{}
-	mu               sync.Mutex
+	authenticator *ComposedAuthenticator
+	logger        *slog.Logger
+	stopChan      chan struct{}
+	mu            sync.Mutex
 }
 
 // NewRelyAuthManager creates a new RelyAuthManager instance from config.
@@ -53,10 +44,12 @@ func NewRelyAuthManager(
 	}
 
 	manager := RelyAuthManager{
-		settings:         &authmode.RelyAuthSettings{},
-		stopChan:         make(chan struct{}),
-		logger:           opts.Logger,
-		customAttributes: opts.CustomAttributes,
+		authenticator: &ComposedAuthenticator{
+			Settings:         &authmode.RelyAuthSettings{},
+			CustomAttributes: opts.CustomAttributes,
+		},
+		stopChan: make(chan struct{}),
+		logger:   opts.Logger,
 	}
 
 	var err error
@@ -66,8 +59,8 @@ func NewRelyAuthManager(
 		return nil, err
 	}
 
-	if hasJWK && manager.settings.ReloadInterval > 0 {
-		go manager.startReloadProcess(ctx, manager.settings.ReloadInterval)
+	if hasJWK && manager.authenticator.Settings.ReloadInterval > 0 {
+		go manager.startReloadProcess(ctx, manager.authenticator.Settings.ReloadInterval)
 	}
 
 	return &manager, nil
@@ -75,118 +68,20 @@ func NewRelyAuthManager(
 
 // Settings return settings of the manager.
 func (am *RelyAuthManager) Settings() *authmode.RelyAuthSettings {
-	return am.settings
+	return am.authenticator.Settings
 }
 
-// Authenticators return authenticators of the manager.
-func (am *RelyAuthManager) Authenticators() []authmode.RelyAuthenticator {
-	return am.authenticators
+// Authenticator returns the internal [ComposedAuthenticator] instance.
+func (am *RelyAuthManager) Authenticator() *ComposedAuthenticator {
+	return am.authenticator
 }
 
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (am *RelyAuthManager) Authenticate(
 	ctx context.Context,
 	body authmode.AuthenticateRequestData,
-) (map[string]any, error) {
-	ctx, span := tracer.Start(ctx, "Authenticate", trace.WithSpanKind(trace.SpanKindInternal))
-	defer span.End()
-
-	if len(am.customAttributes) > 0 {
-		span.SetAttributes(am.customAttributes...)
-	}
-
-	startTime := time.Now()
-	metrics := GetRelyAuthMetrics()
-
-	logger := gotel.GetLogger(ctx)
-
-	var tokenNotFound bool
-
-	for _, authenticator := range am.authenticators {
-		authMode := authenticator.Mode()
-		// if auth token exists but it is unauthorized,
-		// the noAuth mode is skipped with the strict mode enabled.
-		if authMode == authmode.AuthModeNoAuth &&
-			!tokenNotFound && am.settings.Strict {
-			break
-		}
-
-		result, err := authenticator.Authenticate(ctx, body)
-		if err == nil {
-			latency := time.Since(startTime).Seconds()
-			authModeAttr := attribute.String("auth.mode", string(authMode))
-			authIDAttr := attribute.String("auth.id", result.ID)
-
-			metrics.RequestDuration.Record(
-				ctx,
-				latency,
-				metric.WithAttributeSet(
-					attribute.NewSet(append(am.customAttributes, authStatusSuccessAttribute)...,
-					)),
-			)
-
-			span.SetAttributes(authModeAttr, authIDAttr)
-
-			metrics.AuthModeTotalRequests.Add(
-				ctx,
-				1,
-				metric.WithAttributeSet(
-					attribute.NewSet(
-						append(
-							am.customAttributes,
-							authStatusSuccessAttribute,
-							authModeAttr,
-							authIDAttr,
-						)...),
-				),
-			)
-
-			return result.SessionVariables, nil
-		}
-
-		tokenNotFound = tokenNotFound || errors.Is(err, authmode.ErrAuthTokenNotFound)
-
-		logger.Debug(
-			"Authentication failed",
-			slog.String("error", err.Error()),
-			slog.String("auth_mode", string(authMode)),
-		)
-
-		span.AddEvent("Authentication failed", trace.WithAttributes(
-			attribute.String("error", err.Error()),
-		))
-	}
-
-	latency := time.Since(startTime).Seconds()
-
-	metrics.RequestDuration.Record(
-		ctx,
-		latency,
-		metric.WithAttributeSet(
-			attribute.NewSet(append(am.customAttributes, authStatusFailedAttribute)...),
-		),
-	)
-	span.SetStatus(codes.Error, "authentication failed")
-
-	return nil, goutils.NewUnauthorizedError()
-}
-
-// Reload credentials of the authenticator.
-func (am *RelyAuthManager) Reload(ctx context.Context) error {
-	var errs []error
-
-	for _, authenticator := range am.authenticators {
-		err := authenticator.Reload(ctx)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-
-	return nil
+) (authmode.AuthenticatedOutput, error) {
+	return am.authenticator.Authenticate(ctx, body)
 }
 
 // Close terminates all underlying authenticator resources.
@@ -199,26 +94,10 @@ func (am *RelyAuthManager) Close() error {
 		return nil
 	}
 
-	var errs []error
-
 	close(am.stopChan)
 	am.stopChan = nil
 
-	for _, au := range am.authenticators {
-		err := au.Close()
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	switch len(errs) {
-	case 0:
-		return nil
-	case 1:
-		return errs[0]
-	default:
-		return errors.Join(errs...)
-	}
+	return am.authenticator.Close()
 }
 
 func (am *RelyAuthManager) init(
@@ -242,7 +121,7 @@ func (am *RelyAuthManager) init(
 	})
 
 	if config.Settings != nil {
-		am.settings = config.Settings
+		am.authenticator.Settings = config.Settings
 	}
 
 	var jwtAuth *jwt.JWTAuthenticator
@@ -259,7 +138,7 @@ func (am *RelyAuthManager) init(
 				return false, fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
 			}
 
-			am.authenticators = append(am.authenticators, authenticator)
+			am.authenticator.Authenticators = append(am.authenticator.Authenticators, authenticator)
 		case *jwt.RelyAuthJWTConfig:
 			if def.ID == "" {
 				def.ID = strconv.Itoa(i)
@@ -272,7 +151,7 @@ func (am *RelyAuthManager) init(
 				}
 
 				jwtAuth = authenticator
-				am.authenticators = append(am.authenticators, authenticator)
+				am.authenticator.Authenticators = append(am.authenticator.Authenticators, authenticator)
 			}
 
 			err := jwtAuth.Add(ctx, *def)
@@ -289,7 +168,7 @@ func (am *RelyAuthManager) init(
 				return false, fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}
 
-			am.authenticators = append(am.authenticators, authenticator)
+			am.authenticator.Authenticators = append(am.authenticator.Authenticators, authenticator)
 		case *noauth.RelyAuthNoAuthConfig:
 			if def.ID == "" {
 				def.ID = strconv.Itoa(i)
@@ -300,7 +179,7 @@ func (am *RelyAuthManager) init(
 				return false, fmt.Errorf("failed to create noAuth: %w", err)
 			}
 
-			am.authenticators = append(am.authenticators, authenticator)
+			am.authenticator.Authenticators = append(am.authenticator.Authenticators, authenticator)
 		}
 	}
 
@@ -328,7 +207,7 @@ func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterva
 				return
 			}
 
-			err := am.Reload(ctx)
+			err := am.authenticator.Reload(ctx)
 			if err != nil {
 				am.logger.Error(
 					"failed to reload auth credentials",

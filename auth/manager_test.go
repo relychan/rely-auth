@@ -57,8 +57,9 @@ func TestRelyAuthManager_Authenticate_NoAuth(t *testing.T) {
 		Headers: map[string]string{},
 	})
 	assert.NilError(t, err)
-	assert.DeepEqual(t, map[string]any{
-		"x-hasura-role": "guest",
+	assert.DeepEqual(t, authmode.AuthenticatedOutput{
+		ID:               "0",
+		SessionVariables: map[string]any{"x-hasura-role": string("guest")},
 	}, result)
 }
 
@@ -95,8 +96,9 @@ func TestRelyAuthManager_Authenticate_APIKey(t *testing.T) {
 		},
 	})
 	assert.NilError(t, err)
-	assert.DeepEqual(t, map[string]any{
-		"x-hasura-role": "admin",
+	assert.DeepEqual(t, authmode.AuthenticatedOutput{
+		ID:               "0",
+		SessionVariables: map[string]any{"x-hasura-role": string("admin")},
 	}, result)
 
 	// Test failed authentication
@@ -147,8 +149,9 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 		Headers: map[string]string{},
 	})
 	assert.NilError(t, err)
-	assert.DeepEqual(t, map[string]any{
-		"x-hasura-role": "anonymous",
+	assert.DeepEqual(t, authmode.AuthenticatedOutput{
+		ID:               "1",
+		SessionVariables: map[string]any{"x-hasura-role": string("anonymous")},
 	}, result)
 }
 
@@ -216,7 +219,7 @@ func TestRelyAuthManager_Reload(t *testing.T) {
 	assert.NilError(t, err)
 	defer manager.Close()
 
-	err = manager.Reload(context.Background())
+	err = manager.authenticator.Reload(context.Background())
 	assert.NilError(t, err)
 }
 
@@ -292,9 +295,11 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 		},
 	})
 	assert.NilError(t, err)
-	assert.DeepEqual(t, map[string]any{
-		"x-hasura-role": "service1",
-	}, result)
+	assert.DeepEqual(t, authmode.AuthenticatedOutput{
+		ID: "auth1",
+		SessionVariables: map[string]any{
+			"x-hasura-role": "service1",
+		}}, result)
 
 	// Test second authenticator
 	result, err = manager.Authenticate(context.Background(), authmode.AuthenticateRequestData{
@@ -303,8 +308,11 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 		},
 	})
 	assert.NilError(t, err)
-	assert.DeepEqual(t, map[string]any{
-		"x-hasura-role": "service2",
+	assert.DeepEqual(t, authmode.AuthenticatedOutput{
+		ID: "auth2",
+		SessionVariables: map[string]any{
+			"x-hasura-role": "service2",
+		},
 	}, result)
 }
 

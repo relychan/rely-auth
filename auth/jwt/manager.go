@@ -14,12 +14,18 @@ import (
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/relychan/gohttpc"
 	"github.com/relychan/goutils"
+	"github.com/relychan/rely-auth/auth/authmetrics"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 )
 
-var tracer = otel.Tracer("rely-auth/authenticator/jwt")
+var (
+	tracer       = otel.Tracer("rely-auth/authenticator/jwt")
+	authModeAttr = attribute.String("auth.mode", string(authmode.AuthModeJWT))
+)
 
 // JWTAuthenticator implements the authenticator with JWT key.
 type JWTAuthenticator struct {
@@ -71,11 +77,7 @@ func (ja *JWTAuthenticator) Close() error {
 		}
 	}
 
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-
-	return nil
+	return errors.Join(errs...)
 }
 
 // Equal checks if the target value is equal.
@@ -119,7 +121,7 @@ func (ja *JWTAuthenticator) Authenticate(
 	ctx context.Context,
 	body authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
-	return Authenticate(ctx, body, ja.keySets)
+	return Authenticate(ctx, body, ja.keySets, ja.options)
 }
 
 // Reload credentials of the authenticator.
@@ -184,19 +186,23 @@ func Authenticate(
 	ctx context.Context,
 	body authmode.AuthenticateRequestData,
 	keySets map[string][]*JWTKeySet,
+	options authmode.RelyAuthenticatorOptions,
 ) (authmode.AuthenticatedOutput, error) {
 	_, span := tracer.Start(ctx, "JWT")
 	defer span.End()
 
 	for _, group := range keySets {
+		if len(group) == 0 {
+			continue
+		}
+
 		output := authmode.AuthenticatedOutput{}
 		tokenLocation := group[0].GetConfig().TokenLocation
 
 		rawToken, err := authmode.FindAuthTokenByLocation(&body, &tokenLocation)
 		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
-
-			return output, err
+			// can not find token, skip this keyset
+			continue
 		}
 
 		algorithms := []jose.SignatureAlgorithm{}
@@ -226,16 +232,30 @@ func Authenticate(
 			return output, err
 		}
 
+		metrics := authmetrics.GetRelyAuthMetrics()
+
 		for _, key := range group {
-			err := key.ValidateClaims(&claims)
+			verifiedBytes, err := verifyClaims(ctx, key, &claims, sig)
 			if err != nil {
+				metrics.AuthModeTotalRequests.Add(
+					ctx,
+					1,
+					metric.WithAttributeSet(
+						attribute.NewSet(
+							append(
+								options.CustomAttributes,
+								authmetrics.AuthStatusFailedAttribute,
+								authModeAttr,
+								attribute.String("auth.id", key.config.ID),
+							)...),
+					),
+				)
+
+				// continue to verify the claims with the next keyset
 				continue
 			}
 
-			verifiedBytes, err := key.VerifySignature(ctx, sig)
-			if err != nil {
-				continue
-			}
+			output.ID = key.config.ID
 
 			sessionVariables, err := key.TransformClaims(verifiedBytes)
 			if err != nil {
@@ -245,7 +265,6 @@ func Authenticate(
 				return output, err
 			}
 
-			output.ID = key.config.ID
 			output.SessionVariables = sessionVariables
 
 			span.SetStatus(codes.Ok, "")
@@ -257,4 +276,23 @@ func Authenticate(
 	span.SetStatus(codes.Error, "unauthorized")
 
 	return authmode.AuthenticatedOutput{}, goutils.NewUnauthorizedError()
+}
+
+func verifyClaims(
+	ctx context.Context,
+	key *JWTKeySet,
+	claims *jwt.Claims,
+	sig *jose.JSONWebSignature,
+) ([]byte, error) {
+	err := key.ValidateClaims(claims)
+	if err != nil {
+		return nil, err
+	}
+
+	verifiedBytes, err := key.VerifySignature(ctx, sig)
+	if err != nil {
+		return nil, err
+	}
+
+	return verifiedBytes, err
 }
