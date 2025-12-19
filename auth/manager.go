@@ -187,7 +187,7 @@ func (am *RelyAuthManager) init(
 }
 
 func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterval int) {
-	ticker := time.NewTicker(time.Duration(reloadInterval) * time.Minute)
+	ticker := time.NewTicker(time.Duration(reloadInterval) * time.Second)
 	defer ticker.Stop()
 
 	for {
