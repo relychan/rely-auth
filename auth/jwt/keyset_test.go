@@ -533,7 +533,7 @@ func TestJWTKeySet_InitWithECDSA(t *testing.T) {
 	assert.NilError(t, err)
 	defer keyset.Close()
 
-	assert.Assert(t, keyset.publicKey != nil)
+	assert.Assert(t, keyset.signatureVerifier != nil)
 }
 
 func TestJWTKeySet_InitWithEdDSA(t *testing.T) {
@@ -613,8 +613,11 @@ func TestJWTKeySet_InitWithJWKURL(t *testing.T) {
 	assert.NilError(t, err)
 	defer keyset.Close()
 
-	assert.Equal(t, server.URL, keyset.jwksURL)
-	assert.Assert(t, len(keyset.cachedKeys) > 0)
+	result, ok := keyset.signatureVerifier.(*JWKS)
+	assert.Assert(t, ok)
+
+	assert.Equal(t, server.URL, result.url)
+	assert.Assert(t, len(result.cachedKeys) > 0)
 }
 
 func TestJWTKeySet_Reload(t *testing.T) {
@@ -663,7 +666,7 @@ func TestJWTKeySet_Reload(t *testing.T) {
 
 	initialCallCount := callCount
 
-	err = keyset.Reload(context.TODO())
+	err = ReloadJWKS(context.TODO())
 	assert.NilError(t, err)
 	assert.Assert(t, callCount > initialCallCount)
 }

@@ -201,28 +201,6 @@ func TestRelyAuthManager_Authenticate_StrictMode(t *testing.T) {
 	assert.ErrorContains(t, err, "Unauthorized")
 }
 
-func TestRelyAuthManager_Reload(t *testing.T) {
-	config := &RelyAuthConfig{
-		Definitions: []RelyAuthDefinition{
-			{
-				RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
-					Mode: authmode.AuthModeNoAuth,
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("guest"),
-					},
-				},
-			},
-		},
-	}
-
-	manager, err := NewRelyAuthManager(context.TODO(), config)
-	assert.NilError(t, err)
-	defer manager.Close()
-
-	err = manager.Authenticator().Reload(context.Background())
-	assert.NilError(t, err)
-}
-
 func TestRelyAuthManager_WithOptions(t *testing.T) {
 	config := &RelyAuthConfig{
 		Definitions: []RelyAuthDefinition{
@@ -299,7 +277,8 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 		ID: "auth1",
 		SessionVariables: map[string]any{
 			"x-hasura-role": "service1",
-		}}, result)
+		},
+	}, result)
 
 	// Test second authenticator
 	result, err = manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{

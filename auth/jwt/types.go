@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"slices"
@@ -13,6 +14,8 @@ import (
 var (
 	// ErrJWTAuthKeyRequired occurs when either JWT key or JWK URL is empty.
 	ErrJWTAuthKeyRequired = errors.New("require either JWT key or JWK URL")
+	// ErrJWKsURLRequired occurs when the JWK URL is empty.
+	ErrJWKsURLRequired = errors.New("the JWK URL must not be empty")
 	// ErrJWTClaimsConfigEmpty occurs when the JWT claims config is empty.
 	ErrJWTClaimsConfigEmpty = errors.New(
 		"invalid claims config. Require either namespace or locations",
@@ -44,6 +47,16 @@ var (
 	// ErrInvalidJWTKey occurs when the JWT key is invalid.
 	ErrInvalidJWTKey = errors.New("invalid JWT key")
 )
+
+// SignatureVerifier abstracts an interface to verify JSON web signatures.
+type SignatureVerifier interface {
+	// GetSignatureAlgorithms get signature algorithms of the keyset.
+	GetSignatureAlgorithms() []jose.SignatureAlgorithm
+	// VerifySignature compares the json web token against a static set of JWT secret key.
+	VerifySignature(ctx context.Context, sig *jose.JSONWebSignature) ([]byte, error)
+	// Equal checks if the target value is equal.
+	Equal(target SignatureVerifier) bool
+}
 
 // JWTClaimsFormat is the format in which JWT claims will be present.
 type JWTClaimsFormat string

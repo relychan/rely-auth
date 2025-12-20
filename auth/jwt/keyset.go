@@ -1,60 +1,27 @@
 package jwt
 
 import (
-	"bytes"
 	"context"
-	"crypto"
-	"crypto/ecdsa"
-	"crypto/ed25519"
-	"crypto/rsa"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
-	"net/http"
 	"reflect"
-	"slices"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/hasura/goenvconf"
 	"github.com/jmespath-community/go-jmespath"
-	"github.com/relychan/gohttpc"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/goutils"
-	"github.com/relychan/goutils/httpheader"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"golang.org/x/sync/singleflight"
 )
 
 // JWTKeySet is a verifier that validates JWT against a static set of HMAC or public keys.
 type JWTKeySet struct {
 	config *RelyAuthJWTConfig
-	// Static HMAC key
-	hmacKey []byte
-	// PublicKeys used to verify the JWT. Supported types are *rsa.PublicKey and
-	// *ecdsa.PublicKey.
-	publicKey crypto.PublicKey
-
-	// current JWKs URL
-	jwksURL string
-
-	// inflight suppresses parallel execution of updateKeys and allows
-	// multiple goroutines to wait for its result.
-	inflight *singleflight.Group
-
-	// A set of cached JSON Web keys.
-	cachedKeys []jose.JSONWebKey
-
 	// cached locations after resolving environment variables
-	locations map[string]jmes.FieldMappingEntry
-
-	httpClient *gohttpc.Client
-
-	mu sync.RWMutex
+	locations         map[string]jmes.FieldMappingEntry
+	signatureVerifier SignatureVerifier
 }
 
 // NewJWTKeySet creates a new JWT key set from the configuration.
@@ -63,15 +30,8 @@ func NewJWTKeySet(
 	config *RelyAuthJWTConfig,
 	options authmode.RelyAuthenticatorOptions,
 ) (*JWTKeySet, error) {
-	httpClient := options.HTTPClient
-	if httpClient == nil {
-		httpClient = gohttpc.NewClient()
-	}
-
 	result := JWTKeySet{
-		config:     config,
-		httpClient: httpClient,
-		inflight:   &singleflight.Group{},
+		config: config,
 	}
 
 	err := result.init(ctx, options)
@@ -81,24 +41,12 @@ func NewJWTKeySet(
 
 // Equal checks if the target value is equal.
 func (j *JWTKeySet) Equal(target *JWTKeySet) bool {
-	j.mu.RLock()
-	defer j.mu.RUnlock()
-
 	if !goutils.EqualPtr(j.config, target.config) {
 		return false
 	}
 
-	if j.config.Key.Key != nil && !j.config.Key.Key.IsZero() {
-		if j.config.Key.Algorithm == jose.HS256 ||
-			j.config.Key.Algorithm == jose.HS384 ||
-			j.config.Key.Algorithm == jose.HS512 {
-			return bytes.Equal(j.hmacKey, target.hmacKey)
-		}
-
-		return reflect.DeepEqual(j.publicKey, target.publicKey)
-	}
-
-	return j.jwksURL == target.jwksURL
+	return j.signatureVerifier != nil && target.signatureVerifier != nil &&
+		j.signatureVerifier.Equal(target.signatureVerifier)
 }
 
 // GetConfig get config of the current keyset.
@@ -107,38 +55,15 @@ func (j *JWTKeySet) GetConfig() *RelyAuthJWTConfig {
 }
 
 // Close handles the resources cleaning.
-func (j *JWTKeySet) Close() error {
-	j.mu.Lock()
-	defer j.mu.Unlock()
-
-	if j.httpClient != nil {
-		return j.httpClient.Close()
-	}
-
+func (*JWTKeySet) Close() error {
 	return nil
 }
 
 // GetSignatureAlgorithms get signature algorithms of the keyset.
 func (j *JWTKeySet) GetSignatureAlgorithms() []jose.SignatureAlgorithm {
-	j.mu.RLock()
-	defer j.mu.RUnlock()
-
-	result := make([]jose.SignatureAlgorithm, 0, len(j.cachedKeys))
-
-	for _, key := range j.cachedKeys {
-		alg := jose.SignatureAlgorithm(key.Algorithm)
-
-		if key.Algorithm != "" && !slices.Contains(result, alg) {
-			result = append(result, alg)
-		}
-	}
-
-	if len(result) > 0 {
-		return slices.Compact(result)
-	}
-
-	if j.config.Key.Algorithm != "" {
-		return []jose.SignatureAlgorithm{j.config.Key.Algorithm}
+	algorithms := j.signatureVerifier.GetSignatureAlgorithms()
+	if len(algorithms) > 0 {
+		return algorithms
 	}
 
 	return GetSupportedSignatureAlgorithms()
@@ -149,22 +74,7 @@ func (j *JWTKeySet) VerifySignature(
 	ctx context.Context,
 	sig *jose.JSONWebSignature,
 ) ([]byte, error) {
-	j.mu.RLock()
-	cachedKeys := j.cachedKeys
-	publicKey := j.publicKey
-	hmacKey := j.hmacKey
-	j.mu.RUnlock()
-
-	switch {
-	case len(cachedKeys) > 0:
-		return j.verifyJWKs(ctx, sig)
-	case publicKey != nil:
-		return sig.Verify(publicKey)
-	case len(hmacKey) > 0:
-		return sig.Verify(hmacKey)
-	default:
-		return nil, goutils.NewUnauthorizedError()
-	}
+	return j.signatureVerifier.VerifySignature(ctx, sig)
 }
 
 // ValidateClaims checks claims in a token against expected values.
@@ -213,13 +123,6 @@ func (j *JWTKeySet) TransformClaims(rawBytes []byte) (map[string]any, error) {
 	return evalHasuraSessionVariables(result)
 }
 
-// Reload credentials of the authenticator.
-func (j *JWTKeySet) Reload(ctx context.Context) error {
-	_, err := j.keysFromRemote(ctx)
-
-	return err
-}
-
 func (j *JWTKeySet) init(ctx context.Context, options authmode.RelyAuthenticatorOptions) error {
 	getEnvFunc := options.GetEnvFunc(ctx)
 	// load locations
@@ -246,9 +149,7 @@ func (j *JWTKeySet) init(ctx context.Context, options authmode.RelyAuthenticator
 		return err
 	}
 
-	j.jwksURL = jwksURL
-	// fetch JSON web key to validate if the JWK URL is valid.
-	_, err = j.keysFromRemote(ctx)
+	j.signatureVerifier, err = RegisterJWKS(ctx, jwksURL, options.HTTPClient)
 
 	return err
 }
@@ -259,60 +160,9 @@ func (j *JWTKeySet) initJWTKey(getEnvFunc goenvconf.GetEnvFunc) error {
 		return err
 	}
 
-	if rawKey == "" {
-		return ErrJWTAuthKeyRequired
-	}
+	j.signatureVerifier, err = NewStaticKey([]byte(rawKey), j.config.Key.Algorithm)
 
-	switch j.config.Key.Algorithm {
-	case jose.HS256, jose.HS384, jose.HS512:
-		j.hmacKey = []byte(rawKey)
-	case jose.RS256, jose.RS384, jose.RS512, jose.PS256, jose.PS384, jose.PS512:
-		spkiBlock, _ := pem.Decode([]byte(rawKey))
-
-		pubInterface, err := x509.ParsePKIXPublicKey(spkiBlock.Bytes)
-		if err != nil {
-			return err
-		}
-
-		rsaPubKey, ok := pubInterface.(*rsa.PublicKey)
-		if !ok {
-			return fmt.Errorf("%w: The public key is not an RSA key", ErrInvalidJWTKey)
-		}
-
-		j.publicKey = rsaPubKey
-	case jose.ES256, jose.ES384, jose.ES512:
-		spkiBlock, _ := pem.Decode([]byte(rawKey))
-
-		pubInterface, err := x509.ParsePKIXPublicKey(spkiBlock.Bytes)
-		if err != nil {
-			return err
-		}
-
-		pubKey, ok := pubInterface.(*ecdsa.PublicKey)
-		if !ok {
-			return fmt.Errorf("%w: The public key is not an ECDSA key", ErrInvalidJWTKey)
-		}
-
-		j.publicKey = pubKey
-	case jose.EdDSA:
-		spkiBlock, _ := pem.Decode([]byte(rawKey))
-
-		pubInterface, err := x509.ParsePKIXPublicKey(spkiBlock.Bytes)
-		if err != nil {
-			return err
-		}
-
-		pubKey, ok := pubInterface.(*ed25519.PublicKey)
-		if !ok {
-			return fmt.Errorf("%w: The public key is not an Ed25519 key", ErrInvalidJWTKey)
-		}
-
-		j.publicKey = pubKey
-	default:
-		return fmt.Errorf("%w: %s", jose.ErrUnsupportedAlgorithm, j.config.Key.Algorithm)
-	}
-
-	return nil
+	return err
 }
 
 func (j *JWTKeySet) getClaimsFromNamespace(rawClaims map[string]any) (map[string]any, error) {
@@ -355,202 +205,4 @@ func (j *JWTKeySet) getClaimsFromNamespace(rawClaims map[string]any) (map[string
 	}
 
 	return rawJSONValue, nil
-}
-
-func (j *JWTKeySet) verifyJWKs(ctx context.Context, jws *jose.JSONWebSignature) ([]byte, error) {
-	// We don't support JWTs signed with multiple signatures.
-	keyID := ""
-
-	for _, sig := range jws.Signatures {
-		keyID = sig.Header.KeyID
-
-		break
-	}
-
-	keys := j.keysFromCache()
-
-	for _, key := range keys {
-		if keyID == "" || key.KeyID == keyID {
-			payload, err := jws.Verify(&key)
-			if err == nil {
-				return payload, nil
-			}
-		}
-	}
-
-	// If the kid doesn't match, check for new keys from the remote. This is the
-	// strategy recommended by the spec.
-	//
-	// https://openid.net/specs/openid-connect-core-1_0.html#RotateSigKeys
-	keys, err := j.keysFromRemote(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("fetching keys %w", err)
-	}
-
-	for _, key := range keys {
-		if keyID == "" || key.KeyID == keyID {
-			payload, err := jws.Verify(&key)
-			if err == nil {
-				return payload, nil
-			}
-		}
-	}
-
-	return nil, ErrJWTVerificationFailed
-}
-
-func (j *JWTKeySet) keysFromCache() []jose.JSONWebKey {
-	j.mu.RLock()
-	defer j.mu.RUnlock()
-
-	return j.cachedKeys
-}
-
-// keysFromRemote syncs the key set from the remote set, records the values in the
-// cache, and returns the key set.
-func (j *JWTKeySet) keysFromRemote(ctx context.Context) ([]jose.JSONWebKey, error) {
-	result, err, _ := j.inflight.Do(j.jwksURL, func() (any, error) {
-		// Sync keys and finish inflight when that's done.
-		keys, updateErr := j.updateKeys(ctx)
-
-		// Lock to update the keys and indicate that there is no longer an
-		// inflight request.
-		j.mu.Lock()
-		defer j.mu.Unlock()
-
-		if updateErr == nil {
-			j.cachedKeys = keys
-		}
-
-		return j.cachedKeys, updateErr
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	keys, ok := result.([]jose.JSONWebKey)
-	if !ok {
-		return j.keysFromCache(), nil
-	}
-
-	return keys, nil
-}
-
-func (j *JWTKeySet) updateKeys(ctx context.Context) ([]jose.JSONWebKey, error) {
-	req := j.httpClient.R(http.MethodGet, j.jwksURL)
-
-	resp, err := req.Execute(ctx) //nolint:bodyclose
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrGetJWKsFailed, err.Error())
-	}
-
-	if resp.Body == nil {
-		return nil, fmt.Errorf("%w: response body has no content", ErrGetJWKsFailed)
-	}
-
-	defer goutils.CatchWarnErrorFunc(resp.Body.Close)
-
-	var keySet jose.JSONWebKeySet
-
-	err = json.NewDecoder(resp.Body).Decode(&keySet)
-	if err != nil {
-		ct := resp.Header.Get(httpheader.ContentType)
-
-		if strings.HasPrefix(ct, httpheader.ContentTypeJSON) {
-			return nil, fmt.Errorf(
-				"got Content-Type = application/json, but could not unmarshal as JSON: %w",
-				err,
-			)
-		}
-
-		return nil, fmt.Errorf("jwk: failed to decode keys: %w", err)
-	}
-
-	return keySet.Keys, nil
-}
-
-// Transform x-hasura-role, if this is the hasura JWT claims:
-// - At least contain an x-hasura-default-role property and x-hasura-allowed-roles array.
-// - An x-hasura-role value can optionally be sent as a plain header in the request to indicate the role which should be used.
-// - If this is not provided, the engine will use the x-hasura-default-role value in the JWT.
-// See https://hasura.io/docs/3.0/auth/jwt/jwt-mode/#session-variable-requirements for more context.
-func evalHasuraSessionVariables(result map[string]any) (map[string]any, error) {
-	rawAllowedRoles, ok := result[authmode.XHasuraAllowedRoles]
-	if !ok || rawAllowedRoles == nil {
-		return result, nil
-	}
-
-	allowedRoles, err := goutils.DecodeStringSlice(rawAllowedRoles)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"malformed %s; expected an array of strings: %w",
-			authmode.XHasuraAllowedRoles,
-			err,
-		)
-	}
-
-	var defaultRoleStr, roleStr *string
-
-	defaultRole, ok := result[authmode.XHasuraDefaultRole]
-	if ok && defaultRole != nil {
-		defaultRoleStr, err = goutils.DecodeNullableString(defaultRole)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"malformed %s; expected a string: %w",
-				authmode.XHasuraDefaultRole,
-				err,
-			)
-		}
-	}
-
-	desiredRole, ok := result[authmode.XHasuraRole]
-	if ok && desiredRole != nil {
-		roleStr, err = goutils.DecodeNullableString(desiredRole)
-		if err != nil {
-			return nil, fmt.Errorf("malformed %s; expected a string: %w", authmode.XHasuraRole, err)
-		}
-	}
-
-	if roleStr != nil && *roleStr != "" {
-		if !slices.Contains(allowedRoles, *roleStr) {
-			return nil, goutils.NewForbiddenError(goutils.ErrorDetail{
-				Header: authmode.XHasuraRole,
-				Detail: fmt.Sprintf(
-					"%s is not in the allowed roles %v",
-					*roleStr,
-					authmode.XHasuraAllowedRoles,
-				),
-			})
-		}
-
-		delete(result, authmode.XHasuraAllowedRoles)
-		delete(result, authmode.XHasuraDefaultRole)
-
-		return result, nil
-	}
-
-	if defaultRoleStr == nil || *defaultRoleStr == "" {
-		return nil, goutils.NewForbiddenError(goutils.ErrorDetail{
-			Header: authmode.XHasuraDefaultRole,
-			Detail: "value of x-hasura-default-role variable is empty",
-		})
-	}
-
-	if !slices.Contains(allowedRoles, *defaultRoleStr) {
-		return nil, goutils.NewForbiddenError(goutils.ErrorDetail{
-			Header: authmode.XHasuraDefaultRole,
-			Detail: fmt.Sprintf(
-				"%s is not in the allowed roles %v",
-				*defaultRoleStr,
-				authmode.XHasuraAllowedRoles,
-			),
-		})
-	}
-
-	delete(result, authmode.XHasuraAllowedRoles)
-	delete(result, authmode.XHasuraDefaultRole)
-
-	result[authmode.XHasuraRole] = *defaultRoleStr
-
-	return result, nil
 }

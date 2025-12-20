@@ -52,14 +52,12 @@ func NewRelyAuthManager(
 		logger:   opts.Logger,
 	}
 
-	var err error
-
-	hasJWK, err := manager.init(ctx, config, opts)
+	err := manager.init(ctx, config, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	if hasJWK && manager.authenticator.Settings.ReloadInterval > 0 {
+	if jwt.GetJWKSCount() > 0 && manager.authenticator.Settings.ReloadInterval > 0 {
 		go manager.startReloadProcess(ctx, manager.authenticator.Settings.ReloadInterval)
 	}
 
@@ -104,7 +102,7 @@ func (am *RelyAuthManager) init(
 	ctx context.Context,
 	config *RelyAuthConfig,
 	options authmode.RelyAuthenticatorOptions,
-) (bool, error) {
+) error {
 	authModes := authmode.GetSupportedAuthModes()
 	definitions := config.Definitions
 
@@ -135,7 +133,7 @@ func (am *RelyAuthManager) init(
 
 			authenticator, err := apikey.NewAPIKeyAuthenticator(ctx, def, options)
 			if err != nil {
-				return false, fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
+				return fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
 			}
 
 			am.authenticator.Authenticators = append(am.authenticator.Authenticators, authenticator)
@@ -147,7 +145,7 @@ func (am *RelyAuthManager) init(
 			if jwtAuth == nil {
 				authenticator, err := jwt.NewJWTAuthenticator(ctx, nil, options)
 				if err != nil {
-					return false, err
+					return err
 				}
 
 				jwtAuth = authenticator
@@ -156,7 +154,7 @@ func (am *RelyAuthManager) init(
 
 			err := jwtAuth.Add(ctx, *def)
 			if err != nil {
-				return false, fmt.Errorf("failed to create JWT auth %s: %w", def.ID, err)
+				return fmt.Errorf("failed to create JWT auth %s: %w", def.ID, err)
 			}
 		case *webhook.RelyAuthWebhookConfig:
 			if def.ID == "" {
@@ -165,7 +163,7 @@ func (am *RelyAuthManager) init(
 
 			authenticator, err := webhook.NewWebhookAuthenticator(ctx, def, options)
 			if err != nil {
-				return false, fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
+				return fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}
 
 			am.authenticator.Authenticators = append(am.authenticator.Authenticators, authenticator)
@@ -176,14 +174,14 @@ func (am *RelyAuthManager) init(
 
 			authenticator, err := noauth.NewNoAuth(ctx, def, options)
 			if err != nil {
-				return false, fmt.Errorf("failed to create noAuth: %w", err)
+				return fmt.Errorf("failed to create noAuth: %w", err)
 			}
 
 			am.authenticator.Authenticators = append(am.authenticator.Authenticators, authenticator)
 		}
 	}
 
-	return jwtAuth != nil && jwtAuth.HasJWK(), nil
+	return nil
 }
 
 func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterval int) {
@@ -207,7 +205,7 @@ func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterva
 				return
 			}
 
-			err := am.authenticator.Reload(ctx)
+			err := jwt.ReloadJWKS(ctx)
 			if err != nil {
 				am.logger.Error(
 					"failed to reload auth credentials",

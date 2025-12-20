@@ -154,24 +154,6 @@ func (a *ComposedAuthenticator) Authenticate(
 	return authmode.AuthenticatedOutput{}, goutils.NewUnauthorizedError()
 }
 
-// Reload credentials of the authenticator.
-func (a *ComposedAuthenticator) Reload(ctx context.Context) error {
-	var errs []error
-
-	for _, authenticator := range a.Authenticators {
-		err := authenticator.Reload(ctx)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-
-	return nil
-}
-
 // Close terminates all underlying authenticator resources.
 func (a *ComposedAuthenticator) Close() error {
 	var errs []error

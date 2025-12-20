@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"slices"
 	"strings"
 
@@ -122,33 +121,6 @@ func (ja *JWTAuthenticator) Authenticate(
 	body *authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
 	return Authenticate(ctx, body, ja.keySets, ja.options)
-}
-
-// Reload credentials of the authenticator.
-func (ja *JWTAuthenticator) Reload(ctx context.Context) error {
-	for _, group := range ja.keySets {
-		for _, keySet := range group {
-			err := keySet.Reload(ctx)
-			if err != nil {
-				slog.Warn(err.Error())
-			}
-		}
-	}
-
-	return nil
-}
-
-// HasJWK checks if at least 1 keyset has JWK url.
-func (ja *JWTAuthenticator) HasJWK() bool {
-	for _, group := range ja.keySets {
-		for _, key := range group {
-			if key.jwksURL != "" {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 // Add a new JWT authenticator from config.
