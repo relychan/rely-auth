@@ -52,7 +52,7 @@ func (j *JWKS) Equal(target SignatureVerifier) bool {
 	return j.url == t.url
 }
 
-// VerifySignature compares the json web token against a static set of JWT secret key.
+// VerifySignature compares a JWT signature against a static set of JWT secret key.
 func (j *JWKS) VerifySignature(
 	ctx context.Context,
 	jws *jose.JSONWebSignature,

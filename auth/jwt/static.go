@@ -47,7 +47,7 @@ func (hk *HMACKey) Equal(target SignatureVerifier) bool {
 	return ok && t != nil && bytes.Equal(hk.hmacKey, t.hmacKey)
 }
 
-// VerifySignature compares the json web token against a static set of JWT secret key.
+// VerifySignature compares a JWT signature against a static set of JWT secret key.
 func (hk *HMACKey) VerifySignature(
 	_ context.Context,
 	sig *jose.JSONWebSignature,
@@ -58,7 +58,7 @@ func (hk *HMACKey) VerifySignature(
 // PublicKey represents a public key to verify signatures.
 type PublicKey struct {
 	algorithm jose.SignatureAlgorithm
-	// PublicKeys used to verify the JWT. Supported types are *rsa.PublicKey and
+	// publicKey used to verify the JWT. Supported types are *rsa.PublicKey and
 	// *ecdsa.PublicKey.
 	publicKey crypto.PublicKey
 }
@@ -89,10 +89,11 @@ func (pk *PublicKey) Equal(target SignatureVerifier) bool {
 		return false
 	}
 
-	return goutils.DeepEqual(t.publicKey, pk.publicKey, true)
+	return t.algorithm == pk.algorithm &&
+		goutils.DeepEqual(t.publicKey, pk.publicKey, true)
 }
 
-// VerifySignature compares the json web token against a static set of JWT secret key.
+// VerifySignature compares a JWT signature against a static set of JWT secret key.
 func (pk *PublicKey) VerifySignature(
 	_ context.Context,
 	sig *jose.JSONWebSignature,
@@ -115,7 +116,7 @@ func NewStaticKey( //nolint:ireturn
 	case jose.RS256, jose.RS384, jose.RS512, jose.PS256, jose.PS384, jose.PS512:
 		spkiBlock, _ := pem.Decode(rawKey)
 		if spkiBlock == nil {
-			return nil, ErrInvalidJWTKey
+			return nil, fmt.Errorf("%w: invalid PEM format", ErrInvalidJWTKey)
 		}
 
 		pubInterface, err := x509.ParsePKIXPublicKey(spkiBlock.Bytes)
@@ -125,14 +126,14 @@ func NewStaticKey( //nolint:ireturn
 
 		rsaPubKey, ok := pubInterface.(*rsa.PublicKey)
 		if !ok {
-			return nil, fmt.Errorf("%w: The public key is not an RSA key", ErrInvalidJWTKey)
+			return nil, fmt.Errorf("%w: the public key is not an RSA key", ErrInvalidJWTKey)
 		}
 
 		return NewPublicKey(rsaPubKey, algorithm), nil
 	case jose.ES256, jose.ES384, jose.ES512:
 		spkiBlock, _ := pem.Decode(rawKey)
 		if spkiBlock == nil {
-			return nil, ErrInvalidJWTKey
+			return nil, fmt.Errorf("%w: invalid PEM format", ErrInvalidJWTKey)
 		}
 
 		pubInterface, err := x509.ParsePKIXPublicKey(spkiBlock.Bytes)
@@ -142,14 +143,14 @@ func NewStaticKey( //nolint:ireturn
 
 		pubKey, ok := pubInterface.(*ecdsa.PublicKey)
 		if !ok {
-			return nil, fmt.Errorf("%w: The public key is not an ECDSA key", ErrInvalidJWTKey)
+			return nil, fmt.Errorf("%w: the public key is not an ECDSA key", ErrInvalidJWTKey)
 		}
 
 		return NewPublicKey(pubKey, algorithm), nil
 	case jose.EdDSA:
 		spkiBlock, _ := pem.Decode(rawKey)
 		if spkiBlock == nil {
-			return nil, ErrInvalidJWTKey
+			return nil, fmt.Errorf("%w: invalid PEM format", ErrInvalidJWTKey)
 		}
 
 		pubInterface, err := x509.ParsePKIXPublicKey(spkiBlock.Bytes)
@@ -159,7 +160,7 @@ func NewStaticKey( //nolint:ireturn
 
 		pubKey, ok := pubInterface.(ed25519.PublicKey)
 		if !ok {
-			return nil, fmt.Errorf("%w: The public key is not an Ed25519 key", ErrInvalidJWTKey)
+			return nil, fmt.Errorf("%w: the public key is not an Ed25519 key", ErrInvalidJWTKey)
 		}
 
 		return NewPublicKey(pubKey, algorithm), nil

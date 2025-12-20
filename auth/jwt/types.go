@@ -52,7 +52,7 @@ var (
 type SignatureVerifier interface {
 	// GetSignatureAlgorithms get signature algorithms of the keyset.
 	GetSignatureAlgorithms() []jose.SignatureAlgorithm
-	// VerifySignature compares the json web token against a static set of JWT secret key.
+	// VerifySignature compares a JWT signature against a static set of JWT secret key.
 	VerifySignature(ctx context.Context, sig *jose.JSONWebSignature) ([]byte, error)
 	// Equal checks if the target value is equal.
 	Equal(target SignatureVerifier) bool

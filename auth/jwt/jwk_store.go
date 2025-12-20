@@ -33,7 +33,14 @@ func (j *JWKStore) getJWKs() map[string]*JWKS {
 	j.locker.RLock()
 	defer j.locker.RUnlock()
 
-	return j.jwks
+	// Return a copy of the internal map to avoid exposing shared mutable state.
+	copied := make(map[string]*JWKS, len(j.jwks))
+
+	for k, v := range j.jwks {
+		copied[k] = v
+	}
+
+	return copied
 }
 
 func (j *JWKStore) getJWK(key string) *JWKS {
@@ -102,12 +109,12 @@ func RegisterJWKS(ctx context.Context, jwksURL string, httpClient *gohttpc.Clien
 	return result, nil
 }
 
-// GetJWKSCount gets the current number of JWKs secret keys from the global store.
+// GetJWKSCount gets the current number of JWKS instances from the global store.
 func GetJWKSCount() int {
 	return len(globalJWKStore.getJWKs())
 }
 
-// ReloadJWKS reload JWK secret keys from the global store.
+// ReloadJWKS reload JSON web key sets from the global store.
 func ReloadJWKS(ctx context.Context) error {
 	errs := []error{}
 

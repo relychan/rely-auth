@@ -569,7 +569,7 @@ func TestJWTKeySet_InitWithEdDSA(t *testing.T) {
 
 	// This will fail due to the type assertion issue in keyset.go line 305
 	_, err = NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
-	assert.ErrorContains(t, err, "The public key is not an Ed25519 key")
+	assert.ErrorContains(t, err, "the public key is not an Ed25519 key")
 }
 
 func TestJWTKeySet_InitWithJWKURL(t *testing.T) {
