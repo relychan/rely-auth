@@ -44,7 +44,9 @@ func (hk *HMACKey) GetSignatureAlgorithms() []jose.SignatureAlgorithm {
 func (hk *HMACKey) Equal(target SignatureVerifier) bool {
 	t, ok := target.(*HMACKey)
 
-	return ok && t != nil && bytes.Equal(hk.hmacKey, t.hmacKey)
+	return ok && t != nil &&
+		hk.algorithm == t.algorithm &&
+		bytes.Equal(hk.hmacKey, t.hmacKey)
 }
 
 // VerifySignature compares a JWT signature against a static set of JWT secret key.

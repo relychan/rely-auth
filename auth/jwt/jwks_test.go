@@ -18,6 +18,8 @@ import (
 )
 
 func TestJWTKeySet_Reload(t *testing.T) {
+	defer CloseJWKS()
+
 	callCount := 0
 
 	// Generate a real RSA key for the JWKS

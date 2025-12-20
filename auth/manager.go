@@ -3,6 +3,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -95,7 +96,10 @@ func (am *RelyAuthManager) Close() error {
 	close(am.stopChan)
 	am.stopChan = nil
 
-	return am.authenticator.Close()
+	authErr := am.authenticator.Close()
+	jwsErr := jwt.CloseJWKS()
+
+	return errors.Join(authErr, jwsErr)
 }
 
 func (am *RelyAuthManager) init(

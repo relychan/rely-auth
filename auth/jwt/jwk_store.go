@@ -3,6 +3,7 @@ package jwt
 import (
 	"context"
 	"errors"
+	"maps"
 	"strings"
 	"sync"
 
@@ -35,10 +36,7 @@ func (j *JWKStore) getJWKs() map[string]*JWKS {
 
 	// Return a copy of the internal map to avoid exposing shared mutable state.
 	copied := make(map[string]*JWKS, len(j.jwks))
-
-	for k, v := range j.jwks {
-		copied[k] = v
-	}
+	maps.Copy(copied, j.jwks)
 
 	return copied
 }
@@ -139,4 +137,9 @@ func ResetJWKStore() {
 // UnregisterJWKS removes a JSON web key set from the global store if exists.
 func UnregisterJWKS(key string) {
 	globalJWKStore.deleteJWK(key)
+}
+
+// CloseJWKS closes resources of the JWK store.
+func CloseJWKS() error {
+	return globalJWKStore.httpClient.Close()
 }
