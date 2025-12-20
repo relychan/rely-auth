@@ -71,6 +71,7 @@ type RelyAuthenticatorOptions struct {
 	Logger           *slog.Logger
 	HTTPClient       *gohttpc.Client
 	CustomAttributes []attribute.KeyValue
+	Prefix           string
 }
 
 // NewRelyAuthenticatorOptions creates a new [RelyAuthenticatorOptions] instance.
@@ -110,6 +111,13 @@ func WithLogger(logger *slog.Logger) RelyAuthenticatorOption {
 func WithHTTPClient(client *gohttpc.Client) RelyAuthenticatorOption {
 	return func(ramo *RelyAuthenticatorOptions) {
 		ramo.HTTPClient = client
+	}
+}
+
+// WithPrefix sets the prefix to auth manager options.
+func WithPrefix(prefix string) RelyAuthenticatorOption {
+	return func(ramo *RelyAuthenticatorOptions) {
+		ramo.Prefix = prefix
 	}
 }
 

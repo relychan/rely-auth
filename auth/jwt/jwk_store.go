@@ -63,25 +63,40 @@ func (j *JWKStore) deleteJWK(key string) {
 }
 
 // RegisterJWKS registers a JWKS URL to the global store.
-func RegisterJWKS(ctx context.Context, jwksURL string, httpClient *gohttpc.Client) (*JWKS, error) {
+func RegisterJWKS(
+	ctx context.Context,
+	jwksURL string,
+	options ...RegisterJWKSOption,
+) (*JWKS, error) {
+	opts := &RegisterJWKSOptions{}
+
+	for _, opt := range options {
+		opt(opts)
+	}
+
 	trimmedURL := strings.TrimRight(jwksURL, "/")
 	if trimmedURL == "" {
 		return nil, ErrJWKsURLRequired
 	}
 
-	keyset, err, _ := globalJWKStore.inflight.Do(trimmedURL, func() (any, error) {
-		jwk := globalJWKStore.getJWK(trimmedURL)
+	jwksID := trimmedURL
+	if opts.prefix != "" {
+		jwksID = opts.prefix + trimmedURL
+	}
+
+	keyset, err, _ := globalJWKStore.inflight.Do(jwksID, func() (any, error) {
+		jwk := globalJWKStore.getJWK(jwksID)
 		if jwk != nil {
 			return jwk, nil
 		}
 
-		if httpClient == nil {
-			httpClient = globalJWKStore.httpClient
+		if opts.httpClient == nil {
+			opts.httpClient = globalJWKStore.httpClient
 		}
 
 		jwk = &JWKS{
 			url:        trimmedURL,
-			httpClient: httpClient,
+			httpClient: opts.httpClient,
 			inflight:   globalJWKStore.inflight,
 		}
 
@@ -91,7 +106,7 @@ func RegisterJWKS(ctx context.Context, jwksURL string, httpClient *gohttpc.Clien
 			return nil, err
 		}
 
-		globalJWKStore.setJWK(trimmedURL, jwk)
+		globalJWKStore.setJWK(jwksID, jwk)
 
 		return jwk, nil
 	})
@@ -142,4 +157,27 @@ func UnregisterJWKS(key string) {
 // CloseJWKS closes resources of the JWK store.
 func CloseJWKS() error {
 	return globalJWKStore.httpClient.Close()
+}
+
+// RegisterJWKSOptions holds options for registering JWKS.
+type RegisterJWKSOptions struct {
+	httpClient *gohttpc.Client
+	prefix     string
+}
+
+// RegisterJWKSOption abstracts a function to modify [RegisterJWKSOptions].
+type RegisterJWKSOption func(*RegisterJWKSOptions)
+
+// RegisterJWKSWithHTTPClient returns a function to set the HTTP client.
+func RegisterJWKSWithHTTPClient(httpClient *gohttpc.Client) RegisterJWKSOption {
+	return func(rj *RegisterJWKSOptions) {
+		rj.httpClient = httpClient
+	}
+}
+
+// RegisterJWKSWithPrefix returns a function to set the prefix.
+func RegisterJWKSWithPrefix(prefix string) RegisterJWKSOption {
+	return func(rj *RegisterJWKSOptions) {
+		rj.prefix = prefix
+	}
 }
