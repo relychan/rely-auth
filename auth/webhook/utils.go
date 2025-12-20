@@ -11,8 +11,6 @@ import (
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/goutils/httpheader"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 )
 
 func NewCustomWebhookAuthHeadersConfig(
@@ -37,12 +35,9 @@ func NewCustomWebhookAuthHeadersConfig(
 	return &result, nil
 }
 
-func decodeResponseJSON(span trace.Span, resp *http.Response, value any) error {
+func decodeResponseJSON(resp *http.Response, value any) error {
 	err := json.NewDecoder(resp.Body).Decode(value)
 	if err != nil {
-		span.SetStatus(codes.Error, "failed to decode session variables")
-		span.RecordError(err)
-
 		if errors.Is(err, io.EOF) {
 			return ErrResponseBodyRequired
 		}

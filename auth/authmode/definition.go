@@ -35,6 +35,7 @@ type HasuraV2PostRequestBody struct {
 // AuthenticatedOutput represents the authenticated output and authenticator metadata.
 type AuthenticatedOutput struct {
 	ID               string
+	Mode             AuthMode
 	SessionVariables map[string]any
 }
 

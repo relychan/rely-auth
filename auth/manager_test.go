@@ -59,6 +59,7 @@ func TestRelyAuthManager_Authenticate_NoAuth(t *testing.T) {
 	assert.NilError(t, err)
 	assert.DeepEqual(t, authmode.AuthenticatedOutput{
 		ID:               "0",
+		Mode:             authmode.AuthModeNoAuth,
 		SessionVariables: map[string]any{"x-hasura-role": string("guest")},
 	}, result)
 }
@@ -98,6 +99,7 @@ func TestRelyAuthManager_Authenticate_APIKey(t *testing.T) {
 	assert.NilError(t, err)
 	assert.DeepEqual(t, authmode.AuthenticatedOutput{
 		ID:               "0",
+		Mode:             authmode.AuthModeAPIKey,
 		SessionVariables: map[string]any{"x-hasura-role": string("admin")},
 	}, result)
 
@@ -151,6 +153,7 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 	assert.NilError(t, err)
 	assert.DeepEqual(t, authmode.AuthenticatedOutput{
 		ID:               "1",
+		Mode:             authmode.AuthModeNoAuth,
 		SessionVariables: map[string]any{"x-hasura-role": string("anonymous")},
 	}, result)
 }
@@ -274,7 +277,8 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 	})
 	assert.NilError(t, err)
 	assert.DeepEqual(t, authmode.AuthenticatedOutput{
-		ID: "auth1",
+		ID:   "auth1",
+		Mode: authmode.AuthModeAPIKey,
 		SessionVariables: map[string]any{
 			"x-hasura-role": "service1",
 		},
@@ -288,7 +292,8 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 	})
 	assert.NilError(t, err)
 	assert.DeepEqual(t, authmode.AuthenticatedOutput{
-		ID: "auth2",
+		ID:   "auth2",
+		Mode: authmode.AuthModeAPIKey,
 		SessionVariables: map[string]any{
 			"x-hasura-role": "service2",
 		},

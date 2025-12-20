@@ -5,14 +5,11 @@ import (
 	"errors"
 	"log/slog"
 	"slices"
-	"time"
 
 	"github.com/hasura/gotel"
-	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmetrics"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -21,7 +18,6 @@ var tracer = gotel.NewTracer("rely-auth")
 
 // ComposedAuthenticator represents an authenticator that composes a list of authenticators and authenticates fallback in order.
 type ComposedAuthenticator struct {
-	Settings         authmode.RelyAuthSettings
 	Authenticators   []authmode.RelyAuthenticator
 	CustomAttributes []attribute.KeyValue
 }
@@ -32,7 +28,6 @@ var _ authmode.RelyAuthenticator = (*ComposedAuthenticator)(nil)
 func NewComposedAuthenticator(authenticators []authmode.RelyAuthenticator) *ComposedAuthenticator {
 	return &ComposedAuthenticator{
 		Authenticators: authenticators,
-		Settings:       authmode.RelyAuthSettings{},
 	}
 }
 
@@ -46,47 +41,19 @@ func (a *ComposedAuthenticator) Authenticate(
 	ctx context.Context,
 	body *authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
-	ctx, span := tracer.Start(ctx, "Authenticate", trace.WithSpanKind(trace.SpanKindInternal))
-	defer span.End()
-
-	if len(a.CustomAttributes) > 0 {
-		span.SetAttributes(a.CustomAttributes...)
-	}
-
-	startTime := time.Now()
 	metrics := authmetrics.GetRelyAuthMetrics()
-
 	logger := gotel.GetLogger(ctx)
+	span := trace.SpanFromContext(ctx)
 
-	var tokenNotFound bool
+	var finalError error
 
 	for _, authenticator := range a.Authenticators {
 		authMode := authenticator.Mode()
-		// if auth token exists but it is unauthorized,
-		// the noAuth mode is skipped with the strict mode enabled.
-		if authMode == authmode.AuthModeNoAuth &&
-			!tokenNotFound && a.Settings.Strict {
-			break
-		}
-
-		authModeAttr := attribute.String("auth.mode", string(authMode))
+		authModeAttr := authmetrics.NewAuthModeAttribute(authMode)
 
 		result, err := authenticator.Authenticate(ctx, body)
 		if err == nil {
-			latency := time.Since(startTime).Seconds()
-			authIDAttr := attribute.String("auth.id", result.ID)
-
-			metrics.RequestDuration.Record(
-				ctx,
-				latency,
-				metric.WithAttributeSet(attribute.NewSet(
-					append(
-						a.CustomAttributes,
-						authmetrics.AuthStatusSuccessAttribute)...,
-				)),
-			)
-
-			span.SetAttributes(authModeAttr, authIDAttr)
+			authIDAttr := authmetrics.NewAuthIDAttribute(result.ID)
 
 			metrics.AuthModeTotalRequests.Add(
 				ctx,
@@ -106,7 +73,10 @@ func (a *ComposedAuthenticator) Authenticate(
 		}
 
 		authModeTokenNotFound := errors.Is(err, authmode.ErrAuthTokenNotFound)
-		tokenNotFound = tokenNotFound || authModeTokenNotFound
+		// Return the last error that the request token was found, yet invalid.
+		if finalError == nil || !authModeTokenNotFound {
+			finalError = err
+		}
 
 		logger.Debug(
 			"Authentication failed",
@@ -140,18 +110,7 @@ func (a *ComposedAuthenticator) Authenticate(
 		}
 	}
 
-	latency := time.Since(startTime).Seconds()
-
-	metrics.RequestDuration.Record(
-		ctx,
-		latency,
-		metric.WithAttributeSet(
-			attribute.NewSet(append(a.CustomAttributes, authmetrics.AuthStatusFailedAttribute)...),
-		),
-	)
-	span.SetStatus(codes.Error, "authentication failed")
-
-	return authmode.AuthenticatedOutput{}, goutils.NewUnauthorizedError()
+	return authmode.AuthenticatedOutput{}, finalError
 }
 
 // Close terminates all underlying authenticator resources.

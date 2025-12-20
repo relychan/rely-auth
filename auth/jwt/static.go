@@ -104,7 +104,7 @@ func (pk *PublicKey) VerifySignature(
 }
 
 // NewStaticKey creates a JWT secret from static credentials.
-func NewStaticKey( //nolint:ireturn
+func NewStaticKey( //nolint:ireturn,nolintlint
 	rawKey []byte,
 	algorithm jose.SignatureAlgorithm,
 ) (SignatureVerifier, error) {

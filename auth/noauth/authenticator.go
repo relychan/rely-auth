@@ -64,6 +64,7 @@ func (j *NoAuth) Authenticate(
 ) (authmode.AuthenticatedOutput, error) {
 	result := authmode.AuthenticatedOutput{
 		ID:               j.id,
+		Mode:             j.Mode(),
 		SessionVariables: j.sessionVariables,
 	}
 

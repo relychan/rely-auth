@@ -3,16 +3,15 @@ package apikey
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
 )
 
-var tracer = otel.Tracer("rely-auth/authenticator/api-key")
+var errAPIKeyNotMatched = errors.New("api key does not match")
 
 // APIKeyAuthenticator implements the authenticator with API key.
 type APIKeyAuthenticator struct {
@@ -101,33 +100,24 @@ func (*APIKeyAuthenticator) Close() error {
 
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (aka *APIKeyAuthenticator) Authenticate(
-	ctx context.Context,
+	_ context.Context,
 	body *authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
-	_, span := tracer.Start(ctx, "APIKey")
-	defer span.End()
-
 	result := authmode.AuthenticatedOutput{
-		ID: aka.id,
+		ID:   aka.id,
+		Mode: aka.Mode(),
 	}
 
 	rawToken, err := authmode.FindAuthTokenByLocation(body, &aka.tokenLocation)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		span.RecordError(err)
-
 		return result, err
 	}
 
 	if rawToken != aka.value {
-		span.SetStatus(codes.Error, "api key does not match")
-
-		return result, goutils.NewUnauthorizedError()
+		return result, errAPIKeyNotMatched
 	}
 
 	result.SessionVariables = aka.sessionVariables
-
-	span.SetStatus(codes.Ok, "")
 
 	return result, nil
 }
