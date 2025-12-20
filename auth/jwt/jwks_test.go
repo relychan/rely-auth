@@ -17,7 +17,7 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestJWTKeySet_Reload(t *testing.T) {
+func TestReloadJWKS(t *testing.T) {
 	defer CloseJWKS()
 
 	callCount := 0

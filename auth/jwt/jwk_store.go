@@ -62,7 +62,7 @@ func (j *JWKStore) deleteJWK(key string) {
 	delete(j.jwks, key)
 }
 
-// RegisterJWKS registers a JWK secret key to the global store.
+// RegisterJWKS registers a JWKS URL to the global store.
 func RegisterJWKS(ctx context.Context, jwksURL string, httpClient *gohttpc.Client) (*JWKS, error) {
 	trimmedURL := strings.TrimRight(jwksURL, "/")
 	if trimmedURL == "" {
@@ -112,7 +112,7 @@ func GetJWKSCount() int {
 	return len(globalJWKStore.getJWKs())
 }
 
-// ReloadJWKS reload JSON web key sets from the global store.
+// ReloadJWKS reloads all JSON Web Key Sets from the global store.
 func ReloadJWKS(ctx context.Context) error {
 	errs := []error{}
 

@@ -49,7 +49,7 @@ func (hk *HMACKey) Equal(target SignatureVerifier) bool {
 		bytes.Equal(hk.hmacKey, t.hmacKey)
 }
 
-// VerifySignature compares a JWT signature against a static set of JWT secret key.
+// VerifySignature compares a JWT signature against a static JWT secret key.
 func (hk *HMACKey) VerifySignature(
 	_ context.Context,
 	sig *jose.JSONWebSignature,
@@ -60,8 +60,8 @@ func (hk *HMACKey) VerifySignature(
 // PublicKey represents a public key to verify signatures.
 type PublicKey struct {
 	algorithm jose.SignatureAlgorithm
-	// publicKey used to verify the JWT. Supported types are *rsa.PublicKey and
-	// *ecdsa.PublicKey.
+	// publicKey used to verify the JWT. Supported types include *rsa.PublicKey,
+	// *ecdsa.PublicKey, and ed25519.PublicKey.
 	publicKey crypto.PublicKey
 }
 
@@ -95,7 +95,7 @@ func (pk *PublicKey) Equal(target SignatureVerifier) bool {
 		goutils.DeepEqual(t.publicKey, pk.publicKey, true)
 }
 
-// VerifySignature compares a JWT signature against a static set of JWT secret key.
+// VerifySignature compares a JWT signature against a static JWT public key.
 func (pk *PublicKey) VerifySignature(
 	_ context.Context,
 	sig *jose.JSONWebSignature,
