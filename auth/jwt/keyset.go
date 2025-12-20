@@ -69,7 +69,7 @@ func (j *JWTKeySet) GetSignatureAlgorithms() []jose.SignatureAlgorithm {
 	return GetSupportedSignatureAlgorithms()
 }
 
-// VerifySignature compares a JWT signature against a static set of JWT secret keys.
+// VerifySignature verifies a JWT signature using the configured signature verifier.
 func (j *JWTKeySet) VerifySignature(
 	ctx context.Context,
 	sig *jose.JSONWebSignature,
