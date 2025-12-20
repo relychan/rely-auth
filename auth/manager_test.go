@@ -59,6 +59,7 @@ func TestRelyAuthManager_Authenticate_NoAuth(t *testing.T) {
 	assert.NilError(t, err)
 	assert.DeepEqual(t, authmode.AuthenticatedOutput{
 		ID:               "0",
+		Mode:             authmode.AuthModeNoAuth,
 		SessionVariables: map[string]any{"x-hasura-role": string("guest")},
 	}, result)
 }
@@ -98,6 +99,7 @@ func TestRelyAuthManager_Authenticate_APIKey(t *testing.T) {
 	assert.NilError(t, err)
 	assert.DeepEqual(t, authmode.AuthenticatedOutput{
 		ID:               "0",
+		Mode:             authmode.AuthModeAPIKey,
 		SessionVariables: map[string]any{"x-hasura-role": string("admin")},
 	}, result)
 
@@ -151,6 +153,7 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 	assert.NilError(t, err)
 	assert.DeepEqual(t, authmode.AuthenticatedOutput{
 		ID:               "1",
+		Mode:             authmode.AuthModeNoAuth,
 		SessionVariables: map[string]any{"x-hasura-role": string("anonymous")},
 	}, result)
 }
@@ -199,28 +202,6 @@ func TestRelyAuthManager_Authenticate_StrictMode(t *testing.T) {
 		},
 	})
 	assert.ErrorContains(t, err, "Unauthorized")
-}
-
-func TestRelyAuthManager_Reload(t *testing.T) {
-	config := &RelyAuthConfig{
-		Definitions: []RelyAuthDefinition{
-			{
-				RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
-					Mode: authmode.AuthModeNoAuth,
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("guest"),
-					},
-				},
-			},
-		},
-	}
-
-	manager, err := NewRelyAuthManager(context.TODO(), config)
-	assert.NilError(t, err)
-	defer manager.Close()
-
-	err = manager.Authenticator().Reload(context.Background())
-	assert.NilError(t, err)
 }
 
 func TestRelyAuthManager_WithOptions(t *testing.T) {
@@ -296,10 +277,12 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 	})
 	assert.NilError(t, err)
 	assert.DeepEqual(t, authmode.AuthenticatedOutput{
-		ID: "auth1",
+		ID:   "auth1",
+		Mode: authmode.AuthModeAPIKey,
 		SessionVariables: map[string]any{
 			"x-hasura-role": "service1",
-		}}, result)
+		},
+	}, result)
 
 	// Test second authenticator
 	result, err = manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -309,7 +292,8 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 	})
 	assert.NilError(t, err)
 	assert.DeepEqual(t, authmode.AuthenticatedOutput{
-		ID: "auth2",
+		ID:   "auth2",
+		Mode: authmode.AuthModeAPIKey,
 		SessionVariables: map[string]any{
 			"x-hasura-role": "service2",
 		},

@@ -64,15 +64,11 @@ func (j *NoAuth) Authenticate(
 ) (authmode.AuthenticatedOutput, error) {
 	result := authmode.AuthenticatedOutput{
 		ID:               j.id,
+		Mode:             j.Mode(),
 		SessionVariables: j.sessionVariables,
 	}
 
 	return result, nil
-}
-
-// Reload credentials of the authenticator.
-func (*NoAuth) Reload(_ context.Context) error {
-	return nil
 }
 
 // Close handles the resources cleaning.

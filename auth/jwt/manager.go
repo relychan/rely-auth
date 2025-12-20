@@ -6,26 +6,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"slices"
 	"strings"
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/relychan/gohttpc"
-	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmetrics"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 )
 
-var (
-	tracer       = otel.Tracer("rely-auth/authenticator/jwt")
-	authModeAttr = attribute.String("auth.mode", string(authmode.AuthModeJWT))
-)
+var authModeAttr = attribute.String("auth.mode", string(authmode.AuthModeJWT))
 
 // JWTAuthenticator implements the authenticator with JWT key.
 type JWTAuthenticator struct {
@@ -124,33 +117,6 @@ func (ja *JWTAuthenticator) Authenticate(
 	return Authenticate(ctx, body, ja.keySets, ja.options)
 }
 
-// Reload credentials of the authenticator.
-func (ja *JWTAuthenticator) Reload(ctx context.Context) error {
-	for _, group := range ja.keySets {
-		for _, keySet := range group {
-			err := keySet.Reload(ctx)
-			if err != nil {
-				slog.Warn(err.Error())
-			}
-		}
-	}
-
-	return nil
-}
-
-// HasJWK checks if at least 1 keyset has JWK url.
-func (ja *JWTAuthenticator) HasJWK() bool {
-	for _, group := range ja.keySets {
-		for _, key := range group {
-			if key.jwksURL != "" {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
 // Add a new JWT authenticator from config.
 func (ja *JWTAuthenticator) Add(ctx context.Context, config RelyAuthJWTConfig) error {
 	tokenLocation, err := authmode.ValidateTokenLocation(config.TokenLocation)
@@ -188,15 +154,15 @@ func Authenticate(
 	keySets map[string][]*JWTKeySet,
 	options authmode.RelyAuthenticatorOptions,
 ) (authmode.AuthenticatedOutput, error) {
-	_, span := tracer.Start(ctx, "JWT")
-	defer span.End()
+	output := authmode.AuthenticatedOutput{
+		Mode: authmode.AuthModeJWT,
+	}
 
 	for _, group := range keySets {
 		if len(group) == 0 {
 			continue
 		}
 
-		output := authmode.AuthenticatedOutput{}
 		tokenLocation := group[0].GetConfig().TokenLocation
 
 		rawToken, err := authmode.FindAuthTokenByLocation(body, &tokenLocation)
@@ -216,20 +182,14 @@ func Authenticate(
 
 		sig, err := jose.ParseSigned(rawToken, algorithms)
 		if err != nil {
-			span.SetStatus(codes.Error, "failed to parse signed token")
-			span.RecordError(err)
-
-			return output, err
+			return output, fmt.Errorf("failed to parse signed token: %w", err)
 		}
 
 		var claims jwt.Claims
 
 		err = json.Unmarshal(sig.UnsafePayloadWithoutVerification(), &claims)
 		if err != nil {
-			span.SetStatus(codes.Error, "failed to decode jwt payload")
-			span.RecordError(err)
-
-			return output, err
+			return output, fmt.Errorf("failed to decode jwt payload: %w", err)
 		}
 
 		metrics := authmetrics.GetRelyAuthMetrics()
@@ -259,23 +219,16 @@ func Authenticate(
 
 			sessionVariables, err := key.TransformClaims(verifiedBytes)
 			if err != nil {
-				span.SetStatus(codes.Error, "failed to transform claims")
-				span.RecordError(err)
-
-				return output, err
+				return output, fmt.Errorf("failed to transform claims: %w", err)
 			}
 
 			output.SessionVariables = sessionVariables
-
-			span.SetStatus(codes.Ok, "")
 
 			return output, nil
 		}
 	}
 
-	span.SetStatus(codes.Error, "unauthorized")
-
-	return authmode.AuthenticatedOutput{}, goutils.NewUnauthorizedError()
+	return output, authmode.ErrAuthTokenNotFound
 }
 
 func verifyClaims(

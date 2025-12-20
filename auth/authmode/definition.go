@@ -35,6 +35,7 @@ type HasuraV2PostRequestBody struct {
 // AuthenticatedOutput represents the authenticated output and authenticator metadata.
 type AuthenticatedOutput struct {
 	ID               string
+	Mode             AuthMode
 	SessionVariables map[string]any
 }
 
@@ -50,8 +51,6 @@ type RelyAuthenticator interface {
 
 	// GetMode returns the auth mode of the current authenticator.
 	Mode() AuthMode
-	// Reload credentials of the authenticator.
-	Reload(ctx context.Context) error
 	// Close handles the resources cleaning.
 	Close() error
 }

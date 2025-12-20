@@ -377,59 +377,6 @@ func TestJWTAuthenticator_Equal(t *testing.T) {
 	})
 }
 
-func TestJWTAuthenticator_Reload(t *testing.T) {
-	config := RelyAuthJWTConfig{
-		Mode: authmode.AuthModeJWT,
-		TokenLocation: authscheme.TokenLocation{
-			In:   authscheme.InHeader,
-			Name: "Authorization",
-		},
-		Key: JWTKey{
-			Algorithm: jose.HS256,
-			Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("my-secret-key-for-testing-at-least-32-bytes-long")),
-		},
-		ClaimsConfig: JWTClaimsConfig{
-			Locations: map[string]jmes.FieldMappingEntryConfig{
-				"x-hasura-user-id": {Path: goutils.ToPtr("sub")},
-			},
-		},
-	}
-
-	authenticator, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
-	defer authenticator.Close()
-
-	err = authenticator.Reload(context.TODO())
-	assert.NilError(t, err)
-}
-
-func TestJWTAuthenticator_HasJWK(t *testing.T) {
-	t.Run("with_static_key", func(t *testing.T) {
-		config := RelyAuthJWTConfig{
-			Mode: authmode.AuthModeJWT,
-			TokenLocation: authscheme.TokenLocation{
-				In:   authscheme.InHeader,
-				Name: "Authorization",
-			},
-			Key: JWTKey{
-				Algorithm: jose.HS256,
-				Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("my-secret-key-for-testing-at-least-32-bytes-long")),
-			},
-			ClaimsConfig: JWTClaimsConfig{
-				Locations: map[string]jmes.FieldMappingEntryConfig{
-					"x-hasura-user-id": {Path: goutils.ToPtr("sub")},
-				},
-			},
-		}
-
-		authenticator, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
-		defer authenticator.Close()
-
-		assert.Assert(t, !authenticator.HasJWK())
-	})
-}
-
 func TestJWTAuthenticator_Add(t *testing.T) {
 	authenticator := &JWTAuthenticator{
 		options: authmode.NewRelyAuthenticatorOptions(),
