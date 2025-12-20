@@ -573,6 +573,8 @@ func TestJWTKeySet_InitWithEdDSA(t *testing.T) {
 }
 
 func TestJWTKeySet_InitWithJWKURL(t *testing.T) {
+	ResetJWKStore()
+
 	// Generate a real RSA key for the JWKS
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	assert.NilError(t, err)
@@ -617,56 +619,5 @@ func TestJWTKeySet_InitWithJWKURL(t *testing.T) {
 	assert.Assert(t, ok)
 
 	assert.Equal(t, server.URL, result.url)
-	assert.Assert(t, len(result.cachedKeys) > 0)
-}
-
-func TestJWTKeySet_Reload(t *testing.T) {
-	callCount := 0
-
-	// Generate a real RSA key for the JWKS
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NilError(t, err)
-
-	jwk := jose.JSONWebKey{
-		KeyID:     "test-key-1",
-		Algorithm: string(jose.RS256),
-		Use:       "sig",
-		Key:       &privateKey.PublicKey,
-	}
-
-	jwks := jose.JSONWebKeySet{
-		Keys: []jose.JSONWebKey{jwk},
-	}
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		callCount++
-		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(jwks)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}))
-	defer server.Close()
-
-	config := &RelyAuthJWTConfig{
-		Mode: authmode.AuthModeJWT,
-		Key: JWTKey{
-			JWKFromURL: goutils.ToPtr(goenvconf.NewEnvStringValue(server.URL)),
-		},
-		ClaimsConfig: JWTClaimsConfig{
-			Locations: map[string]jmes.FieldMappingEntryConfig{
-				"x-hasura-user-id": {Path: goutils.ToPtr("sub")},
-			},
-		},
-	}
-
-	keyset, err := NewJWTKeySet(context.TODO(), config, authmode.RelyAuthenticatorOptions{})
-	assert.NilError(t, err)
-	defer keyset.Close()
-
-	initialCallCount := callCount
-
-	err = ReloadJWKS(context.TODO())
-	assert.NilError(t, err)
-	assert.Assert(t, callCount > initialCallCount)
+	assert.Assert(t, len(result.cachedKeys.Load().Keys) > 0)
 }

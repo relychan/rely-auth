@@ -114,6 +114,9 @@ func NewStaticKey( //nolint:ireturn
 		return NewHMACKey(rawKey, algorithm), nil
 	case jose.RS256, jose.RS384, jose.RS512, jose.PS256, jose.PS384, jose.PS512:
 		spkiBlock, _ := pem.Decode(rawKey)
+		if spkiBlock == nil {
+			return nil, ErrInvalidJWTKey
+		}
 
 		pubInterface, err := x509.ParsePKIXPublicKey(spkiBlock.Bytes)
 		if err != nil {
@@ -128,6 +131,9 @@ func NewStaticKey( //nolint:ireturn
 		return NewPublicKey(rsaPubKey, algorithm), nil
 	case jose.ES256, jose.ES384, jose.ES512:
 		spkiBlock, _ := pem.Decode(rawKey)
+		if spkiBlock == nil {
+			return nil, ErrInvalidJWTKey
+		}
 
 		pubInterface, err := x509.ParsePKIXPublicKey(spkiBlock.Bytes)
 		if err != nil {
@@ -142,13 +148,16 @@ func NewStaticKey( //nolint:ireturn
 		return NewPublicKey(pubKey, algorithm), nil
 	case jose.EdDSA:
 		spkiBlock, _ := pem.Decode(rawKey)
+		if spkiBlock == nil {
+			return nil, ErrInvalidJWTKey
+		}
 
 		pubInterface, err := x509.ParsePKIXPublicKey(spkiBlock.Bytes)
 		if err != nil {
 			return nil, err
 		}
 
-		pubKey, ok := pubInterface.(*ed25519.PublicKey)
+		pubKey, ok := pubInterface.(ed25519.PublicKey)
 		if !ok {
 			return nil, fmt.Errorf("%w: The public key is not an Ed25519 key", ErrInvalidJWTKey)
 		}

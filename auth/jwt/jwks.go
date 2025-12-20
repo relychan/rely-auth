@@ -3,11 +3,10 @@ package jwt
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
+	"sync/atomic"
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/relychan/gohttpc"
@@ -16,20 +15,9 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
-// JWKStore represents a global JWT store structure.
-type JWKStore struct {
-	// inflight suppresses parallel execution of updateKeys and allows
-	// multiple goroutines to wait for its result.
-	inflight *singleflight.Group
-	// Set of JWKS map.
-	jwks map[string]*JWKS
-	// The default http client to fetch JWKs.
-	httpClient *gohttpc.Client
-}
-
-var globalJWKStore = JWKStore{
-	inflight: &singleflight.Group{},
-	jwks:     map[string]*JWKS{},
+type jsonWebKeySet struct {
+	Keys                []jose.JSONWebKey
+	SignatureAlgorithms []jose.SignatureAlgorithm
 }
 
 // JWKS represents a JSON key set secret.
@@ -37,8 +25,7 @@ type JWKS struct {
 	url      string
 	inflight *singleflight.Group
 	// A set of cached JSON Web keys.
-	cachedKeys          []jose.JSONWebKey
-	signatureAlgorithms []jose.SignatureAlgorithm
+	cachedKeys atomic.Pointer[jsonWebKeySet]
 	// The HTTP client is used to fetch JSON web keys
 	httpClient *gohttpc.Client
 }
@@ -47,7 +34,12 @@ var _ SignatureVerifier = (*JWKS)(nil)
 
 // GetSignatureAlgorithms get signature algorithms of the keyset.
 func (j *JWKS) GetSignatureAlgorithms() []jose.SignatureAlgorithm {
-	return j.signatureAlgorithms
+	cachedKeys := j.cachedKeys.Load()
+	if cachedKeys == nil {
+		return []jose.SignatureAlgorithm{}
+	}
+
+	return cachedKeys.SignatureAlgorithms
 }
 
 // Equal checks if the target value is equal.
@@ -63,12 +55,8 @@ func (j *JWKS) Equal(target SignatureVerifier) bool {
 // VerifySignature compares the json web token against a static set of JWT secret key.
 func (j *JWKS) VerifySignature(
 	ctx context.Context,
-	sig *jose.JSONWebSignature,
+	jws *jose.JSONWebSignature,
 ) ([]byte, error) {
-	return j.verifyJWKs(ctx, sig)
-}
-
-func (j *JWKS) verifyJWKs(ctx context.Context, jws *jose.JSONWebSignature) ([]byte, error) {
 	// We don't support JWTs signed with multiple signatures.
 	keyID := ""
 
@@ -78,13 +66,14 @@ func (j *JWKS) verifyJWKs(ctx context.Context, jws *jose.JSONWebSignature) ([]by
 		break
 	}
 
-	keys := j.cachedKeys
-
-	for _, key := range keys {
-		if keyID == "" || key.KeyID == keyID {
-			payload, err := jws.Verify(&key)
-			if err == nil {
-				return payload, nil
+	keyset := j.cachedKeys.Load()
+	if keyset != nil {
+		for _, key := range keyset.Keys {
+			if keyID == "" || key.KeyID == keyID {
+				payload, err := jws.Verify(&key)
+				if err == nil {
+					return payload, nil
+				}
 			}
 		}
 	}
@@ -129,17 +118,20 @@ func (j *JWKS) keysFromRemoteInflight(ctx context.Context) ([]jose.JSONWebKey, e
 }
 
 func (j *JWKS) keysFromRemote(ctx context.Context) ([]jose.JSONWebKey, error) {
-	// Sync keys and finish inflight when that's done.
+	// Sync keys from the remote source.
 	keys, updateErr := j.updateKeys(ctx)
 
-	// Lock to update the keys and indicate that there is no longer an
-	// inflight request.
+	// If the keys were fetched successfully, update the cached keys and algorithms.
 	if updateErr == nil {
-		j.cachedKeys = keys
-		j.signatureAlgorithms = getSignatureAlgorithmsFromJWKS(keys)
+		cachedKeys := &jsonWebKeySet{
+			Keys:                keys,
+			SignatureAlgorithms: getSignatureAlgorithmsFromJWKS(keys),
+		}
+
+		j.cachedKeys.Store(cachedKeys)
 	}
 
-	return j.cachedKeys, updateErr
+	return keys, updateErr
 }
 
 func (j *JWKS) updateKeys(ctx context.Context) ([]jose.JSONWebKey, error) {
@@ -173,93 +165,4 @@ func (j *JWKS) updateKeys(ctx context.Context) ([]jose.JSONWebKey, error) {
 	}
 
 	return keySet.Keys, nil
-}
-
-func getSignatureAlgorithmsFromJWKS(keys []jose.JSONWebKey) []jose.SignatureAlgorithm {
-	results := make([]jose.SignatureAlgorithm, 0, len(keys))
-
-	for _, key := range keys {
-		if key.Algorithm == "" {
-			continue
-		}
-
-		alg := jose.SignatureAlgorithm(key.Algorithm)
-		results = append(results, alg)
-	}
-
-	if len(results) == 0 {
-		return []jose.SignatureAlgorithm{}
-	}
-
-	slices.Sort(results)
-
-	return slices.Compact(results)
-}
-
-// RegisterJWKS registers a JWK secret key to the global store.
-func RegisterJWKS(ctx context.Context, jwksURL string, httpClient *gohttpc.Client) (*JWKS, error) {
-	trimmedURL := strings.TrimRight(jwksURL, "/")
-	if trimmedURL == "" {
-		return nil, ErrJWKsURLRequired
-	}
-
-	keyset, err, _ := globalJWKStore.inflight.Do(trimmedURL, func() (any, error) {
-		jwk, ok := globalJWKStore.jwks[trimmedURL]
-		if ok {
-			return jwk, nil
-		}
-
-		if httpClient == nil {
-			if globalJWKStore.httpClient == nil {
-				globalJWKStore.httpClient = gohttpc.NewClient()
-			}
-
-			httpClient = globalJWKStore.httpClient
-		}
-
-		jwk = &JWKS{
-			url:        trimmedURL,
-			httpClient: httpClient,
-			inflight:   globalJWKStore.inflight,
-		}
-
-		// fetch JSON web key to validate if the JWK URL is valid.
-		_, err := jwk.keysFromRemote(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		globalJWKStore.jwks[trimmedURL] = jwk
-
-		return jwk, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	result, ok := keyset.(*JWKS)
-	if !ok {
-		return nil, ErrGetJWKsFailed
-	}
-
-	return result, nil
-}
-
-// GetJWKSCount gets the current number of JWKs secret keys from the global store.
-func GetJWKSCount() int {
-	return len(globalJWKStore.jwks)
-}
-
-// ReloadJWKS reload JWK secret keys from the global store.
-func ReloadJWKS(ctx context.Context) error {
-	errs := []error{}
-
-	for _, jwk := range globalJWKStore.jwks {
-		_, err := jwk.keysFromRemoteInflight(ctx)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	return errors.Join(errs...)
 }
