@@ -95,42 +95,28 @@ func (am *RelyAuthManager) Authenticate(
 		span.SetAttributes(am.authenticator.CustomAttributes...)
 	}
 
-	var (
-		output authmode.AuthenticatedOutput
-		err    error
-	)
-
 	startTime := time.Now()
 	metrics := authmetrics.GetRelyAuthMetrics()
 
-	if len(am.authenticator.Authenticators) == 0 {
-		output, err = am.noAuth.Authenticate(ctx, body)
-	} else {
-		output, err = am.authenticator.Authenticate(ctx, body)
-		if err != nil && (am.noAuth == nil ||
-			// In the strict mode, if the request token was found but invalid,
-			// return unauthorized error instead of the unauthenticated role.
-			(am.settings.Strict && !errors.Is(err, authmode.ErrAuthTokenNotFound))) {
-			metrics.RequestDuration.Record(
-				ctx,
-				time.Since(startTime).Seconds(),
-				metric.WithAttributeSet(attribute.NewSet(
-					append(
-						am.authenticator.CustomAttributes,
-						authmetrics.AuthStatusFailedAttribute)...,
-				)),
-			)
+	output, err := am.authenticateFallback(ctx, body)
 
-			span.SetAttributes(authmetrics.NewAuthModeAttribute(output.Mode))
-			span.SetStatus(codes.Error, "authentication failed")
-			span.RecordError(err)
+	span.SetAttributes(authmetrics.NewAuthModeAttribute(output.Mode))
 
-			return output, goutils.NewUnauthorizedError()
-		}
+	if err != nil {
+		metrics.RequestDuration.Record(
+			ctx,
+			time.Since(startTime).Seconds(),
+			metric.WithAttributeSet(attribute.NewSet(
+				append(
+					am.authenticator.CustomAttributes,
+					authmetrics.AuthStatusFailedAttribute)...,
+			)),
+		)
 
-		if err != nil && am.noAuth != nil {
-			output, err = am.noAuth.Authenticate(ctx, body)
-		}
+		span.SetStatus(codes.Error, "authentication failed")
+		span.RecordError(err)
+
+		return output, goutils.NewUnauthorizedError()
 	}
 
 	metrics.RequestDuration.Record(
@@ -144,7 +130,6 @@ func (am *RelyAuthManager) Authenticate(
 	)
 
 	span.SetAttributes(authmetrics.NewAuthIDAttribute(output.ID))
-	span.SetAttributes(authmetrics.NewAuthModeAttribute(output.Mode))
 	span.SetStatus(codes.Ok, "")
 
 	return output, err
@@ -290,4 +275,36 @@ func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterva
 			}
 		}
 	}
+}
+
+func (am *RelyAuthManager) authenticateFallback(
+	ctx context.Context,
+	body *authmode.AuthenticateRequestData,
+) (authmode.AuthenticatedOutput, error) {
+	var (
+		output authmode.AuthenticatedOutput
+		err    error
+	)
+
+	if len(am.authenticator.Authenticators) == 0 {
+		if am.noAuth != nil {
+			return am.noAuth.Authenticate(ctx, body)
+		}
+
+		return authmode.AuthenticatedOutput{}, authmode.ErrAuthConfigRequired
+	}
+
+	output, err = am.authenticator.Authenticate(ctx, body)
+	if err != nil && (am.noAuth == nil ||
+		// In the strict mode, if the request token was found but invalid,
+		// return unauthorized error instead of the unauthenticated role.
+		(am.settings.Strict && !errors.Is(err, authmode.ErrAuthTokenNotFound))) {
+		return output, err
+	}
+
+	if err != nil && am.noAuth != nil {
+		return am.noAuth.Authenticate(ctx, body)
+	}
+
+	return output, err
 }

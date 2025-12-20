@@ -108,11 +108,6 @@ func (wa *WebhookAuthenticator) Close() error {
 	return nil
 }
 
-// Reload credentials of the authenticator.
-func (*WebhookAuthenticator) Reload(_ context.Context) error {
-	return nil
-}
-
 func (wa *WebhookAuthenticator) init(
 	ctx context.Context,
 	config *RelyAuthWebhookConfig,

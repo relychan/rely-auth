@@ -84,7 +84,7 @@ func (j *JWKS) VerifySignature(
 	// https://openid.net/specs/openid-connect-core-1_0.html#RotateSigKeys
 	keys, err := j.keysFromRemoteInflight(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("fetching keys %w", err)
+		return nil, fmt.Errorf("failed to fetch json web keys: %w", err)
 	}
 
 	for _, key := range keys {

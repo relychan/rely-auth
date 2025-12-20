@@ -62,7 +62,7 @@ func TestAPIKeyAuthenticator_Unauthorized(t *testing.T) {
 			"authorization": "Bearer wrong-key",
 		},
 	})
-	assert.ErrorContains(t, err, "Unauthorized")
+	assert.ErrorContains(t, err, errAPIKeyNotMatched.Error())
 
 	// Test with missing header
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{

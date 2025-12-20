@@ -126,32 +126,6 @@ func TestWebhookAuthenticator_Mode(t *testing.T) {
 	assert.Equal(t, authmode.AuthModeWebhook, authenticator.Mode())
 }
 
-func TestWebhookAuthenticator_Reload(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
-			"x-hasura-role": "user",
-		})
-	}))
-	defer server.Close()
-
-	config := &RelyAuthWebhookConfig{
-		Mode:   authmode.AuthModeWebhook,
-		URL:    goenvconf.NewEnvStringValue(server.URL),
-		Method: http.MethodGet,
-		CustomRequest: &WebhookAuthCustomRequestConfig{
-			Headers: &WebhookAuthHeadersConfig{},
-		},
-	}
-
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
-	defer authenticator.Close()
-
-	err = authenticator.Reload(context.Background())
-	assert.NilError(t, err)
-}
-
 func TestWebhookAuthenticator_GET_Method(t *testing.T) {
 	// Create a mock webhook server for GET requests
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

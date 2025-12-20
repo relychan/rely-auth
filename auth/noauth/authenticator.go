@@ -71,11 +71,6 @@ func (j *NoAuth) Authenticate(
 	return result, nil
 }
 
-// Reload credentials of the authenticator.
-func (*NoAuth) Reload(_ context.Context) error {
-	return nil
-}
-
 // Close handles the resources cleaning.
 func (*NoAuth) Close() error {
 	return nil

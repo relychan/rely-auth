@@ -88,11 +88,6 @@ func (*APIKeyAuthenticator) Mode() authmode.AuthMode {
 	return authmode.AuthModeAPIKey
 }
 
-// Reload credentials of the authenticator.
-func (*APIKeyAuthenticator) Reload(_ context.Context) error {
-	return nil
-}
-
 // Close handles the resources cleaning.
 func (*APIKeyAuthenticator) Close() error {
 	return nil
