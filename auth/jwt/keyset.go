@@ -149,7 +149,11 @@ func (j *JWTKeySet) init(ctx context.Context, options authmode.RelyAuthenticator
 		return err
 	}
 
-	j.signatureVerifier, err = RegisterJWKS(ctx, jwksURL, options.HTTPClient)
+	j.signatureVerifier, err = RegisterJWKS(
+		ctx, jwksURL,
+		RegisterJWKSWithHTTPClient(options.HTTPClient),
+		RegisterJWKSWithPrefix(options.Prefix),
+	)
 
 	return err
 }
