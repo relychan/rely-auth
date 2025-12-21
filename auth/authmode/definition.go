@@ -71,7 +71,9 @@ type RelyAuthenticatorOptions struct {
 	Logger           *slog.Logger
 	HTTPClient       *gohttpc.Client
 	CustomAttributes []attribute.KeyValue
-	Prefix           string
+	// Prefix is used to create unique JWKS registration keys, allowing multiple authenticators
+	// to register the same JWKS URL independently.
+	Prefix string
 }
 
 // NewRelyAuthenticatorOptions creates a new [RelyAuthenticatorOptions] instance.

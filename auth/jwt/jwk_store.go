@@ -162,7 +162,9 @@ func CloseJWKS() error {
 // RegisterJWKSOptions holds options for registering JWKS.
 type RegisterJWKSOptions struct {
 	httpClient *gohttpc.Client
-	prefix     string
+	// prefix is prepended to the JWKS URL to create a unique registration key,
+	// allowing multiple authenticators to register the same JWKS URL independently.
+	prefix string
 }
 
 // RegisterJWKSOption abstracts a function to modify [RegisterJWKSOptions].
