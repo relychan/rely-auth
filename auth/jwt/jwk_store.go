@@ -81,7 +81,7 @@ func RegisterJWKS(
 
 	jwksID := trimmedURL
 	if opts.prefix != "" {
-		jwksID = opts.prefix + trimmedURL
+		jwksID = opts.prefix + ":" + trimmedURL
 	}
 
 	keyset, err, _ := globalJWKStore.inflight.Do(jwksID, func() (any, error) {
