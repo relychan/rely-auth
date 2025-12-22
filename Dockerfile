@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 go build \
     -v -o rely-auth ./server
 
 # stage 2: production image
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian13:nonroot
 
 # Copy the binary to the production image from the builder stage.
 COPY --from=builder /app/rely-auth /rely-auth
