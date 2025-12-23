@@ -10,7 +10,7 @@ require (
 	github.com/hasura/gotel v0.5.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
-	github.com/relychan/gohttpc v0.0.0-20251214022704-553f87cb214d
+	github.com/relychan/gohttpc v0.0.0-20251221091317-e15eaee60ca3
 	github.com/relychan/gohttps v0.0.0-20251206085650-5f2727ade1fa
 	github.com/relychan/gotransform v0.0.0-20251214152200-6dcd174d5492
 	github.com/relychan/goutils v0.0.0-20251214090424-aad6497ba9b4
@@ -74,7 +74,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/crypto v0.46.0 // indirect
-	golang.org/x/exp v0.0.0-20251209150349-8475f28825e9 // indirect
+	golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect

@@ -1,12 +1,18 @@
 name: Unit tests
 
 on:
+  workflow_call:
   pull_request:
   push:
     branches:
       - main
 
+env:
+  DOCKER_REGISTRY: ghcr.io
+  DOCKER_IMAGE_NAME: relychan/rely-auth
+
 permissions:
+  contents: read
   pull-requests: write
   
 jobs:
@@ -15,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
           go-version-file: ./go.mod
@@ -56,3 +62,36 @@ jobs:
       - name: Dump docker logs on failure
         if: failure()
         uses: jwalton/gh-docker-logs@v2
+
+  build-scan:
+    name: Build and scan vulnerabilities
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Generate version SHA
+        id: get-version
+        run: |
+          echo "ref_version=${GITHUB_SHA:0:10}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Build image
+        id: docker-build
+        run: |
+          docker build --build-arg VERSION=$VERSION \
+            -t "$DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$VERSION" .
+        env:
+          VERSION: ${{ steps.get-version.outputs.ref_version }}
+          
+      - name: Scan High/Critical Vulnerabilities
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: "image"
+          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.get-version.outputs.ref_version }}
+          format: table
+          severity: "CRITICAL,HIGH"
+          scanners: vuln
+          ignore-unfixed: true
+          exit-code: 1
