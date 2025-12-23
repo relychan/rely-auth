@@ -9,6 +9,8 @@ env:
   DOCKER_IMAGE_NAME: relychan/rely-auth
 
 permissions:
+  actions: read
+  contents: read
   pull-requests: write
   packages: write
 
@@ -69,5 +71,4 @@ jobs:
           severity: "CRITICAL,HIGH"
           scanners: vuln
           ignore-unfixed: true
-          DOCKER-HOST: "unix://${SOCKET}"
           exit-code: 1

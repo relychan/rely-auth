@@ -12,6 +12,7 @@ env:
   DOCKER_IMAGE_NAME: relychan/rely-auth
 
 permissions:
+  contents: read
   pull-requests: write
   
 jobs:
@@ -70,7 +71,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Get version from tag
+      - name: Generate version SHA
         id: get-version
         run: |
           echo "ref_version=${GITHUB_SHA:0:10}" >> $GITHUB_OUTPUT
