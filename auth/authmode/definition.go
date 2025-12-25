@@ -142,3 +142,27 @@ func WithCustomEnvGetter(
 		ramo.CustomEnvGetter = getter
 	}
 }
+
+// RelyAuthentication is the wrapper of [RelyAuthenticator] with extra security rules.
+type RelyAuthentication struct {
+	RelyAuthenticator
+
+	SecurityRules *RelyAuthSecurityRules
+}
+
+// Authenticate validates and authenticates the token from the auth webhook request.
+func (ra *RelyAuthentication) Authenticate(
+	ctx context.Context,
+	body *AuthenticateRequestData,
+) (AuthenticatedOutput, error) {
+	if ra.SecurityRules != nil {
+		err := ra.SecurityRules.Authenticate(body)
+		if err != nil {
+			return AuthenticatedOutput{
+				Mode: ra.Mode(),
+			}, err
+		}
+	}
+
+	return ra.RelyAuthenticator.Authenticate(ctx, body)
+}

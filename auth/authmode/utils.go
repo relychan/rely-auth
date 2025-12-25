@@ -2,7 +2,9 @@ package authmode
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -10,6 +12,90 @@ import (
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/goutils"
 )
+
+var ipHeaders = []string{
+	"cf-connecting-ip",
+	"x-real-ip",
+	"x-forwarded-for",
+}
+
+var originHeaders = []string{"origin"}
+
+// ParseSubnet parses the subnet from a raw string.
+func ParseSubnet(value string) (*net.IPNet, error) {
+	if value == "" {
+		return nil, ErrInvalidSubnet
+	}
+
+	if !strings.Contains(value, "/") {
+		value += "/32"
+	}
+
+	_, subnet, err := net.ParseCIDR(value)
+	if err != nil {
+		return nil, err
+	}
+
+	return subnet, err
+}
+
+// GetClientIP get the client IP from request headers.
+func GetClientIP(headers map[string]string, allowedHeaders ...string) (net.IP, error) {
+	if len(headers) == 0 {
+		return nil, ErrIPNotFound
+	}
+
+	if len(allowedHeaders) == 0 {
+		allowedHeaders = ipHeaders
+	}
+
+	errs := []error{}
+
+	for _, name := range allowedHeaders {
+		value, ok := headers[name]
+		if !ok || value == "" {
+			continue
+		}
+
+		ip := net.ParseIP(value)
+		if ip != nil {
+			return ip, nil
+		}
+
+		errs = append(errs, fmt.Errorf("%s: %w", value, ErrInvalidIP))
+	}
+
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
+
+	return nil, ErrInvalidIP
+}
+
+// GetOrigin get the origin header from request headers.
+func GetOrigin(headers map[string]string, allowedHeaders ...string) string {
+	if len(headers) == 0 {
+		return ""
+	}
+
+	if len(allowedHeaders) == 0 {
+		allowedHeaders = originHeaders
+	}
+
+	for _, name := range allowedHeaders {
+		value, ok := headers[name]
+		if !ok || value == "" {
+			continue
+		}
+
+		trimmed := strings.TrimSpace(value)
+		if trimmed != "" {
+			return strings.ToLower(trimmed)
+		}
+	}
+
+	return ""
+}
 
 // FindAuthTokenByLocation finds the authentication token or api key from the request.
 func FindAuthTokenByLocation(

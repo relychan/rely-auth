@@ -29,7 +29,7 @@ import (
 type RelyAuthManager struct {
 	settings      authmode.RelyAuthSettings
 	authenticator *ComposedAuthenticator
-	noAuth        *noauth.NoAuth
+	noAuth        *authmode.RelyAuthentication
 	logger        *slog.Logger
 	stopChan      chan struct{}
 	mu            sync.Mutex
@@ -181,6 +181,14 @@ func (am *RelyAuthManager) init(
 	var jwtAuth *jwt.JWTAuthenticator
 
 	for i, rawDef := range definitions {
+		securityRules, err := authmode.RelyAuthSecurityRulesFromConfig(
+			rawDef.SecurityRules,
+			options.GetEnvFunc(ctx),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to parse security rules of authenticator %d: %w", i, err)
+		}
+
 		switch def := rawDef.RelyAuthDefinitionInterface.(type) {
 		case *apikey.RelyAuthAPIKeyConfig:
 			if def.ID == "" {
@@ -192,7 +200,13 @@ func (am *RelyAuthManager) init(
 				return fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
 			}
 
-			am.authenticator.Authenticators = append(am.authenticator.Authenticators, authenticator)
+			am.authenticator.Authenticators = append(
+				am.authenticator.Authenticators,
+				authmode.RelyAuthentication{
+					RelyAuthenticator: authenticator,
+					SecurityRules:     securityRules,
+				},
+			)
 		case *jwt.RelyAuthJWTConfig:
 			if def.ID == "" {
 				def.ID = strconv.Itoa(i)
@@ -205,7 +219,14 @@ func (am *RelyAuthManager) init(
 				}
 
 				jwtAuth = authenticator
-				am.authenticator.Authenticators = append(am.authenticator.Authenticators, authenticator)
+
+				am.authenticator.Authenticators = append(
+					am.authenticator.Authenticators,
+					authmode.RelyAuthentication{
+						RelyAuthenticator: authenticator,
+						SecurityRules:     securityRules,
+					},
+				)
 			}
 
 			err := jwtAuth.Add(ctx, *def)
@@ -222,7 +243,13 @@ func (am *RelyAuthManager) init(
 				return fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}
 
-			am.authenticator.Authenticators = append(am.authenticator.Authenticators, authenticator)
+			am.authenticator.Authenticators = append(
+				am.authenticator.Authenticators,
+				authmode.RelyAuthentication{
+					RelyAuthenticator: authenticator,
+					SecurityRules:     securityRules,
+				},
+			)
 		case *noauth.RelyAuthNoAuthConfig:
 			if am.noAuth != nil {
 				return authmode.ErrOnlyOneNoAuthModeAllowed
@@ -237,7 +264,10 @@ func (am *RelyAuthManager) init(
 				return fmt.Errorf("failed to create noAuth: %w", err)
 			}
 
-			am.noAuth = authenticator
+			am.noAuth = &authmode.RelyAuthentication{
+				RelyAuthenticator: authenticator,
+				SecurityRules:     securityRules,
+			}
 		}
 	}
 

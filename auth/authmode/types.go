@@ -29,6 +29,20 @@ var (
 	ErrAuthTokenNotFound = errors.New("auth token not found")
 	// ErrUnsupportedAuthMode occurs when the auth mode is unsupported.
 	ErrUnsupportedAuthMode = errors.New("unsupported auth mode")
+	// ErrEmptyAllowedIPs occurs when the allowed IPs config is empty.
+	ErrEmptyAllowedIPs = errors.New("allowed IPs config is empty")
+	// ErrInvalidSubnet occurs when the subnet string is invalid.
+	ErrInvalidSubnet = errors.New("invalid IP or subnet")
+	// ErrInvalidIP occurs when the IP string is invalid.
+	ErrInvalidIP = errors.New("invalid IP")
+	// ErrIPNotFound occurs when the IP does not exist in request headers.
+	ErrIPNotFound = errors.New("ip not found")
+	// ErrDisallowedIP occurs when the IP string does not satisfy the allow list.
+	ErrDisallowedIP = errors.New("ip address does not satisfy the allow list")
+	// ErrHostOriginRequired occurs when the host origin does not exist in request headers.
+	ErrHostOriginRequired = errors.New("host origin is empty")
+	// ErrDisallowedOrigin occurs when the origin string does not satisfy the allow list.
+	ErrDisallowedOrigin = errors.New("host origin does not satisfy the allow list")
 )
 
 // NewAuthFieldRequiredError creates a required auth field error.

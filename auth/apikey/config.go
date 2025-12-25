@@ -9,8 +9,6 @@ import (
 
 // RelyAuthAPIKeyConfig contains configurations for HTTP authentication with static secrets.
 type RelyAuthAPIKeyConfig struct {
-	authscheme.TokenLocation `yaml:",inline"`
-
 	// Unique identity of the auth config.
 	// If not set, ID will be the index of the array.
 	ID string `json:"id,omitempty" yaml:"id,omitempty"`
@@ -18,6 +16,8 @@ type RelyAuthAPIKeyConfig struct {
 	Mode authmode.AuthMode `json:"mode" jsonschema:"enum=apiKey" yaml:"mode"`
 	// Brief description of the auth config.
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+	// Source of the authentication token.
+	TokenLocation authscheme.TokenLocation `json:"tokenLocation" yaml:"tokenLocation"`
 	// Custom session variables for this auth mode.
 	SessionVariables map[string]goenvconf.EnvAny `json:"sessionVariables" yaml:"sessionVariables"`
 	// Value of the static API key to be compared.
@@ -44,11 +44,7 @@ func NewRelyAuthAPIKeyConfig(
 func (j RelyAuthAPIKeyConfig) Validate() error {
 	mode := j.GetMode()
 
-	if j.Name == "" {
-		return authmode.NewAuthFieldRequiredError(mode, "name")
-	}
-
-	err := j.In.Validate()
+	err := j.TokenLocation.Validate()
 	if err != nil {
 		return err
 	}

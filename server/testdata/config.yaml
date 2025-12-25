@@ -20,8 +20,9 @@ definitions:
         x-hasura-user-id:
           path: sub
   - mode: apiKey
-    in: header
-    name: Authorization
+    tokenLocation:
+      in: header
+      name: Authorization
     value:
       value: "randomsecret"
     sessionVariables:

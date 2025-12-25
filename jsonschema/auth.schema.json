@@ -79,6 +79,35 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "EnvStringSlice": {
+      "anyOf": [
+        {
+          "required": [
+            "value"
+          ],
+          "title": "value"
+        },
+        {
+          "required": [
+            "env"
+          ],
+          "title": "env"
+        }
+      ],
+      "properties": {
+        "value": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "env": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "FieldMappingEntryConfig": {
       "properties": {
         "path": {
@@ -204,20 +233,6 @@
     },
     "RelyAuthAPIKeyConfig": {
       "properties": {
-        "in": {
-          "type": "string",
-          "enum": [
-            "header",
-            "query",
-            "cookie"
-          ]
-        },
-        "name": {
-          "type": "string"
-        },
-        "scheme": {
-          "type": "string"
-        },
         "id": {
           "type": "string",
           "description": "Unique identity of the auth config.\nIf not set, ID will be the index of the array."
@@ -229,6 +244,10 @@
         "description": {
           "type": "string",
           "description": "Brief description of the auth config."
+        },
+        "tokenLocation": {
+          "$ref": "#/$defs/TokenLocation",
+          "description": "Source of the authentication token."
         },
         "sessionVariables": {
           "additionalProperties": {
@@ -245,9 +264,8 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "in",
-        "name",
         "mode",
+        "tokenLocation",
         "sessionVariables",
         "value"
       ],
@@ -288,7 +306,32 @@
         {
           "$ref": "#/$defs/RelyAuthWebhookConfig"
         }
-      ]
+      ],
+      "properties": {
+        "securityRules": {
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
+        }
+      },
+      "type": "object"
+    },
+    "RelyAuthHeaderAllowListSetting": {
+      "properties": {
+        "headers": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "patterns": {
+          "$ref": "#/$defs/EnvStringSlice"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "patterns"
+      ],
+      "description": "RelyAuthHeaderAllowListSetting represents a setting for header allow list."
     },
     "RelyAuthJWTConfig": {
       "properties": {
@@ -367,6 +410,21 @@
         "sessionVariables"
       ],
       "description": "RelyAuthNoAuthConfig contains the definition config for unauthenticated users."
+    },
+    "RelyAuthSecurityRulesConfig": {
+      "properties": {
+        "allowedIPs": {
+          "$ref": "#/$defs/RelyAuthHeaderAllowListSetting",
+          "description": "Configure the list of allowed IPs."
+        },
+        "allowedHosts": {
+          "$ref": "#/$defs/RelyAuthHeaderAllowListSetting",
+          "description": "Configure the list of allowed hosts."
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "RelyAuthSecurityRulesConfig contains extra settings to harden the security."
     },
     "RelyAuthSettings": {
       "properties": {
@@ -485,10 +543,12 @@
             "header",
             "query",
             "cookie"
-          ]
+          ],
+          "default": "header"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "default": "Authorization"
         },
         "scheme": {
           "type": "string"

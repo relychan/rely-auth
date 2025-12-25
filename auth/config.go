@@ -46,6 +46,9 @@ func (rac RelyAuthConfig) Validate() error {
 // RelyAuthDefinition wraps authentication configurations for an auth mode.
 type RelyAuthDefinition struct {
 	authmode.RelyAuthDefinitionInterface `yaml:",inline"`
+
+	// Configurations for extra security rules .
+	SecurityRules *authmode.RelyAuthSecurityRulesConfig `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
 }
 
 // NewRelyAuthDefinition creates a new [RelyAuthDefinition] instance.
@@ -56,7 +59,8 @@ func NewRelyAuthDefinition[T authmode.RelyAuthDefinitionInterface](inner T) Rely
 }
 
 type rawRelyAuthDefinition struct {
-	Mode authmode.AuthMode `json:"mode" yaml:"mode"`
+	Mode          authmode.AuthMode                     `json:"mode" yaml:"mode"`
+	SecurityRules *authmode.RelyAuthSecurityRulesConfig `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -93,6 +97,7 @@ func (j *RelyAuthDefinition) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	j.SecurityRules = temp.SecurityRules
 	j.RelyAuthDefinitionInterface = config
 
 	return nil
@@ -132,6 +137,7 @@ func (j *RelyAuthDefinition) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 
+	j.SecurityRules = temp.SecurityRules
 	j.RelyAuthDefinitionInterface = config
 
 	return nil
@@ -148,7 +154,14 @@ func (j RelyAuthDefinition) Validate() error {
 
 // JSONSchema defines a custom definition for JSON schema.
 func (RelyAuthDefinition) JSONSchema() *jsonschema.Schema {
+	props := jsonschema.NewProperties()
+	props.Set("securityRules", &jsonschema.Schema{
+		Ref: "#/$defs/RelyAuthSecurityRulesConfig",
+	})
+
 	return &jsonschema.Schema{
+		Type:       "object",
+		Properties: props,
 		OneOf: []*jsonschema.Schema{
 			{
 				Ref: "#/$defs/RelyAuthAPIKeyConfig",

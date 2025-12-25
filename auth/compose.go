@@ -18,14 +18,14 @@ var tracer = gotel.NewTracer("rely-auth")
 
 // ComposedAuthenticator represents an authenticator that composes a list of authenticators and authenticates fallback in order.
 type ComposedAuthenticator struct {
-	Authenticators   []authmode.RelyAuthenticator
+	Authenticators   []authmode.RelyAuthentication
 	CustomAttributes []attribute.KeyValue
 }
 
 var _ authmode.RelyAuthenticator = (*ComposedAuthenticator)(nil)
 
 // NewComposedAuthenticator creates a new [ComposedAuthenticator] instance.
-func NewComposedAuthenticator(authenticators []authmode.RelyAuthenticator) *ComposedAuthenticator {
+func NewComposedAuthenticator(authenticators []authmode.RelyAuthentication) *ComposedAuthenticator {
 	return &ComposedAuthenticator{
 		Authenticators: authenticators,
 	}
