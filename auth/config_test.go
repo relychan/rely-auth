@@ -96,8 +96,10 @@ func TestRelyAuthDefinition_UnmarshalJSON(t *testing.T) {
 			Name: "apikey_mode",
 			JSON: `{
 				"mode": "apiKey",
-				"in": "header",
-				"name": "Authorization",
+				"tokenLocation": {
+					"in": "header",
+					"name": "Authorization"
+				},
 				"value": {"value": "secret"}
 			}`,
 			ExpectMode: authmode.AuthModeAPIKey,
@@ -175,8 +177,9 @@ func TestRelyAuthDefinition_UnmarshalYAML(t *testing.T) {
 			Name: "apikey_mode",
 			YAML: `
 mode: apiKey
-in: header
-name: Authorization
+tokenLocation:
+  in: header
+  name: Authorization
 value:
   value: secret
 `,

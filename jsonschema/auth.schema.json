@@ -424,7 +424,7 @@
       },
       "additionalProperties": false,
       "type": "object",
-      "description": "RelyAuthSecurityRulesConfig contains extra settings to harden the security."
+      "description": "RelyAuthSecurityRulesConfig defines configurations of security rules."
     },
     "RelyAuthSettings": {
       "properties": {
