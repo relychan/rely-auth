@@ -158,6 +158,8 @@ func Authenticate(
 		Mode: authmode.AuthModeJWT,
 	}
 
+	desiredAuthID := body.Headers[authmode.XRelyAuthID]
+
 	for _, group := range keySets {
 		if len(group) == 0 {
 			continue
@@ -195,6 +197,12 @@ func Authenticate(
 		metrics := authmetrics.GetRelyAuthMetrics()
 
 		for _, key := range group {
+			if desiredAuthID != "" {
+				if key.config.ID != desiredAuthID {
+					continue
+				}
+			}
+
 			verifiedBytes, err := verifyClaims(ctx, key, body, &claims, sig)
 			if err != nil {
 				metrics.AuthModeTotalRequests.Add(
@@ -210,6 +218,13 @@ func Authenticate(
 							)...),
 					),
 				)
+
+				// if the user specifies this authenticator ID, terminate the loop.
+				if desiredAuthID != "" {
+					output.ID = key.config.ID
+
+					break
+				}
 
 				// continue to verify the claims with the next keyset
 				continue
