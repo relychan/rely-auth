@@ -64,6 +64,17 @@ func jsonSchemaConfiguration() error {
 		Enum:        goutils.ToAnySlice(jwt.GetSupportedSignatureAlgorithms()),
 	}
 
+	for _, key := range []string{
+		"RelyAuthNoAuthConfig",
+		"RelyAuthAPIKeyConfig",
+		"RelyAuthJWTConfig",
+		"RelyAuthWebhookConfig",
+	} {
+		reflectSchema.Definitions[key].Properties.Set("securityRules", &jsonschema.Schema{
+			Ref: "#/$defs/RelyAuthSecurityRulesConfig",
+		})
+	}
+
 	reflectSchema.Definitions["AllOrListString"] = &jsonschema.Schema{
 		OneOf: []*jsonschema.Schema{
 			{

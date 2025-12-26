@@ -559,7 +559,7 @@ func TestRelyAuthSecurityRules_Authenticate(t *testing.T) {
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{},
 		}
-		err := rules.Authenticate(body)
+		err := rules.Validate(body)
 		assert.NilError(t, err)
 	})
 
@@ -577,7 +577,7 @@ func TestRelyAuthSecurityRules_Authenticate(t *testing.T) {
 				"x-real-ip": "192.168.1.100",
 			},
 		}
-		err = rules.Authenticate(body)
+		err = rules.Validate(body)
 		assert.NilError(t, err)
 	})
 
@@ -595,7 +595,7 @@ func TestRelyAuthSecurityRules_Authenticate(t *testing.T) {
 				"x-real-ip": "10.0.0.1",
 			},
 		}
-		err = rules.Authenticate(body)
+		err = rules.Validate(body)
 		assert.ErrorContains(t, err, ErrDisallowedIP.Error())
 	})
 
@@ -613,7 +613,7 @@ func TestRelyAuthSecurityRules_Authenticate(t *testing.T) {
 				"origin": "example.com",
 			},
 		}
-		err = rules.Authenticate(body)
+		err = rules.Validate(body)
 		assert.NilError(t, err)
 	})
 
@@ -631,7 +631,7 @@ func TestRelyAuthSecurityRules_Authenticate(t *testing.T) {
 				"origin": "malicious.com",
 			},
 		}
-		err = rules.Authenticate(body)
+		err = rules.Validate(body)
 		assert.ErrorContains(t, err, ErrDisallowedOrigin.Error())
 	})
 
@@ -653,7 +653,7 @@ func TestRelyAuthSecurityRules_Authenticate(t *testing.T) {
 				"origin":    "example.com",
 			},
 		}
-		err = rules.Authenticate(body)
+		err = rules.Validate(body)
 		assert.NilError(t, err)
 	})
 
@@ -675,7 +675,7 @@ func TestRelyAuthSecurityRules_Authenticate(t *testing.T) {
 				"origin":    "malicious.com",
 			},
 		}
-		err = rules.Authenticate(body)
+		err = rules.Validate(body)
 		assert.ErrorContains(t, err, ErrDisallowedOrigin.Error())
 	})
 
@@ -697,7 +697,7 @@ func TestRelyAuthSecurityRules_Authenticate(t *testing.T) {
 				"origin":    "example.com",
 			},
 		}
-		err = rules.Authenticate(body)
+		err = rules.Validate(body)
 		assert.ErrorContains(t, err, ErrDisallowedIP.Error())
 	})
 }
@@ -935,6 +935,11 @@ func (m *mockAuthenticator) Authenticate(ctx context.Context, body *Authenticate
 		return AuthenticatedOutput{}, m.err
 	}
 	return m.output, nil
+}
+
+// IDs returns identities of this authenticator.
+func (m *mockAuthenticator) IDs() []string {
+	return []string{}
 }
 
 func (m *mockAuthenticator) Mode() AuthMode {

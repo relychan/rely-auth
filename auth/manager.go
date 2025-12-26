@@ -29,7 +29,6 @@ import (
 type RelyAuthManager struct {
 	settings      authmode.RelyAuthSettings
 	authenticator *ComposedAuthenticator
-	noAuth        *authmode.RelyAuthentication
 	logger        *slog.Logger
 	stopChan      chan struct{}
 	mu            sync.Mutex
@@ -98,7 +97,7 @@ func (am *RelyAuthManager) Authenticate(
 	startTime := time.Now()
 	metrics := authmetrics.GetRelyAuthMetrics()
 
-	output, err := am.authenticateFallback(ctx, body)
+	output, err := am.authenticator.Authenticate(ctx, body)
 
 	span.SetAttributes(authmetrics.NewAuthModeAttribute(output.Mode))
 
@@ -202,7 +201,7 @@ func (am *RelyAuthManager) init(
 
 			am.authenticator.Authenticators = append(
 				am.authenticator.Authenticators,
-				authmode.RelyAuthentication{
+				&authmode.RelyAuthentication{
 					RelyAuthenticator: authenticator,
 					SecurityRules:     securityRules,
 				},
@@ -213,23 +212,14 @@ func (am *RelyAuthManager) init(
 			}
 
 			if jwtAuth == nil {
-				authenticator, err := jwt.NewJWTAuthenticator(ctx, nil, options)
-				if err != nil {
-					return err
-				}
-
-				jwtAuth = authenticator
-
+				jwtAuth = jwt.NewJWTAuthenticator(options)
 				am.authenticator.Authenticators = append(
 					am.authenticator.Authenticators,
-					authmode.RelyAuthentication{
-						RelyAuthenticator: authenticator,
-						SecurityRules:     securityRules,
-					},
+					jwtAuth,
 				)
 			}
 
-			err := jwtAuth.Add(ctx, *def)
+			err := jwtAuth.Add(ctx, *def, securityRules)
 			if err != nil {
 				return fmt.Errorf("failed to create JWT auth %s: %w", def.ID, err)
 			}
@@ -245,16 +235,12 @@ func (am *RelyAuthManager) init(
 
 			am.authenticator.Authenticators = append(
 				am.authenticator.Authenticators,
-				authmode.RelyAuthentication{
+				&authmode.RelyAuthentication{
 					RelyAuthenticator: authenticator,
 					SecurityRules:     securityRules,
 				},
 			)
 		case *noauth.RelyAuthNoAuthConfig:
-			if am.noAuth != nil {
-				return authmode.ErrOnlyOneNoAuthModeAllowed
-			}
-
 			if def.ID == "" {
 				def.ID = strconv.Itoa(i)
 			}
@@ -264,10 +250,13 @@ func (am *RelyAuthManager) init(
 				return fmt.Errorf("failed to create noAuth: %w", err)
 			}
 
-			am.noAuth = &authmode.RelyAuthentication{
-				RelyAuthenticator: authenticator,
-				SecurityRules:     securityRules,
-			}
+			am.authenticator.Authenticators = append(
+				am.authenticator.Authenticators,
+				&authmode.RelyAuthentication{
+					RelyAuthenticator: authenticator,
+					SecurityRules:     securityRules,
+				},
+			)
 		}
 	}
 
@@ -305,36 +294,4 @@ func (am *RelyAuthManager) startReloadProcess(ctx context.Context, reloadInterva
 			}
 		}
 	}
-}
-
-func (am *RelyAuthManager) authenticateFallback(
-	ctx context.Context,
-	body *authmode.AuthenticateRequestData,
-) (authmode.AuthenticatedOutput, error) {
-	var (
-		output authmode.AuthenticatedOutput
-		err    error
-	)
-
-	if len(am.authenticator.Authenticators) == 0 {
-		if am.noAuth != nil {
-			return am.noAuth.Authenticate(ctx, body)
-		}
-
-		return authmode.AuthenticatedOutput{}, authmode.ErrAuthConfigRequired
-	}
-
-	output, err = am.authenticator.Authenticate(ctx, body)
-	if err != nil && (am.noAuth == nil ||
-		// In the strict mode, if the request token was found but invalid,
-		// return unauthorized error instead of the unauthenticated role.
-		(am.settings.Strict && !errors.Is(err, authmode.ErrAuthTokenNotFound))) {
-		return output, err
-	}
-
-	if err != nil && am.noAuth != nil {
-		return am.noAuth.Authenticate(ctx, body)
-	}
-
-	return output, err
 }

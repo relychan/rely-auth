@@ -154,14 +154,7 @@ func (j RelyAuthDefinition) Validate() error {
 
 // JSONSchema defines a custom definition for JSON schema.
 func (RelyAuthDefinition) JSONSchema() *jsonschema.Schema {
-	props := jsonschema.NewProperties()
-	props.Set("securityRules", &jsonschema.Schema{
-		Ref: "#/$defs/RelyAuthSecurityRulesConfig",
-	})
-
 	return &jsonschema.Schema{
-		Type:       "object",
-		Properties: props,
 		OneOf: []*jsonschema.Schema{
 			{
 				Ref: "#/$defs/RelyAuthAPIKeyConfig",

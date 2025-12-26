@@ -6,12 +6,18 @@ import (
 )
 
 const (
-	// XHasuraDefaultRole is the constant string of the x-hasura-default-role key.
+	// XHasuraDefaultRole is the constant string of the x-hasura-default-role header name.
 	XHasuraDefaultRole = "x-hasura-default-role"
-	// XHasuraAllowedRoles is the constant string of the x-hasura-allowed-roles key.
+	// XHasuraAllowedRoles is the constant string of the x-hasura-allowed-roles header name.
 	XHasuraAllowedRoles = "x-hasura-allowed-roles"
-	// XHasuraRole is the constant string of the x-hasura-role key.
+	// XHasuraRole is the constant string of the x-hasura-role header name.
 	XHasuraRole = "x-hasura-role"
+	// XHasuraAuthMode is the constant string of the x-hasura-auth-mode header name.
+	XHasuraAuthMode = "x-hasura-auth-mode"
+	// XRelyAuthMode is the constant string of the x-rely-auth-mode header name.
+	XRelyAuthMode = "x-rely-auth-mode"
+	// XRelyAuthID is the constant string of the x-rely-auth-id header name.
+	XRelyAuthID = "x-rely-auth-id"
 )
 
 var (

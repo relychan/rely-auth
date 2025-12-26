@@ -158,52 +158,6 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 	}, result)
 }
 
-func TestRelyAuthManager_Authenticate_StrictMode(t *testing.T) {
-	apiKey := "strict-key"
-	t.Setenv("STRICT_API_KEY", apiKey)
-
-	config := &RelyAuthConfig{
-		Settings: &authmode.RelyAuthSettings{
-			Strict: true,
-		},
-		Definitions: []RelyAuthDefinition{
-			{
-				RelyAuthDefinitionInterface: &apikey.RelyAuthAPIKeyConfig{
-					Mode: authmode.AuthModeAPIKey,
-					TokenLocation: authscheme.TokenLocation{
-						In:   authscheme.InHeader,
-						Name: "Authorization",
-					},
-					Value: goenvconf.NewEnvStringVariable("STRICT_API_KEY"),
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("user"),
-					},
-				},
-			},
-			{
-				RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
-					Mode: authmode.AuthModeNoAuth,
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("anonymous"),
-					},
-				},
-			},
-		},
-	}
-
-	manager, err := NewRelyAuthManager(context.TODO(), config)
-	assert.NilError(t, err)
-	defer manager.Close()
-
-	// Test strict mode: should not fallback to noAuth when wrong token provided
-	_, err = manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
-		Headers: map[string]string{
-			"authorization": "wrong-key",
-		},
-	})
-	assert.ErrorContains(t, err, "Unauthorized")
-}
-
 func TestRelyAuthManager_WithOptions(t *testing.T) {
 	config := &RelyAuthConfig{
 		Definitions: []RelyAuthDefinition{

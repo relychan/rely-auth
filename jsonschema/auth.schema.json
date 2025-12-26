@@ -259,6 +259,9 @@
         "value": {
           "$ref": "#/$defs/EnvString",
           "description": "Value of the static API key to be compared."
+        },
+        "securityRules": {
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
         }
       },
       "additionalProperties": false,
@@ -306,13 +309,7 @@
         {
           "$ref": "#/$defs/RelyAuthWebhookConfig"
         }
-      ],
-      "properties": {
-        "securityRules": {
-          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
-        }
-      },
-      "type": "object"
+      ]
     },
     "RelyAuthHeaderAllowListSetting": {
       "properties": {
@@ -373,6 +370,9 @@
         "claimsConfig": {
           "$ref": "#/$defs/JWTClaimsConfig",
           "description": "Configuration to describe how and where the engine should look for the claims within the decoded token.\nYou can vary the format and location of the claims."
+        },
+        "securityRules": {
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
         }
       },
       "additionalProperties": false,
@@ -401,6 +401,9 @@
           },
           "type": "object",
           "description": "Custom session variables for this auth mode."
+        },
+        "securityRules": {
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
         }
       },
       "additionalProperties": false,
@@ -514,6 +517,9 @@
         "customResponse": {
           "$ref": "#/$defs/WebhookAuthCustomResponseConfig",
           "description": "The configuration for transforming response bodies"
+        },
+        "securityRules": {
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
         }
       },
       "type": "object",

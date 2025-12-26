@@ -40,11 +40,11 @@ func TestJWTKeySet_Equal(t *testing.T) {
 			},
 		}
 
-		keyset1, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+		keyset1, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer keyset1.Close()
 
-		keyset2, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+		keyset2, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer keyset2.Close()
 
@@ -80,11 +80,11 @@ func TestJWTKeySet_Equal(t *testing.T) {
 			},
 		}
 
-		keyset1, err := NewJWTKeySet(context.TODO(), config1, authmode.NewRelyAuthenticatorOptions())
+		keyset1, err := NewJWTKeySet(context.TODO(), config1, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer keyset1.Close()
 
-		keyset2, err := NewJWTKeySet(context.TODO(), config2, authmode.NewRelyAuthenticatorOptions())
+		keyset2, err := NewJWTKeySet(context.TODO(), config2, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer keyset2.Close()
 
@@ -107,7 +107,7 @@ func TestJWTKeySet_GetConfig(t *testing.T) {
 		},
 	}
 
-	keyset, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer keyset.Close()
 
@@ -131,7 +131,7 @@ func TestJWTKeySet_Close(t *testing.T) {
 		},
 	}
 
-	keyset, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	err = keyset.Close()
@@ -159,7 +159,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(context.TODO(), &config, authmode.NewRelyAuthenticatorOptions())
+		keyset, err := NewJWTKeySet(context.TODO(), &config, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
 		rawClaims := `{
@@ -207,7 +207,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(context.TODO(), &config, authmode.NewRelyAuthenticatorOptions())
+		keyset, err := NewJWTKeySet(context.TODO(), &config, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
 		rawClaims := `{
@@ -244,7 +244,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(context.TODO(), &config, authmode.NewRelyAuthenticatorOptions())
+		keyset, err := NewJWTKeySet(context.TODO(), &config, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer keyset.Close()
 
@@ -266,7 +266,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(context.TODO(), &config, authmode.NewRelyAuthenticatorOptions())
+		keyset, err := NewJWTKeySet(context.TODO(), &config, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer keyset.Close()
 
@@ -295,7 +295,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(context.TODO(), &config, authmode.NewRelyAuthenticatorOptions())
+		keyset, err := NewJWTKeySet(context.TODO(), &config, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer keyset.Close()
 
@@ -326,7 +326,7 @@ func TestJWTKeySet_GetSignatureAlgorithms(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+		keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer keyset.Close()
 
@@ -353,7 +353,7 @@ func TestJWTKeySet_ValidateClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+		keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer keyset.Close()
 
@@ -382,7 +382,7 @@ func TestJWTKeySet_ValidateClaims(t *testing.T) {
 			},
 		}
 
-		keyset, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+		keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer keyset.Close()
 
@@ -529,7 +529,7 @@ func TestJWTKeySet_InitWithECDSA(t *testing.T) {
 		},
 	}
 
-	keyset, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer keyset.Close()
 
@@ -568,7 +568,7 @@ func TestJWTKeySet_InitWithEdDSA(t *testing.T) {
 	}
 
 	// This will fail due to the type assertion issue in keyset.go line 305
-	keyset, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	defer keyset.Close()
@@ -615,7 +615,7 @@ func TestJWTKeySet_InitWithJWKURL(t *testing.T) {
 		},
 	}
 
-	keyset, err := NewJWTKeySet(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer keyset.Close()
 

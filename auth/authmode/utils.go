@@ -15,6 +15,7 @@ import (
 
 var ipHeaders = []string{
 	"cf-connecting-ip",
+	"true-client-ip",
 	"x-real-ip",
 	"x-forwarded-for",
 }
@@ -39,7 +40,7 @@ func ParseSubnet(value string) (*net.IPNet, error) {
 	return subnet, err
 }
 
-// GetClientIP get the client IP from request headers.
+// GetClientIP gets the client IP from request headers.
 func GetClientIP(headers map[string]string, allowedHeaders ...string) (net.IP, error) {
 	if len(headers) == 0 {
 		return nil, ErrIPNotFound
@@ -72,7 +73,7 @@ func GetClientIP(headers map[string]string, allowedHeaders ...string) (net.IP, e
 	return nil, ErrInvalidIP
 }
 
-// GetOrigin get the origin header from request headers.
+// GetOrigin gets the origin header from request headers.
 func GetOrigin(headers map[string]string, allowedHeaders ...string) string {
 	if len(headers) == 0 {
 		return ""
@@ -95,6 +96,21 @@ func GetOrigin(headers map[string]string, allowedHeaders ...string) string {
 	}
 
 	return ""
+}
+
+// GetAuthModeHeader gets the authentication mode from request headers.
+// Note that headers must be converted to a string map with keys in lower-case.
+func GetAuthModeHeader(headers map[string]string) string {
+	if len(headers) == 0 {
+		return ""
+	}
+
+	authMode, ok := headers[XRelyAuthMode]
+	if ok && authMode != "" {
+		return authMode
+	}
+
+	return headers[XHasuraAuthMode]
 }
 
 // FindAuthTokenByLocation finds the authentication token or api key from the request.

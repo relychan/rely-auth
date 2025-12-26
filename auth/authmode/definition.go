@@ -49,6 +49,8 @@ type Authenticator interface {
 type RelyAuthenticator interface {
 	Authenticator
 
+	// IDs returns identities of this authenticator.
+	IDs() []string
 	// GetMode returns the auth mode of the current authenticator.
 	Mode() AuthMode
 	// Close handles the resources cleaning.
@@ -156,7 +158,7 @@ func (ra *RelyAuthentication) Authenticate(
 	body *AuthenticateRequestData,
 ) (AuthenticatedOutput, error) {
 	if ra.SecurityRules != nil {
-		err := ra.SecurityRules.Authenticate(body)
+		err := ra.SecurityRules.Validate(body)
 		if err != nil {
 			return AuthenticatedOutput{
 				Mode: ra.Mode(),

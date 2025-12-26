@@ -83,6 +83,11 @@ func (aka APIKeyAuthenticator) Equal(target APIKeyAuthenticator) bool {
 		goutils.EqualMap(aka.sessionVariables, target.sessionVariables, true)
 }
 
+// IDs returns identities of this authenticator.
+func (aka *APIKeyAuthenticator) IDs() []string {
+	return []string{aka.id}
+}
+
 // Mode returns the auth mode of the current authenticator.
 func (*APIKeyAuthenticator) Mode() authmode.AuthMode {
 	return authmode.AuthModeAPIKey

@@ -57,6 +57,11 @@ func (*NoAuth) Mode() authmode.AuthMode {
 	return authmode.AuthModeNoAuth
 }
 
+// IDs returns identities of this authenticator.
+func (j *NoAuth) IDs() []string {
+	return []string{j.id}
+}
+
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (j *NoAuth) Authenticate(
 	_ context.Context,

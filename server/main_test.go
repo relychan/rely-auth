@@ -38,7 +38,9 @@ func TestHasuraDDNAuthHookHandler(t *testing.T) {
 			Name: "apikey",
 			Body: authmode.AuthenticateRequestData{
 				Headers: map[string]string{
-					"Authorization": "randomsecret",
+					"authorization":  "randomsecret",
+					"true-client-ip": "127.0.0.1",
+					"origin":         "http://localhost:1234",
 				},
 			},
 			StatusCode: 200,
@@ -67,7 +69,6 @@ func TestHasuraDDNAuthHookHandler(t *testing.T) {
 			},
 		},
 		{
-
 			Name:       "noAuth",
 			Body:       authmode.AuthenticateRequestData{},
 			StatusCode: 200,
@@ -76,11 +77,11 @@ func TestHasuraDDNAuthHookHandler(t *testing.T) {
 			},
 		},
 		{
-
 			Name: "unauthorized",
 			Body: authmode.AuthenticateRequestData{
 				Headers: map[string]string{
-					"Authorization": "test",
+					"Authorization":    "test",
+					"X-Rely-Auth-Mode": "jwt",
 				},
 			},
 			StatusCode: 401,
@@ -137,7 +138,6 @@ func TestHasuraV2AuthHookHandler(t *testing.T) {
 			},
 		},
 		{
-
 			Name:       "noAuth",
 			Body:       authmode.AuthenticateRequestData{},
 			StatusCode: 200,
@@ -146,11 +146,11 @@ func TestHasuraV2AuthHookHandler(t *testing.T) {
 			},
 		},
 		{
-
 			Name: "unauthorized",
 			Body: authmode.AuthenticateRequestData{
 				Headers: map[string]string{
-					"Authorization": "test",
+					"Authorization":  "test",
+					"X-Rely-Auth-ID": "test_jwt",
 				},
 			},
 			StatusCode: 401,

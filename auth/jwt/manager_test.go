@@ -50,7 +50,8 @@ func TestNewJWTAuthenticator(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
+	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+	err := authenticator.Add(context.TODO(), config, nil)
 	assert.NilError(t, err)
 	assert.Assert(t, authenticator != nil)
 	defer authenticator.Close()
@@ -76,7 +77,8 @@ func TestJWTAuthenticator_Mode(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
+	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+	err := authenticator.Add(context.TODO(), config, nil)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -109,7 +111,8 @@ func TestJWTAuthenticator_Authenticate_HMAC(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
+	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+	err := authenticator.Add(context.TODO(), config, nil)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -159,7 +162,8 @@ func TestJWTAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
+	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+	err := authenticator.Add(context.TODO(), config, nil)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -209,7 +213,8 @@ func TestJWTAuthenticator_Authenticate_RSA(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
+	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+	err = authenticator.Add(context.TODO(), config, nil)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -263,7 +268,8 @@ func TestJWTAuthenticator_Authenticate_WithIssuerValidation(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
+	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+	err := authenticator.Add(context.TODO(), config, nil)
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -310,11 +316,13 @@ func TestJWTAuthenticator_Equal(t *testing.T) {
 			},
 		}
 
-		auth1, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
+		auth1 := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+		err := auth1.Add(context.TODO(), config, nil)
 		assert.NilError(t, err)
 		defer auth1.Close()
 
-		auth2, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config}, authmode.NewRelyAuthenticatorOptions())
+		auth2 := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+		err = auth2.Add(context.TODO(), config, nil)
 		assert.NilError(t, err)
 		defer auth2.Close()
 
@@ -358,11 +366,13 @@ func TestJWTAuthenticator_Equal(t *testing.T) {
 			},
 		}
 
-		auth1, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config1}, authmode.NewRelyAuthenticatorOptions())
+		auth1 := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+		err := auth1.Add(context.TODO(), config1, nil)
 		assert.NilError(t, err)
 		defer auth1.Close()
 
-		auth2, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config2}, authmode.NewRelyAuthenticatorOptions())
+		auth2 := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+		err = auth2.Add(context.TODO(), config2, nil)
 		assert.NilError(t, err)
 		defer auth2.Close()
 
@@ -400,7 +410,7 @@ func TestJWTAuthenticator_Add(t *testing.T) {
 		},
 	}
 
-	err := authenticator.Add(context.TODO(), config)
+	err := authenticator.Add(context.TODO(), config, nil)
 	assert.NilError(t, err)
 	assert.Assert(t, len(authenticator.keySets) > 0)
 }
@@ -442,8 +452,12 @@ func TestJWTAuthenticator_MultipleConfigs(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewJWTAuthenticator(context.TODO(), []RelyAuthJWTConfig{config1, config2}, authmode.NewRelyAuthenticatorOptions())
+	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
+	err := authenticator.Add(context.TODO(), config1, nil)
 	assert.NilError(t, err)
+	err = authenticator.Add(context.TODO(), config2, nil)
+	assert.NilError(t, err)
+
 	defer authenticator.Close()
 
 	assert.Assert(t, len(authenticator.keySets) == 2)

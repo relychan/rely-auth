@@ -9,9 +9,6 @@ import (
 
 // RelyAuthSettings holds global settings for the authenticators.
 type RelyAuthSettings struct {
-	// Strict mode, when enabled will return HTTP 401 if the token is found but unauthorized.
-	// It won't fallback to the noAuth mode.
-	Strict bool `json:"strict,omitempty" yaml:"strict,omitempty"`
 	// The interval in seconds to reload JSON web keys from the remote URL.
 	// If the value is zero or negative, disables the process.
 	ReloadInterval int `json:"reloadInterval,omitempty" yaml:"reloadInterval,omitempty" jsonschema:"minimum=0,default=0"`
@@ -94,8 +91,8 @@ func RelyAuthSecurityRulesFromConfig(
 	return result, nil
 }
 
-// Authenticate validates and authenticates the token from the auth webhook request.
-func (sr *RelyAuthSecurityRules) Authenticate(body *AuthenticateRequestData) error {
+// Validate checks if the webhook request satisfies security rules.
+func (sr *RelyAuthSecurityRules) Validate(body *AuthenticateRequestData) error {
 	if sr.AllowedHosts != nil {
 		err := sr.AllowedHosts.Validate(body)
 		if err != nil {

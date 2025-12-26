@@ -8,6 +8,6 @@ import (
 )
 
 func TestNewComposedAuthenticator(t *testing.T) {
-	ca := NewComposedAuthenticator([]authmode.RelyAuthentication{})
+	ca := NewComposedAuthenticator([]authmode.RelyAuthenticator{})
 	assert.Equal(t, ca.Mode(), authmode.AuthModeComposed)
 }
