@@ -20,22 +20,12 @@ definitions:
       locations:
         x-hasura-user-id:
           path: sub
-    # securityRules:
-    #   allowedIPs:
-    #     patterns:
-    #       value:
-    #         - "127.0.0.1/32"
   - mode: apiKey
     tokenLocation:
       in: header
       name: Authorization
     value:
       value: "randomsecret"
-    # securityRules:
-    #   allowedIPs:
-    #     patterns:
-    #       value:
-    #         - "127.0.0.1/32"
     sessionVariables:
       x-hasura-role:
         value: admin
