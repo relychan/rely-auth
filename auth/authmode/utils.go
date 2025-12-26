@@ -20,8 +20,6 @@ var ipHeaders = []string{
 	"x-forwarded-for",
 }
 
-var originHeaders = []string{"origin"}
-
 // ParseSubnet parses the subnet from a raw string.
 func ParseSubnet(value string) (*net.IPNet, error) {
 	if value == "" {
@@ -70,7 +68,7 @@ func GetClientIP(headers map[string]string, allowedHeaders ...string) (net.IP, e
 		return nil, errors.Join(errs...)
 	}
 
-	return nil, ErrInvalidIP
+	return nil, ErrIPNotFound
 }
 
 // GetAuthModeHeader gets the authentication mode from request headers.

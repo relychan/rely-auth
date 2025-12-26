@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/hasura/gotel"
+	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmetrics"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"go.opentelemetry.io/otel/attribute"
@@ -60,15 +61,20 @@ func (a *ComposedAuthenticator) Authenticate(
 		if desiredAuthID != "" {
 			if slices.Contains(authenticator.IDs(), desiredAuthID) {
 				result, _, err := a.authenticateOne(ctx, body, authenticator, span, metrics)
-				if err == nil {
-					return result, nil
-				}
+
+				return result, err
 			}
 
 			continue
 		}
 
-		result, isTokenNotFound, err := a.authenticateOne(ctx, body, authenticator, span, metrics)
+		result, isTokenNotFound, err := a.authenticateOne(
+			ctx,
+			body,
+			authenticator,
+			span,
+			metrics,
+		)
 		if err == nil {
 			return result, nil
 		}
@@ -83,6 +89,10 @@ func (a *ComposedAuthenticator) Authenticate(
 			slog.String("error", err.Error()),
 			slog.String("auth_mode", string(authMode)),
 		)
+	}
+
+	if finalError == nil {
+		finalError = goutils.NewUnauthorizedError()
 	}
 
 	return authmode.AuthenticatedOutput{}, finalError
@@ -120,7 +130,8 @@ func (a *ComposedAuthenticator) authenticateOne(
 	span trace.Span,
 	metrics *authmetrics.RelyAuthMetrics,
 ) (authmode.AuthenticatedOutput, bool, error) {
-	authModeAttr := authmetrics.NewAuthModeAttribute(authenticator.Mode())
+	authMode := authenticator.Mode()
+	authModeAttr := authmetrics.NewAuthModeAttribute(authMode)
 
 	result, err := authenticator.Authenticate(ctx, body)
 	if err == nil {

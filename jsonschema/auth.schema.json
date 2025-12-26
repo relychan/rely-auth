@@ -311,7 +311,7 @@
         }
       ]
     },
-    "RelyAuthHeaderAllowListSetting": {
+    "RelyAuthIPAllowListConfig": {
       "properties": {
         "headers": {
           "items": {
@@ -328,7 +328,7 @@
       "required": [
         "patterns"
       ],
-      "description": "RelyAuthHeaderAllowListSetting represents a setting for header allow list."
+      "description": "RelyAuthIPAllowListConfig represents a setting for IP allow list."
     },
     "RelyAuthJWTConfig": {
       "properties": {
@@ -417,12 +417,15 @@
     "RelyAuthSecurityRulesConfig": {
       "properties": {
         "allowedIPs": {
-          "$ref": "#/$defs/RelyAuthHeaderAllowListSetting",
+          "$ref": "#/$defs/RelyAuthIPAllowListConfig",
           "description": "Configure the list of allowed IPs."
         },
-        "allowedHosts": {
-          "$ref": "#/$defs/RelyAuthHeaderAllowListSetting",
-          "description": "Configure the list of allowed hosts."
+        "headerRules": {
+          "additionalProperties": {
+            "$ref": "#/$defs/EnvStringSlice"
+          },
+          "type": "object",
+          "description": "Configure the map of header rules."
         }
       },
       "additionalProperties": false,
@@ -431,10 +434,6 @@
     },
     "RelyAuthSettings": {
       "properties": {
-        "strict": {
-          "type": "boolean",
-          "description": "Strict mode, when enabled will return HTTP 401 if the token is found but unauthorized.\nIt won't fallback to the noAuth mode."
-        },
         "reloadInterval": {
           "type": "integer",
           "minimum": 0,
