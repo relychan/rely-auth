@@ -45,10 +45,8 @@ var (
 	ErrIPNotFound = errors.New("ip not found")
 	// ErrDisallowedIP occurs when the IP string does not satisfy the allow list.
 	ErrDisallowedIP = errors.New("ip address does not satisfy the allow list")
-	// ErrHostOriginRequired occurs when the host origin does not exist in request headers.
-	ErrHostOriginRequired = errors.New("host origin is empty")
-	// ErrDisallowedOrigin occurs when the origin string does not satisfy the allow list.
-	ErrDisallowedOrigin = errors.New("host origin does not satisfy the allow list")
+	// ErrInvalidHeader occurs when the header does not satisfy the security rule.
+	ErrInvalidHeader = errors.New("invalid header")
 )
 
 // NewAuthFieldRequiredError creates a required auth field error.

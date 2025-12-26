@@ -73,31 +73,6 @@ func GetClientIP(headers map[string]string, allowedHeaders ...string) (net.IP, e
 	return nil, ErrInvalidIP
 }
 
-// GetOrigin gets the origin header from request headers.
-func GetOrigin(headers map[string]string, allowedHeaders ...string) string {
-	if len(headers) == 0 {
-		return ""
-	}
-
-	if len(allowedHeaders) == 0 {
-		allowedHeaders = originHeaders
-	}
-
-	for _, name := range allowedHeaders {
-		value, ok := headers[name]
-		if !ok || value == "" {
-			continue
-		}
-
-		trimmed := strings.TrimSpace(value)
-		if trimmed != "" {
-			return strings.ToLower(trimmed)
-		}
-	}
-
-	return ""
-}
-
 // GetAuthModeHeader gets the authentication mode from request headers.
 // Note that headers must be converted to a string map with keys in lower-case.
 func GetAuthModeHeader(headers map[string]string) string {

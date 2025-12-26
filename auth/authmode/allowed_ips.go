@@ -17,7 +17,7 @@ type RelyAuthAllowedIPs struct {
 
 // RelyAuthAllowedIPsFromConfig creates a [RelyAuthAllowedIPs] instance from config.
 func RelyAuthAllowedIPsFromConfig(
-	conf *RelyAuthHeaderAllowListSetting,
+	conf *RelyAuthIPAllowListConfig,
 	getEnvFunc goenvconf.GetEnvFunc,
 ) (*RelyAuthAllowedIPs, error) {
 	if conf == nil || conf.Patterns.IsZero() {
