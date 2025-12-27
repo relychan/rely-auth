@@ -4,7 +4,7 @@
 trap "cd examples && docker compose down --remove-orphans -v" EXIT
 
 pushd examples \
-    && docker compose up -d --build auth-hook postgres engine app_mypostgres_promptql hasura \
+    && docker compose up -d --wait --build auth-hook postgres engine app_mypostgres_promptql hasura \
     && popd
 
 export DDN_SERVER_URL=http://localhost:3280/graphql
