@@ -34,7 +34,7 @@ func TestHasuraAuthHookHandlers(t *testing.T, setupServer SetupTestServerFunc) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "auth-config.yaml")
 
-	assert.NilError(t, os.WriteFile(configPath, configYaml, 0644))
+	assert.NilError(t, os.WriteFile(configPath, configYaml, 0o644))
 
 	server, close := setupServer(t, configPath)
 	defer close()
@@ -208,7 +208,7 @@ func TestAuthWebhook(t *testing.T, setupServer SetupTestServerFunc) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "auth-webhook.yaml")
 
-	assert.NilError(t, os.WriteFile(configPath, webhookYaml, 0644))
+	assert.NilError(t, os.WriteFile(configPath, webhookYaml, 0o644))
 
 	server, close := setupServer(t, configPath)
 	defer close()
@@ -256,11 +256,19 @@ func TestAuthWebhook(t *testing.T, setupServer SetupTestServerFunc) {
 	}
 }
 
-func runRequest[T any](t *testing.T, method string, body authmode.AuthenticateRequestData, statusCode int, expectedBody T) {
+func runRequest[T any](
+	t *testing.T,
+	method string,
+	body authmode.AuthenticateRequestData,
+	statusCode int,
+	expectedBody T,
+) {
 	t.Helper()
 
-	var resp *http.Response
-	var err error
+	var (
+		resp *http.Response
+		err  error
+	)
 
 	switch method {
 	case http.MethodGet:
@@ -284,7 +292,7 @@ func runRequest[T any](t *testing.T, method string, body authmode.AuthenticateRe
 			req.Header.Set(key, header)
 		}
 
-		req.Header.Set("content-type", "application/json")
+		req.Header.Set("Content-Type", "application/json")
 
 		resp, err = http.DefaultClient.Do(req)
 		assert.NilError(t, err)
@@ -296,7 +304,12 @@ func runRequest[T any](t *testing.T, method string, body authmode.AuthenticateRe
 		respBody, err := io.ReadAll(resp.Body)
 		assert.NilError(t, err)
 
-		t.Errorf("expected status code: %d; got: %d; response body: %s", statusCode, resp.StatusCode, string(respBody))
+		t.Errorf(
+			"expected status code: %d; got: %d; response body: %s",
+			statusCode,
+			resp.StatusCode,
+			string(respBody),
+		)
 		t.FailNow()
 	}
 
@@ -320,6 +333,8 @@ func runRequest[T any](t *testing.T, method string, body authmode.AuthenticateRe
 }
 
 func initWebhookServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /authorize", func(w http.ResponseWriter, r *http.Request) {
@@ -339,7 +354,7 @@ func initWebhookServer(t *testing.T) *httptest.Server {
 			return
 		}
 
-		assert.Equal(t, r.Header.Get("x-test-header"), "")
+		assert.Equal(t, r.Header.Get("X-Test-Header"), "")
 
 		data, err := io.ReadAll(r.Body)
 		assert.NilError(t, err)

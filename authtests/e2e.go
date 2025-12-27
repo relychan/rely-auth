@@ -138,7 +138,7 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 		req.Header.Set(key, header)
 	}
 
-	req.Header.Set("content-type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	assert.NilError(t, err)
@@ -149,7 +149,12 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 		respBody, err := io.ReadAll(resp.Body)
 		assert.NilError(t, err)
 
-		t.Errorf("expected status code: %d; got: %d; response body: %s", http.StatusOK, resp.StatusCode, string(respBody))
+		t.Errorf(
+			"expected status code: %d; got: %d; response body: %s",
+			http.StatusOK,
+			resp.StatusCode,
+			string(respBody),
+		)
 		t.FailNow()
 	}
 

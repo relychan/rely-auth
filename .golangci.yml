@@ -138,7 +138,7 @@ linters:
     # "/" will be replaced by the current OS file path separator to properly work on Windows.
     paths:
       - ".*_test\\.go$"
-      - "authtests\/*\\.go$"
+      - "authtests/.*"
 
 formatters:
   # Enable specific formatter.
