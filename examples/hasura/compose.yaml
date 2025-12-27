@@ -21,3 +21,8 @@ services:
       HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
     extra_hosts:
       - local.hasura.dev:host-gateway
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
