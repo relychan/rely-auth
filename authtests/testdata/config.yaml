@@ -41,3 +41,8 @@ definitions:
     sessionVariables:
       x-hasura-role:
         value: anonymous
+    securityRules:
+      headerRules:
+        origin:
+          value:
+            - localhost

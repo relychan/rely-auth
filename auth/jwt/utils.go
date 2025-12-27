@@ -14,7 +14,7 @@ import (
 // - An x-hasura-role value can optionally be sent as a plain header in the request to indicate the role which should be used.
 // - If x-hasura-role is not provided, the engine will use the x-hasura-default-role value from the JWT.
 // See https://hasura.io/docs/3.0/auth/jwt/jwt-mode/#session-variable-requirements for more context.
-func evalHasuraSessionVariables(result map[string]any) (map[string]any, error) {
+func evalHasuraSessionVariables(result map[string]any, desiredRole string) (map[string]any, error) {
 	rawAllowedRoles, ok := result[authmode.XHasuraAllowedRoles]
 	if !ok || rawAllowedRoles == nil {
 		return result, nil
@@ -29,35 +29,13 @@ func evalHasuraSessionVariables(result map[string]any) (map[string]any, error) {
 		)
 	}
 
-	var defaultRoleStr, roleStr *string
-
-	defaultRole, ok := result[authmode.XHasuraDefaultRole]
-	if ok && defaultRole != nil {
-		defaultRoleStr, err = goutils.DecodeNullableString(defaultRole)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"malformed %s; expected a string: %w",
-				authmode.XHasuraDefaultRole,
-				err,
-			)
-		}
-	}
-
-	desiredRole, ok := result[authmode.XHasuraRole]
-	if ok && desiredRole != nil {
-		roleStr, err = goutils.DecodeNullableString(desiredRole)
-		if err != nil {
-			return nil, fmt.Errorf("malformed %s; expected a string: %w", authmode.XHasuraRole, err)
-		}
-	}
-
-	if roleStr != nil && *roleStr != "" {
-		if !slices.Contains(allowedRoles, *roleStr) {
+	if desiredRole != "" {
+		if !slices.Contains(allowedRoles, desiredRole) {
 			return nil, goutils.NewForbiddenError(goutils.ErrorDetail{
 				Header: authmode.XHasuraRole,
 				Detail: fmt.Sprintf(
 					"%s is not in the allowed roles %v",
-					*roleStr,
+					desiredRole,
 					authmode.XHasuraAllowedRoles,
 				),
 			})
@@ -66,22 +44,46 @@ func evalHasuraSessionVariables(result map[string]any) (map[string]any, error) {
 		delete(result, authmode.XHasuraAllowedRoles)
 		delete(result, authmode.XHasuraDefaultRole)
 
+		result[authmode.XHasuraRole] = desiredRole
+
 		return result, nil
 	}
 
-	if defaultRoleStr == nil || *defaultRoleStr == "" {
+	var roleStr *string
+
+	for _, roleKey := range []string{authmode.XHasuraRole, authmode.XHasuraDefaultRole} {
+		rawRole, ok := result[roleKey]
+		if !ok || rawRole == nil {
+			continue
+		}
+
+		nullableRole, err := goutils.DecodeNullableString(rawRole)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"malformed %s; expected a string: %w",
+				authmode.XHasuraDefaultRole,
+				err,
+			)
+		}
+
+		roleStr = nullableRole
+
+		break
+	}
+
+	if roleStr == nil || *roleStr == "" {
 		return nil, goutils.NewForbiddenError(goutils.ErrorDetail{
 			Header: authmode.XHasuraDefaultRole,
 			Detail: "value of x-hasura-default-role variable is empty",
 		})
 	}
 
-	if !slices.Contains(allowedRoles, *defaultRoleStr) {
+	if !slices.Contains(allowedRoles, *roleStr) {
 		return nil, goutils.NewForbiddenError(goutils.ErrorDetail{
-			Header: authmode.XHasuraDefaultRole,
+			Header: authmode.XHasuraRole,
 			Detail: fmt.Sprintf(
 				"%s is not in the allowed roles %v",
-				*defaultRoleStr,
+				*roleStr,
 				authmode.XHasuraAllowedRoles,
 			),
 		})
@@ -90,7 +92,7 @@ func evalHasuraSessionVariables(result map[string]any) (map[string]any, error) {
 	delete(result, authmode.XHasuraAllowedRoles)
 	delete(result, authmode.XHasuraDefaultRole)
 
-	result[authmode.XHasuraRole] = *defaultRoleStr
+	result[authmode.XHasuraRole] = *roleStr
 
 	return result, nil
 }

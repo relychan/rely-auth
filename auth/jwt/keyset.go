@@ -106,7 +106,7 @@ func (j *JWTKeySet) ValidateClaims(claims *jwt.Claims) error {
 }
 
 // TransformClaims transform JWT claims to expected session variables.
-func (j *JWTKeySet) TransformClaims(rawBytes []byte) (map[string]any, error) {
+func (j *JWTKeySet) TransformClaims(rawBytes []byte, desiredRole string) (map[string]any, error) {
 	if len(rawBytes) == 0 {
 		return nil, ErrJWTClaimsNull
 	}
@@ -132,7 +132,7 @@ func (j *JWTKeySet) TransformClaims(rawBytes []byte) (map[string]any, error) {
 		}
 	}
 
-	return evalHasuraSessionVariables(result)
+	return evalHasuraSessionVariables(result, desiredRole)
 }
 
 func (j *JWTKeySet) init(ctx context.Context, options authmode.RelyAuthenticatorOptions) error {

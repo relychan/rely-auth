@@ -159,6 +159,7 @@ func Authenticate(
 	}
 
 	desiredAuthID := body.Headers[authmode.XRelyAuthID]
+	desiredRole := body.Headers[authmode.XHasuraRole]
 
 	for _, group := range keySets {
 		if len(group) == 0 {
@@ -232,7 +233,7 @@ func Authenticate(
 
 			output.ID = key.config.ID
 
-			sessionVariables, err := key.TransformClaims(verifiedBytes)
+			sessionVariables, err := key.TransformClaims(verifiedBytes, desiredRole)
 			if err != nil {
 				return output, fmt.Errorf("failed to transform claims: %w", err)
 			}

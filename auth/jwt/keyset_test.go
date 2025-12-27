@@ -176,7 +176,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			"exp": 9761026354
 		}`
 
-		result, err := keyset.TransformClaims([]byte(rawClaims))
+		result, err := keyset.TransformClaims([]byte(rawClaims), "")
 		assert.NilError(t, err)
 
 		expected := map[string]any{
@@ -185,6 +185,16 @@ func TestTransformJWTClaims(t *testing.T) {
 		}
 
 		assert.DeepEqual(t, result, expected)
+
+		result2, err := keyset.TransformClaims([]byte(rawClaims), "admin")
+		assert.NilError(t, err)
+
+		expected2 := map[string]any{
+			"x-hasura-role":    "admin",
+			"x-hasura-user-id": "user-id",
+		}
+
+		assert.DeepEqual(t, result2, expected2)
 	})
 
 	t.Run("namespace_stringified_json", func(t *testing.T) {
@@ -219,7 +229,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			"exp": 9761026354
 		}`
 
-		result, err := keyset.TransformClaims([]byte(rawClaims))
+		result, err := keyset.TransformClaims([]byte(rawClaims), "")
 		assert.NilError(t, err)
 
 		expected := map[string]any{
@@ -228,6 +238,16 @@ func TestTransformJWTClaims(t *testing.T) {
 		}
 
 		assert.DeepEqual(t, result, expected)
+
+		result2, err := keyset.TransformClaims([]byte(rawClaims), "admin")
+		assert.NilError(t, err)
+
+		expected2 := map[string]any{
+			"x-hasura-role":    "admin",
+			"x-hasura-user-id": "user-id",
+		}
+
+		assert.DeepEqual(t, result2, expected2)
 	})
 
 	t.Run("empty_claims", func(t *testing.T) {
@@ -248,7 +268,7 @@ func TestTransformJWTClaims(t *testing.T) {
 		assert.NilError(t, err)
 		defer keyset.Close()
 
-		_, err = keyset.TransformClaims([]byte{})
+		_, err = keyset.TransformClaims([]byte{}, "")
 		assert.ErrorContains(t, err, ErrJWTClaimsNull.Error())
 	})
 
@@ -270,7 +290,7 @@ func TestTransformJWTClaims(t *testing.T) {
 		assert.NilError(t, err)
 		defer keyset.Close()
 
-		_, err = keyset.TransformClaims([]byte("invalid json"))
+		_, err = keyset.TransformClaims([]byte("invalid json"), "")
 		assert.ErrorContains(t, err, ErrJWTClaimsMalformedJSON.Error())
 	})
 
@@ -304,7 +324,7 @@ func TestTransformJWTClaims(t *testing.T) {
 			"iss": "https://relychan.com"
 		}`
 
-		result, err := keyset.TransformClaims([]byte(rawClaims))
+		result, err := keyset.TransformClaims([]byte(rawClaims), "")
 		assert.NilError(t, err)
 		assert.Equal(t, "user-123", result["x-hasura-user-id"])
 		assert.Equal(t, "default-org", result["x-hasura-org-id"])
@@ -405,7 +425,7 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 			"x-hasura-user-id":       "123",
 		}
 
-		result, err := evalHasuraSessionVariables(input)
+		result, err := evalHasuraSessionVariables(input, "")
 		assert.NilError(t, err)
 		assert.Equal(t, "admin", result["x-hasura-role"])
 		assert.Equal(t, "123", result["x-hasura-user-id"])
@@ -422,7 +442,7 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 			"x-hasura-user-id":       "123",
 		}
 
-		result, err := evalHasuraSessionVariables(input)
+		result, err := evalHasuraSessionVariables(input, "")
 		assert.NilError(t, err)
 		assert.Equal(t, "user", result["x-hasura-role"])
 		assert.Equal(t, "123", result["x-hasura-user-id"])
@@ -435,7 +455,7 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 			"x-hasura-role":          "superadmin",
 		}
 
-		_, err := evalHasuraSessionVariables(input)
+		_, err := evalHasuraSessionVariables(input, "")
 		assert.ErrorContains(t, err, "not in the allowed roles")
 	})
 
@@ -445,7 +465,7 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 			"x-hasura-default-role":  "superadmin",
 		}
 
-		_, err := evalHasuraSessionVariables(input)
+		_, err := evalHasuraSessionVariables(input, "")
 		assert.ErrorContains(t, err, "not in the allowed roles")
 	})
 
@@ -455,7 +475,7 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 			"x-hasura-default-role":  "",
 		}
 
-		_, err := evalHasuraSessionVariables(input)
+		_, err := evalHasuraSessionVariables(input, "")
 		assert.ErrorContains(t, err, "value of x-hasura-default-role variable is empty")
 	})
 
@@ -465,7 +485,7 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 			"custom-claim":     "value",
 		}
 
-		result, err := evalHasuraSessionVariables(input)
+		result, err := evalHasuraSessionVariables(input, "")
 		assert.NilError(t, err)
 		assert.Equal(t, "123", result["x-hasura-user-id"])
 		assert.Equal(t, "value", result["custom-claim"])
@@ -477,7 +497,7 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 			"x-hasura-default-role":  "user",
 		}
 
-		_, err := evalHasuraSessionVariables(input)
+		_, err := evalHasuraSessionVariables(input, "")
 		assert.ErrorContains(t, err, "malformed x-hasura-allowed-roles")
 	})
 
@@ -487,7 +507,7 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 			"x-hasura-default-role":  123,
 		}
 
-		_, err := evalHasuraSessionVariables(input)
+		_, err := evalHasuraSessionVariables(input, "")
 		assert.ErrorContains(t, err, "malformed x-hasura-default-role")
 	})
 
@@ -498,8 +518,8 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 			"x-hasura-role":          123,
 		}
 
-		_, err := evalHasuraSessionVariables(input)
-		assert.ErrorContains(t, err, "malformed x-hasura-role")
+		_, err := evalHasuraSessionVariables(input, "")
+		assert.ErrorContains(t, err, "malformed x-hasura-default-role; expected a string: malformed string, got: int")
 	})
 }
 
