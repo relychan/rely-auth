@@ -102,6 +102,8 @@ github.com/relychan/goutils v0.0.0-20251225152402-92f091e8a31a h1:M+IWeBAy3ucVcR
 github.com/relychan/goutils v0.0.0-20251225152402-92f091e8a31a/go.mod h1:qDzZOmGZQCAaNLYm2/Ml4LMrNK/CTW6vi10a6LBkyIc=
 github.com/relychan/goutils v0.0.0-20251226174924-9c18b7760d88 h1:wyosjVsR9Wsl9TsGTKNCTMD1iBplF7MbbvWuokSHQK4=
 github.com/relychan/goutils v0.0.0-20251226174924-9c18b7760d88/go.mod h1:qDzZOmGZQCAaNLYm2/Ml4LMrNK/CTW6vi10a6LBkyIc=
+github.com/relychan/goutils v0.0.0-20251227004516-6f0ea24d6084 h1:jQBeaAx7QfCKU42qR08kTYrl3CK1VhvrK4rRCqVNPiI=
+github.com/relychan/goutils v0.0.0-20251227004516-6f0ea24d6084/go.mod h1:qDzZOmGZQCAaNLYm2/Ml4LMrNK/CTW6vi10a6LBkyIc=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/shopspring/decimal v1.4.0 h1:bxl37RwXBklmTi0C79JfXCEBD1cqqHt0bbgBAGFp81k=

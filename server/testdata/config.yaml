@@ -1,6 +1,5 @@
 # yaml-language-server: $schema=../../jsonschema/auth.schema.json
 settings:
-  strict: true
   reloadInterval: 0
 definitions:
   - id: test_jwt

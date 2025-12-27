@@ -21,8 +21,11 @@ func NewCustomWebhookAuthHeadersConfig(
 		return &CustomWebhookAuthHeadersConfig{}, nil
 	}
 
-	result := CustomWebhookAuthHeadersConfig{
-		Forward: input.Forward,
+	result := CustomWebhookAuthHeadersConfig{}
+
+	if input.Forward != nil {
+		forward := input.Forward.Map(strings.ToLower)
+		result.Forward = &forward
 	}
 
 	additional, err := jmes.EvaluateObjectFieldMappingStringEntries(input.Additional, getEnvFunc)
