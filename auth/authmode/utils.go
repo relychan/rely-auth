@@ -27,7 +27,16 @@ func ParseSubnet(value string) (*net.IPNet, error) {
 	}
 
 	if !strings.Contains(value, "/") {
-		value += "/32"
+		ip := net.ParseIP(value)
+		if ip == nil {
+			return nil, ErrInvalidSubnet
+		}
+
+		if ip.To4() != nil {
+			value += "/32"
+		} else {
+			value += "/128"
+		}
 	}
 
 	_, subnet, err := net.ParseCIDR(value)
@@ -56,12 +65,20 @@ func GetClientIP(headers map[string]string, allowedHeaders ...string) (net.IP, e
 			continue
 		}
 
-		ip := net.ParseIP(value)
-		if ip != nil {
-			return ip, nil
-		}
+		// Some headers (e.g., X-Forwarded-For) may contain a comma-separated list of IPs.
+		for _, part := range strings.Split(value, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
 
-		errs = append(errs, fmt.Errorf("%s: %w", value, ErrInvalidIP))
+			ip := net.ParseIP(part)
+			if ip != nil {
+				return ip, nil
+			}
+
+			errs = append(errs, fmt.Errorf("%s: %w", part, ErrInvalidIP))
+		}
 	}
 
 	if len(errs) > 0 {
