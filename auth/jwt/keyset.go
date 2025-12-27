@@ -22,16 +22,19 @@ type JWTKeySet struct {
 	// cached locations after resolving environment variables
 	locations         map[string]jmes.FieldMappingEntry
 	signatureVerifier SignatureVerifier
+	securityRules     *authmode.RelyAuthSecurityRules
 }
 
 // NewJWTKeySet creates a new JWT key set from the configuration.
 func NewJWTKeySet(
 	ctx context.Context,
 	config *RelyAuthJWTConfig,
+	securityRules *authmode.RelyAuthSecurityRules,
 	options authmode.RelyAuthenticatorOptions,
 ) (*JWTKeySet, error) {
 	result := JWTKeySet{
-		config: config,
+		config:        config,
+		securityRules: securityRules,
 	}
 
 	err := result.init(ctx, options)
@@ -69,6 +72,15 @@ func (j *JWTKeySet) GetSignatureAlgorithms() []jose.SignatureAlgorithm {
 	return GetSupportedSignatureAlgorithms()
 }
 
+// ValidateSecurityRules validates security rules of the current JWT key set config.
+func (j *JWTKeySet) ValidateSecurityRules(body *authmode.AuthenticateRequestData) error {
+	if j.securityRules == nil {
+		return nil
+	}
+
+	return j.securityRules.Validate(body)
+}
+
 // VerifySignature verifies a JWT signature using the configured signature verifier.
 func (j *JWTKeySet) VerifySignature(
 	ctx context.Context,
@@ -94,7 +106,7 @@ func (j *JWTKeySet) ValidateClaims(claims *jwt.Claims) error {
 }
 
 // TransformClaims transform JWT claims to expected session variables.
-func (j *JWTKeySet) TransformClaims(rawBytes []byte) (map[string]any, error) {
+func (j *JWTKeySet) TransformClaims(rawBytes []byte, desiredRole string) (map[string]any, error) {
 	if len(rawBytes) == 0 {
 		return nil, ErrJWTClaimsNull
 	}
@@ -120,7 +132,7 @@ func (j *JWTKeySet) TransformClaims(rawBytes []byte) (map[string]any, error) {
 		}
 	}
 
-	return evalHasuraSessionVariables(result)
+	return evalHasuraSessionVariables(result, desiredRole)
 }
 
 func (j *JWTKeySet) init(ctx context.Context, options authmode.RelyAuthenticatorOptions) error {

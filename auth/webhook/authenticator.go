@@ -55,6 +55,11 @@ func (*WebhookAuthenticator) Mode() authmode.AuthMode {
 	return authmode.AuthModeWebhook
 }
 
+// IDs returns identities of this authenticator.
+func (wa *WebhookAuthenticator) IDs() []string {
+	return []string{wa.id}
+}
+
 // Equal checks if the target value is equal.
 func (wa WebhookAuthenticator) Equal(target WebhookAuthenticator) bool {
 	return wa.id == target.id &&

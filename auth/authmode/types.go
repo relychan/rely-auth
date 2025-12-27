@@ -6,12 +6,18 @@ import (
 )
 
 const (
-	// XHasuraDefaultRole is the constant string of the x-hasura-default-role key.
+	// XHasuraDefaultRole is the constant string of the x-hasura-default-role header name.
 	XHasuraDefaultRole = "x-hasura-default-role"
-	// XHasuraAllowedRoles is the constant string of the x-hasura-allowed-roles key.
+	// XHasuraAllowedRoles is the constant string of the x-hasura-allowed-roles header name.
 	XHasuraAllowedRoles = "x-hasura-allowed-roles"
-	// XHasuraRole is the constant string of the x-hasura-role key.
+	// XHasuraRole is the constant string of the x-hasura-role header name.
 	XHasuraRole = "x-hasura-role"
+	// XHasuraAuthMode is the constant string of the x-hasura-auth-mode header name.
+	XHasuraAuthMode = "x-hasura-auth-mode"
+	// XRelyAuthMode is the constant string of the x-rely-auth-mode header name.
+	XRelyAuthMode = "x-rely-auth-mode"
+	// XRelyAuthID is the constant string of the x-rely-auth-id header name.
+	XRelyAuthID = "x-rely-auth-id"
 )
 
 var (
@@ -29,6 +35,18 @@ var (
 	ErrAuthTokenNotFound = errors.New("auth token not found")
 	// ErrUnsupportedAuthMode occurs when the auth mode is unsupported.
 	ErrUnsupportedAuthMode = errors.New("unsupported auth mode")
+	// ErrEmptyAllowedIPs occurs when the allowed IPs config is empty.
+	ErrEmptyAllowedIPs = errors.New("allowed IPs config is empty")
+	// ErrInvalidSubnet occurs when the subnet string is invalid.
+	ErrInvalidSubnet = errors.New("invalid IP or subnet")
+	// ErrInvalidIP occurs when the IP string is invalid.
+	ErrInvalidIP = errors.New("invalid IP")
+	// ErrIPNotFound occurs when the IP does not exist in request headers.
+	ErrIPNotFound = errors.New("ip not found")
+	// ErrDisallowedIP occurs when the IP string does not satisfy the allow list.
+	ErrDisallowedIP = errors.New("ip address does not satisfy the allow list")
+	// ErrInvalidHeader occurs when the header does not satisfy the security rule.
+	ErrInvalidHeader = errors.New("invalid header")
 )
 
 // NewAuthFieldRequiredError creates a required auth field error.

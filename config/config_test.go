@@ -175,8 +175,9 @@ func TestInitAuthManager_Success(t *testing.T) {
 	authConfigContent := `
 definitions:
   - mode: apiKey
-    in: header
-    name: Authorization
+    tokenLocation:
+      in: header
+      name: Authorization
     value:
       value: "test-secret"
     sessionVariables:
@@ -284,8 +285,9 @@ func TestInitAuthManager_WithMultipleModes(t *testing.T) {
 	authConfigContent := `
 definitions:
   - mode: apiKey
-    in: header
-    name: X-API-Key
+    tokenLocation:
+      in: header
+      name: X-API-Key
     value:
       value: "api-secret"
     sessionVariables:
@@ -330,8 +332,9 @@ settings:
   strict: true
 definitions:
   - mode: apiKey
-    in: header
-    name: Authorization
+    tokenLocation:
+      in: header
+      name: Authorization
     value:
       value: "test-secret"
     sessionVariables:
@@ -358,8 +361,10 @@ func TestInitAuthManager_JSONConfig(t *testing.T) {
   "definitions": [
     {
       "mode": "apiKey",
-      "in": "header",
-      "name": "Authorization",
+      "tokenLocation": {
+      	"in": "header",
+      	"name": "Authorization"
+	  },
       "value": {
         "value": "json-secret"
       },

@@ -17,6 +17,7 @@ services:
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
       HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
       HASURA_GRAPHQL_AUTH_HOOK: http://auth-hook:8080/auth/hasura
+      HASURA_GRAPHQL_AUTH_HOOK_MODE: POST
       HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
     extra_hosts:
       - local.hasura.dev:host-gateway
@@ -24,4 +25,4 @@ services:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 20

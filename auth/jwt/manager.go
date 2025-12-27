@@ -22,6 +22,7 @@ var authModeAttr = attribute.String("auth.mode", string(authmode.AuthModeJWT))
 
 // JWTAuthenticator implements the authenticator with JWT key.
 type JWTAuthenticator struct {
+	ids     []string
 	keySets map[string][]*JWTKeySet
 	options authmode.RelyAuthenticatorOptions
 }
@@ -29,32 +30,26 @@ type JWTAuthenticator struct {
 var _ authmode.RelyAuthenticator = (*JWTAuthenticator)(nil)
 
 // NewJWTAuthenticator creates a JWT authenticator instance.
-func NewJWTAuthenticator(
-	ctx context.Context,
-	configs []RelyAuthJWTConfig,
-	options authmode.RelyAuthenticatorOptions,
-) (*JWTAuthenticator, error) {
-	result := &JWTAuthenticator{
-		options: options,
-	}
-
+func NewJWTAuthenticator(options authmode.RelyAuthenticatorOptions) *JWTAuthenticator {
 	if options.HTTPClient == nil {
 		options.HTTPClient = gohttpc.NewClient()
 	}
 
-	for _, config := range configs {
-		err := result.Add(ctx, config)
-		if err != nil {
-			return nil, err
-		}
+	result := &JWTAuthenticator{
+		options: options,
 	}
 
-	return result, nil
+	return result
 }
 
 // Mode returns the auth mode of the current authenticator.
 func (*JWTAuthenticator) Mode() authmode.AuthMode {
 	return authmode.AuthModeJWT
+}
+
+// IDs returns identities of this authenticator.
+func (ja *JWTAuthenticator) IDs() []string {
+	return ja.ids
 }
 
 // Close handles the resources cleaning.
@@ -118,7 +113,11 @@ func (ja *JWTAuthenticator) Authenticate(
 }
 
 // Add a new JWT authenticator from config.
-func (ja *JWTAuthenticator) Add(ctx context.Context, config RelyAuthJWTConfig) error {
+func (ja *JWTAuthenticator) Add(
+	ctx context.Context,
+	config RelyAuthJWTConfig,
+	securityRules *authmode.RelyAuthSecurityRules,
+) error {
 	tokenLocation, err := authmode.ValidateTokenLocation(config.TokenLocation)
 	if err != nil {
 		return err
@@ -137,12 +136,13 @@ func (ja *JWTAuthenticator) Add(ctx context.Context, config RelyAuthJWTConfig) e
 		ja.keySets = map[string][]*JWTKeySet{}
 	}
 
-	keySet, err := NewJWTKeySet(ctx, &config, ja.options)
+	keySet, err := NewJWTKeySet(ctx, &config, securityRules, ja.options)
 	if err != nil {
 		return err
 	}
 
 	ja.keySets[groupKey] = append(ja.keySets[groupKey], keySet)
+	ja.ids = append(ja.ids, config.ID)
 
 	return nil
 }
@@ -157,6 +157,9 @@ func Authenticate(
 	output := authmode.AuthenticatedOutput{
 		Mode: authmode.AuthModeJWT,
 	}
+
+	desiredAuthID := body.Headers[authmode.XRelyAuthID]
+	desiredRole := body.Headers[authmode.XHasuraRole]
 
 	for _, group := range keySets {
 		if len(group) == 0 {
@@ -195,7 +198,13 @@ func Authenticate(
 		metrics := authmetrics.GetRelyAuthMetrics()
 
 		for _, key := range group {
-			verifiedBytes, err := verifyClaims(ctx, key, &claims, sig)
+			if desiredAuthID != "" {
+				if key.config.ID != desiredAuthID {
+					continue
+				}
+			}
+
+			verifiedBytes, err := verifyClaims(ctx, key, body, &claims, sig)
 			if err != nil {
 				metrics.AuthModeTotalRequests.Add(
 					ctx,
@@ -211,13 +220,20 @@ func Authenticate(
 					),
 				)
 
+				// if the user specifies this authenticator ID, terminate the loop.
+				if desiredAuthID != "" {
+					output.ID = key.config.ID
+
+					break
+				}
+
 				// continue to verify the claims with the next keyset
 				continue
 			}
 
 			output.ID = key.config.ID
 
-			sessionVariables, err := key.TransformClaims(verifiedBytes)
+			sessionVariables, err := key.TransformClaims(verifiedBytes, desiredRole)
 			if err != nil {
 				return output, fmt.Errorf("failed to transform claims: %w", err)
 			}
@@ -234,10 +250,16 @@ func Authenticate(
 func verifyClaims(
 	ctx context.Context,
 	key *JWTKeySet,
+	body *authmode.AuthenticateRequestData,
 	claims *jwt.Claims,
 	sig *jose.JSONWebSignature,
 ) ([]byte, error) {
-	err := key.ValidateClaims(claims)
+	err := key.ValidateSecurityRules(body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = key.ValidateClaims(claims)
 	if err != nil {
 		return nil, err
 	}

@@ -1,10 +1,9 @@
 # yaml-language-server: $schema=../../jsonschema/auth.schema.json
-settings:
-  strict: true
 definitions:
   - mode: apiKey
-    in: header
-    name: Authorization
+    tokenLocation:
+      in: header
+      name: Authorization
     value:
       value: "randomsecret"
     sessionVariables:
@@ -12,6 +11,23 @@ definitions:
         value: user
       x-hasura-user-id:
         value: "1"
+  - id: test_jwt
+    mode: jwt
+    tokenLocation:
+      in: header
+      name: Authorization
+      scheme: bearer
+    key:
+      algorithm: HS256
+      key:
+        value: NTNv7j0TuYARvmNMmWXo6fKvM4o6nvxyz
+    claimsConfig:
+      namespace:
+        location: '"claims.jwt.hasura.io"'
+        claimsFormat: Json
+      locations:
+        x-hasura-user-id:
+          path: sub
   - mode: noAuth
     sessionVariables:
       x-hasura-role:

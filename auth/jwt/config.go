@@ -84,7 +84,7 @@ func (j RelyAuthJWTConfig) Validate() error {
 		return err
 	}
 
-	err = j.TokenLocation.In.Validate()
+	err = j.TokenLocation.Validate()
 	if err != nil {
 		return err
 	}

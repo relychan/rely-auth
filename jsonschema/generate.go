@@ -10,6 +10,7 @@ import (
 	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth"
 	"github.com/relychan/rely-auth/auth/apikey"
+	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/relychan/rely-auth/auth/jwt"
 	"github.com/relychan/rely-auth/auth/noauth"
 	"github.com/relychan/rely-auth/auth/webhook"
@@ -45,6 +46,7 @@ func jsonSchemaConfiguration() error {
 		webhook.RelyAuthWebhookConfig{},
 		webhook.WebhookAuthHeadersConfig{},
 		webhook.WebhookAuthCustomResponseConfig{},
+		authmode.RelyAuthSecurityRulesConfig{},
 	} {
 		externalSchema := r.Reflect(externalType)
 
@@ -60,6 +62,17 @@ func jsonSchemaConfiguration() error {
 		Type:        "string",
 		Description: "Specifies the cryptographic signing algorithm which is used to sign the JWTs. This is required only if you are using the key property in the config.",
 		Enum:        goutils.ToAnySlice(jwt.GetSupportedSignatureAlgorithms()),
+	}
+
+	for _, key := range []string{
+		"RelyAuthNoAuthConfig",
+		"RelyAuthAPIKeyConfig",
+		"RelyAuthJWTConfig",
+		"RelyAuthWebhookConfig",
+	} {
+		reflectSchema.Definitions[key].Properties.Set("securityRules", &jsonschema.Schema{
+			Ref: "#/$defs/RelyAuthSecurityRulesConfig",
+		})
 	}
 
 	reflectSchema.Definitions["AllOrListString"] = &jsonschema.Schema{

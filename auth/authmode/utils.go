@@ -2,7 +2,9 @@ package authmode
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -10,6 +12,96 @@ import (
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/goutils"
 )
+
+var ipHeaders = []string{
+	"cf-connecting-ip",
+	"true-client-ip",
+	"x-real-ip",
+	"x-forwarded-for",
+}
+
+// ParseSubnet parses the subnet from a raw string.
+func ParseSubnet(value string) (*net.IPNet, error) {
+	if value == "" {
+		return nil, ErrInvalidSubnet
+	}
+
+	if !strings.Contains(value, "/") {
+		ip := net.ParseIP(value)
+		if ip == nil {
+			return nil, ErrInvalidSubnet
+		}
+
+		if ip.To4() != nil {
+			value += "/32"
+		} else {
+			value += "/128"
+		}
+	}
+
+	_, subnet, err := net.ParseCIDR(value)
+	if err != nil {
+		return nil, err
+	}
+
+	return subnet, err
+}
+
+// GetClientIP gets the client IP from request headers.
+func GetClientIP(headers map[string]string, allowedHeaders ...string) (net.IP, error) {
+	if len(headers) == 0 {
+		return nil, ErrIPNotFound
+	}
+
+	if len(allowedHeaders) == 0 {
+		allowedHeaders = ipHeaders
+	}
+
+	errs := []error{}
+
+	for _, name := range allowedHeaders {
+		value, ok := headers[name]
+		if !ok || value == "" {
+			continue
+		}
+
+		// Some headers (e.g., X-Forwarded-For) may contain a comma-separated list of IPs.
+		for part := range strings.SplitSeq(value, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+
+			ip := net.ParseIP(part)
+			if ip != nil {
+				return ip, nil
+			}
+
+			errs = append(errs, fmt.Errorf("%s: %w", part, ErrInvalidIP))
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
+
+	return nil, ErrIPNotFound
+}
+
+// GetAuthModeHeader gets the authentication mode from request headers.
+// Note that headers must be converted to a string map with keys in lower-case.
+func GetAuthModeHeader(headers map[string]string) string {
+	if len(headers) == 0 {
+		return ""
+	}
+
+	authMode, ok := headers[XRelyAuthMode]
+	if ok && authMode != "" {
+		return authMode
+	}
+
+	return headers[XHasuraAuthMode]
+}
 
 // FindAuthTokenByLocation finds the authentication token or api key from the request.
 func FindAuthTokenByLocation(

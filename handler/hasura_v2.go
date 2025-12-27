@@ -3,6 +3,7 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/hasura/gotel"
 	"github.com/relychan/gohttps/httputils"
@@ -41,6 +42,8 @@ func (handler *HasuraGraphQLEngineAuthHookHandler) Post(w http.ResponseWriter, r
 	if !decoded {
 		return
 	}
+
+	body.Headers = makeLowerCaseHeaders(body.Headers)
 
 	handler.handle(w, r, span, body)
 }
@@ -91,4 +94,18 @@ func (handler *HasuraGraphQLEngineAuthHookHandler) handle(
 
 		logger.Error("failed to write response", slog.String("error", err.Error()))
 	}
+}
+
+func makeLowerCaseHeaders(input map[string]string) map[string]string {
+	if len(input) == 0 {
+		return input
+	}
+
+	lcHeaders := make(map[string]string, len(input))
+
+	for key, value := range input {
+		lcHeaders[strings.ToLower(key)] = value
+	}
+
+	return lcHeaders
 }

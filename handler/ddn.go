@@ -44,6 +44,8 @@ func (handler *HasuraDDNAuthHookHandler) Post(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	body.Headers = makeLowerCaseHeaders(body.Headers)
+
 	handler.handle(w, r, body, span)
 }
 

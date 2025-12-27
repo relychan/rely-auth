@@ -35,7 +35,7 @@ func runServer() error {
 		return err
 	}
 
-	logger, _, err := otelutils.NewJSONLogger(envVars.Server.LogLevel)
+	logger, _, err := otelutils.NewJSONLogger(envVars.Server.GetLogLevel())
 	if err != nil {
 		return fmt.Errorf("failed to initialize logger: %w", err)
 	}

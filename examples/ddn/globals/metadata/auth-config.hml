@@ -3,9 +3,12 @@ version: v3
 definition:
   mode:
     webhook:
-      method: GET
+      method: POST
       url:
         value: http://auth-hook:8080/auth/ddn
       customHeadersConfig:
         headers:
           forward: "*"
+        body:
+          headers:
+            forward: "*"

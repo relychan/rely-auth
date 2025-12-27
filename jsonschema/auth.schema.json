@@ -79,6 +79,35 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "EnvStringSlice": {
+      "anyOf": [
+        {
+          "required": [
+            "value"
+          ],
+          "title": "value"
+        },
+        {
+          "required": [
+            "env"
+          ],
+          "title": "env"
+        }
+      ],
+      "properties": {
+        "value": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "env": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "FieldMappingEntryConfig": {
       "properties": {
         "path": {
@@ -204,20 +233,6 @@
     },
     "RelyAuthAPIKeyConfig": {
       "properties": {
-        "in": {
-          "type": "string",
-          "enum": [
-            "header",
-            "query",
-            "cookie"
-          ]
-        },
-        "name": {
-          "type": "string"
-        },
-        "scheme": {
-          "type": "string"
-        },
         "id": {
           "type": "string",
           "description": "Unique identity of the auth config.\nIf not set, ID will be the index of the array."
@@ -230,6 +245,10 @@
           "type": "string",
           "description": "Brief description of the auth config."
         },
+        "tokenLocation": {
+          "$ref": "#/$defs/TokenLocation",
+          "description": "Source of the authentication token."
+        },
         "sessionVariables": {
           "additionalProperties": {
             "$ref": "#/$defs/EnvAny"
@@ -240,14 +259,16 @@
         "value": {
           "$ref": "#/$defs/EnvString",
           "description": "Value of the static API key to be compared."
+        },
+        "securityRules": {
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "in",
-        "name",
         "mode",
+        "tokenLocation",
         "sessionVariables",
         "value"
       ],
@@ -290,6 +311,25 @@
         }
       ]
     },
+    "RelyAuthIPAllowListConfig": {
+      "properties": {
+        "headers": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "patterns": {
+          "$ref": "#/$defs/EnvStringSlice"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "patterns"
+      ],
+      "description": "RelyAuthIPAllowListConfig represents a setting for IP allow list."
+    },
     "RelyAuthJWTConfig": {
       "properties": {
         "id": {
@@ -330,6 +370,9 @@
         "claimsConfig": {
           "$ref": "#/$defs/JWTClaimsConfig",
           "description": "Configuration to describe how and where the engine should look for the claims within the decoded token.\nYou can vary the format and location of the claims."
+        },
+        "securityRules": {
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
         }
       },
       "additionalProperties": false,
@@ -358,6 +401,9 @@
           },
           "type": "object",
           "description": "Custom session variables for this auth mode."
+        },
+        "securityRules": {
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
         }
       },
       "additionalProperties": false,
@@ -368,12 +414,26 @@
       ],
       "description": "RelyAuthNoAuthConfig contains the definition config for unauthenticated users."
     },
+    "RelyAuthSecurityRulesConfig": {
+      "properties": {
+        "allowedIPs": {
+          "$ref": "#/$defs/RelyAuthIPAllowListConfig",
+          "description": "Configure the list of allowed IPs."
+        },
+        "headerRules": {
+          "additionalProperties": {
+            "$ref": "#/$defs/EnvStringSlice"
+          },
+          "type": "object",
+          "description": "Configure the map of header rules."
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "RelyAuthSecurityRulesConfig defines configurations of security rules."
+    },
     "RelyAuthSettings": {
       "properties": {
-        "strict": {
-          "type": "boolean",
-          "description": "Strict mode, when enabled will return HTTP 401 if the token is found but unauthorized.\nIt won't fallback to the noAuth mode."
-        },
         "reloadInterval": {
           "type": "integer",
           "minimum": 0,
@@ -456,6 +516,9 @@
         "customResponse": {
           "$ref": "#/$defs/WebhookAuthCustomResponseConfig",
           "description": "The configuration for transforming response bodies"
+        },
+        "securityRules": {
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
         }
       },
       "type": "object",
@@ -485,10 +548,12 @@
             "header",
             "query",
             "cookie"
-          ]
+          ],
+          "default": "header"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "default": "Authorization"
         },
         "scheme": {
           "type": "string"
