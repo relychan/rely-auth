@@ -66,7 +66,7 @@ func GetClientIP(headers map[string]string, allowedHeaders ...string) (net.IP, e
 		}
 
 		// Some headers (e.g., X-Forwarded-For) may contain a comma-separated list of IPs.
-		for _, part := range strings.Split(value, ",") {
+		for part := range strings.SplitSeq(value, ",") {
 			part = strings.TrimSpace(part)
 			if part == "" {
 				continue
