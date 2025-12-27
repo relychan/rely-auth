@@ -12,7 +12,7 @@ export HASURA_SERVER_URL=http://localhost:8080/v1/graphql
 
 http_wait() {
   printf "$1:\t "
-  for i in {1..60};
+  for i in {1..120};
   do
     local code="$(curl -s -o /dev/null -m 2 -w '%{http_code}' $1)"
     if [[ $code != "200" ]]; then
