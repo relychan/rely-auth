@@ -186,11 +186,13 @@ func (JWTKey) JSONSchema() *jsonschema.Schema {
 		OneOf: []*jsonschema.Schema{
 			{
 				Type:       "object",
+				Title:      "JWTFixedKeyConfig",
 				Required:   []string{"algorithm", "key"},
 				Properties: keyProps,
 			},
 			{
 				Type:       "object",
+				Title:      "JWTRemoteKeyConfig",
 				Properties: jwkFromURLProps,
 				Required:   []string{"jwkFromUrl"},
 			},

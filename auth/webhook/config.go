@@ -112,7 +112,7 @@ func (RelyAuthWebhookConfig) JSONSchema() *jsonschema.Schema {
 	})
 	commonProps.Set("httpClient", &jsonschema.Schema{
 		Description: "Configurations for the HTTP client",
-		Ref:         "https://raw.githubusercontent.com/relychan/gorestly/refs/heads/main/jsonschema/gorestly.schema.json",
+		Ref:         "https://raw.githubusercontent.com/relychan/gohttpc/refs/heads/main/jsonschema/gohttpc.schema.json",
 	})
 	commonProps.Set("customResponse", &jsonschema.Schema{
 		Description: "The configuration for transforming response bodies",

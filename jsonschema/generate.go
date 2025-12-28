@@ -64,6 +64,10 @@ func jsonSchemaConfiguration() error {
 		Enum:        goutils.ToAnySlice(jwt.GetSupportedSignatureAlgorithms()),
 	}
 
+	reflectSchema.Definitions["TemplateTransformerConfig"] = &jsonschema.Schema{
+		Ref: "https://raw.githubusercontent.com/relychan/gotransform/refs/heads/main/jsonschema/gotransform.schema.json",
+	}
+
 	for _, key := range []string{
 		"RelyAuthNoAuthConfig",
 		"RelyAuthAPIKeyConfig",
