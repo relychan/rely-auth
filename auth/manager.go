@@ -28,7 +28,7 @@ import (
 // RelyAuthManager manages multiple authentication strategies to verify HTTP requests.
 type RelyAuthManager struct {
 	settings      authmode.RelyAuthSettings
-	authenticator *ComposedAuthenticator
+	authenticator *FallbackAuthenticator
 	logger        *slog.Logger
 	stopChan      chan struct{}
 	mu            sync.Mutex
@@ -52,7 +52,7 @@ func NewRelyAuthManager(
 	}
 
 	manager := RelyAuthManager{
-		authenticator: &ComposedAuthenticator{
+		authenticator: &FallbackAuthenticator{
 			CustomAttributes: opts.CustomAttributes,
 		},
 		settings: authmode.RelyAuthSettings{},
@@ -78,7 +78,7 @@ func (am *RelyAuthManager) Settings() *authmode.RelyAuthSettings {
 }
 
 // Authenticator returns the internal [ComposedAuthenticator] instance.
-func (am *RelyAuthManager) Authenticator() *ComposedAuthenticator {
+func (am *RelyAuthManager) Authenticator() *FallbackAuthenticator {
 	return am.authenticator
 }
 

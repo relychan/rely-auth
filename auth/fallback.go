@@ -17,28 +17,28 @@ import (
 
 var tracer = gotel.NewTracer("rely-auth")
 
-// ComposedAuthenticator represents an authenticator that composes a list of authenticators and authenticates fallback in order.
-type ComposedAuthenticator struct {
+// FallbackAuthenticator represents an authenticator that receives a list of authenticators and authenticates fallback in order.
+type FallbackAuthenticator struct {
 	Authenticators   []authmode.RelyAuthenticator
 	CustomAttributes []attribute.KeyValue
 }
 
-var _ authmode.RelyAuthenticator = (*ComposedAuthenticator)(nil)
+var _ authmode.RelyAuthenticator = (*FallbackAuthenticator)(nil)
 
 // NewComposedAuthenticator creates a new [ComposedAuthenticator] instance.
-func NewComposedAuthenticator(authenticators []authmode.RelyAuthenticator) *ComposedAuthenticator {
-	return &ComposedAuthenticator{
+func NewComposedAuthenticator(authenticators []authmode.RelyAuthenticator) *FallbackAuthenticator {
+	return &FallbackAuthenticator{
 		Authenticators: authenticators,
 	}
 }
 
 // Mode returns the auth mode of the current authenticator.
-func (*ComposedAuthenticator) Mode() authmode.AuthMode {
-	return authmode.AuthModeComposed
+func (*FallbackAuthenticator) Mode() authmode.AuthMode {
+	return authmode.AuthModeFallback
 }
 
 // Authenticate validates and authenticates the token from the auth webhook request.
-func (a *ComposedAuthenticator) Authenticate(
+func (a *FallbackAuthenticator) Authenticate(
 	ctx context.Context,
 	body *authmode.AuthenticateRequestData,
 ) (authmode.AuthenticatedOutput, error) {
@@ -76,6 +76,12 @@ func (a *ComposedAuthenticator) Authenticate(
 			metrics,
 		)
 		if err == nil {
+			logger.Debug(
+				"Authenticated",
+				slog.Any("session_variables", result.SessionVariables),
+				slog.String("auth_mode", string(authMode)),
+			)
+
 			return result, nil
 		}
 
@@ -99,7 +105,7 @@ func (a *ComposedAuthenticator) Authenticate(
 }
 
 // IDs returns identities of this authenticator.
-func (a *ComposedAuthenticator) IDs() []string {
+func (a *FallbackAuthenticator) IDs() []string {
 	results := []string{}
 
 	for _, au := range a.Authenticators {
@@ -110,7 +116,7 @@ func (a *ComposedAuthenticator) IDs() []string {
 }
 
 // Close terminates all underlying authenticator resources.
-func (a *ComposedAuthenticator) Close() error {
+func (a *FallbackAuthenticator) Close() error {
 	var errs []error
 
 	for _, au := range a.Authenticators {
@@ -123,7 +129,7 @@ func (a *ComposedAuthenticator) Close() error {
 	return errors.Join(errs...)
 }
 
-func (a *ComposedAuthenticator) authenticateOne(
+func (a *FallbackAuthenticator) authenticateOne(
 	ctx context.Context,
 	body *authmode.AuthenticateRequestData,
 	authenticator authmode.RelyAuthenticator,

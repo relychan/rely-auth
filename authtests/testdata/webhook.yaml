@@ -15,6 +15,16 @@ definitions:
           {
             "x-hasura-role": "user"
           }
+    customResponse:
+      response:
+        type: jmespath
+        template:
+          type: object
+          properties:
+            x-hasura-role:
+              type: field
+              path: body."x-hasura-role"
+
   - mode: webhook
     url:
       env: AUTH_HOOK_URL
@@ -25,3 +35,12 @@ definitions:
           Authorization:
             default:
               value: Bearer bearertoken
+    customResponse:
+      response:
+        type: gotmpl
+        contentType: application/json
+        template: |
+          {
+            "x-hasura-role": "{{ index .body "x-hasura-role" }}",
+            "x-content-type": "{{ index .headers "content-type" }}"
+          }
