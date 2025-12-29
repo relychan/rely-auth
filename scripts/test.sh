@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # NOTE: run this script at the root project folder:
-trap "cd examples && docker compose down --remove-orphans -v" EXIT
+trap "cd examples/hasura && docker compose down --remove-orphans -v" EXIT
 
-pushd examples \
+pushd examples/hasura \
     && docker compose up -d --wait --build auth-hook postgres engine app_mypostgres_promptql hasura \
     && popd
 
