@@ -39,19 +39,23 @@ func AllowListMatcherRuleFromConfig(
 
 // IsValid checks if the request satisfies the security rule.
 func (hr RelyAuthAllowListMatcherRule) IsValid(value string) bool {
-	for _, rule := range hr.Include {
-		if !rule.MatchString(value) {
-			return false
-		}
-	}
-
 	for _, rule := range hr.Exclude {
 		if rule.MatchString(value) {
 			return false
 		}
 	}
 
-	return true
+	if len(hr.Include) == 0 {
+		return true
+	}
+
+	for _, rule := range hr.Include {
+		if rule.MatchString(value) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // RelyAuthHeaderRules represents a map of header rules.
@@ -124,10 +128,6 @@ func regexpMatchersFromConfig(
 	matchers := make([]*goutils.RegexpMatcher, len(rawExpressions))
 
 	for i, expr := range rawExpressions {
-		if expr == "" {
-			return nil, nil
-		}
-
 		re, err := goutils.NewRegexpMatcher(expr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse matcher rule: %w", err)

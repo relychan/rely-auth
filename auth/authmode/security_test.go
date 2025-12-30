@@ -642,7 +642,7 @@ func TestAllowListMatcherRuleFromConfig(t *testing.T) {
 		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 		assert.Assert(t, result != nil)
-		assert.Equal(t, 0, len(result.Include))
+		assert.Equal(t, 1, len(result.Include))
 	})
 }
 
@@ -671,8 +671,8 @@ func TestRelyAuthAllowListMatcherRule_IsValid(t *testing.T) {
 		assert.NilError(t, err)
 
 		assert.Assert(t, matcherRule.IsValid("Bearer token123"))
-		assert.Assert(t, !matcherRule.IsValid("Bearer abc"))
-		assert.Assert(t, !matcherRule.IsValid("Token token123"))
+		assert.Assert(t, matcherRule.IsValid("Bearer abc"))
+		assert.Assert(t, matcherRule.IsValid("Token token123"))
 	})
 
 	t.Run("exclude_rule_blocks", func(t *testing.T) {

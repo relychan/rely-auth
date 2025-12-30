@@ -78,6 +78,10 @@ func (ai *RelyAuthIPAllowList) Validate(body *AuthenticateRequestData) error {
 		}
 	}
 
+	if len(ai.Include) == 0 {
+		return nil
+	}
+
 	for _, subnet := range ai.Include {
 		if subnet.Contains(clientIP) {
 			return nil
