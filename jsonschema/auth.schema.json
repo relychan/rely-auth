@@ -276,6 +276,19 @@
       ],
       "description": "RelyAuthAPIKeyConfig contains configurations for HTTP authentication with static secrets."
     },
+    "RelyAuthAllowListConfig": {
+      "properties": {
+        "include": {
+          "$ref": "#/$defs/EnvStringSlice"
+        },
+        "exclude": {
+          "$ref": "#/$defs/EnvStringSlice"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "RelyAuthAllowListConfig represents a common setting for allow list."
+    },
     "RelyAuthConfig": {
       "properties": {
         "settings": {
@@ -315,21 +328,21 @@
     },
     "RelyAuthIPAllowListConfig": {
       "properties": {
+        "include": {
+          "$ref": "#/$defs/EnvStringSlice"
+        },
+        "exclude": {
+          "$ref": "#/$defs/EnvStringSlice"
+        },
         "headers": {
           "items": {
             "type": "string"
           },
           "type": "array"
-        },
-        "patterns": {
-          "$ref": "#/$defs/EnvStringSlice"
         }
       },
       "additionalProperties": false,
       "type": "object",
-      "required": [
-        "patterns"
-      ],
       "description": "RelyAuthIPAllowListConfig represents a setting for IP allow list."
     },
     "RelyAuthJWTConfig": {
@@ -424,7 +437,7 @@
         },
         "headerRules": {
           "additionalProperties": {
-            "$ref": "#/$defs/EnvStringSlice"
+            "$ref": "#/$defs/RelyAuthAllowListConfig"
           },
           "type": "object",
           "description": "Configure the map of header rules."

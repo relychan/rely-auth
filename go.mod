@@ -13,7 +13,7 @@ require (
 	github.com/relychan/gohttpc v0.0.0-20251224161742-aaca86a4d2c7
 	github.com/relychan/gohttps v0.0.0-20251206085650-5f2727ade1fa
 	github.com/relychan/gotransform v0.0.0-20251214152200-6dcd174d5492
-	github.com/relychan/goutils v0.0.0-20251227004516-6f0ea24d6084
+	github.com/relychan/goutils v0.0.0-20251230062103-93a30b1ea43d
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.opentelemetry.io/otel v1.39.0
 	go.opentelemetry.io/otel/metric v1.39.0
@@ -40,7 +40,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.4 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/influxdata/tdigest v0.0.1 // indirect
 	github.com/klauspost/compress v1.18.2 // indirect
