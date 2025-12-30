@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hasura/goenvconf"
+	"github.com/relychan/goutils"
 	"gotest.tools/v3/assert"
 )
 
@@ -23,7 +24,9 @@ func TestRelyAuthHeaderAllowListSetting_IsZero(t *testing.T) {
 
 	t.Run("non_zero_with_patterns", func(t *testing.T) {
 		setting := RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+			},
 		}
 		assert.Assert(t, !setting.IsZero())
 	})
@@ -38,12 +41,16 @@ func TestRelyAuthHeaderAllowListSetting_Equal(t *testing.T) {
 
 	t.Run("equal_with_values", func(t *testing.T) {
 		a := RelyAuthIPAllowListConfig{
-			Headers:  []string{"x-forwarded-for"},
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+			Headers: []string{"x-forwarded-for"},
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+			},
 		}
 		b := RelyAuthIPAllowListConfig{
-			Headers:  []string{"x-forwarded-for"},
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+			Headers: []string{"x-forwarded-for"},
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+			},
 		}
 		assert.Assert(t, a.Equal(b))
 	})
@@ -60,10 +67,14 @@ func TestRelyAuthHeaderAllowListSetting_Equal(t *testing.T) {
 
 	t.Run("not_equal_different_patterns", func(t *testing.T) {
 		a := RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+			},
 		}
 		b := RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"10.0.0.0/8"}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"10.0.0.0/8"})),
+			},
 		}
 		assert.Assert(t, !a.Equal(b))
 	})
@@ -85,7 +96,7 @@ func TestRelyAuthSecurityRulesConfig_IsZero(t *testing.T) {
 	t.Run("zero_empty_settings", func(t *testing.T) {
 		config := RelyAuthSecurityRulesConfig{
 			AllowedIPs:  &RelyAuthIPAllowListConfig{},
-			HeaderRules: make(map[string]goenvconf.EnvStringSlice),
+			HeaderRules: map[string]RelyAuthAllowListConfig{},
 		}
 		assert.Assert(t, config.IsZero())
 	})
@@ -93,7 +104,9 @@ func TestRelyAuthSecurityRulesConfig_IsZero(t *testing.T) {
 	t.Run("non_zero_with_allowed_ips", func(t *testing.T) {
 		config := RelyAuthSecurityRulesConfig{
 			AllowedIPs: &RelyAuthIPAllowListConfig{
-				Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+				},
 			},
 		}
 		assert.Assert(t, !config.IsZero())
@@ -101,8 +114,10 @@ func TestRelyAuthSecurityRulesConfig_IsZero(t *testing.T) {
 
 	t.Run("non_zero_with_allowed_hosts", func(t *testing.T) {
 		config := RelyAuthSecurityRulesConfig{
-			HeaderRules: map[string]goenvconf.EnvStringSlice{
-				"Test": goenvconf.NewEnvStringSliceValue([]string{"*.example.com"}),
+			HeaderRules: map[string]RelyAuthAllowListConfig{
+				"Test": {
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"*.example.com"})),
+				},
 			},
 		}
 		assert.Assert(t, !config.IsZero())
@@ -119,12 +134,16 @@ func TestRelyAuthSecurityRulesConfig_Equal(t *testing.T) {
 	t.Run("equal_with_values", func(t *testing.T) {
 		a := RelyAuthSecurityRulesConfig{
 			AllowedIPs: &RelyAuthIPAllowListConfig{
-				Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+				},
 			},
 		}
 		b := RelyAuthSecurityRulesConfig{
 			AllowedIPs: &RelyAuthIPAllowListConfig{
-				Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+				},
 			},
 		}
 		assert.Assert(t, a.Equal(b))
@@ -133,12 +152,16 @@ func TestRelyAuthSecurityRulesConfig_Equal(t *testing.T) {
 	t.Run("not_equal_different_ips", func(t *testing.T) {
 		a := RelyAuthSecurityRulesConfig{
 			AllowedIPs: &RelyAuthIPAllowListConfig{
-				Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+				},
 			},
 		}
 		b := RelyAuthSecurityRulesConfig{
 			AllowedIPs: &RelyAuthIPAllowListConfig{
-				Patterns: goenvconf.NewEnvStringSliceValue([]string{"10.0.0.0/8"}),
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"10.0.0.0/8"})),
+				},
 			},
 		}
 		assert.Assert(t, !a.Equal(b))
@@ -147,60 +170,68 @@ func TestRelyAuthSecurityRulesConfig_Equal(t *testing.T) {
 
 func TestRelyAuthAllowedIPsFromConfig(t *testing.T) {
 	t.Run("nil_config", func(t *testing.T) {
-		result, err := RelyAuthAllowedIPsFromConfig(nil, goenvconf.GetOSEnv)
+		result, err := AllowedIPsFromConfig(nil, goenvconf.GetOSEnv)
 		assert.ErrorContains(t, err, ErrEmptyAllowedIPs.Error())
 		assert.Assert(t, result == nil)
 	})
 
 	t.Run("empty_patterns", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{}
-		result, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.ErrorContains(t, err, ErrEmptyAllowedIPs.Error())
 		assert.Assert(t, result == nil)
 	})
 
 	t.Run("valid_single_ip", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.100"}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.100"})),
+			},
 		}
-		result, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 		assert.Assert(t, result != nil)
-		assert.Equal(t, 1, len(result.AllowedIPs))
-		assert.Equal(t, "192.168.1.100/32", result.AllowedIPs[0].String())
+		assert.Equal(t, 1, len(result.Include))
+		assert.Equal(t, "192.168.1.100/32", result.Include[0].String())
 	})
 
 	t.Run("valid_subnet", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+			},
 		}
-		result, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 		assert.Assert(t, result != nil)
-		assert.Equal(t, 1, len(result.AllowedIPs))
-		assert.Equal(t, "192.168.1.0/24", result.AllowedIPs[0].String())
+		assert.Equal(t, 1, len(result.Include))
+		assert.Equal(t, "192.168.1.0/24", result.Include[0].String())
 	})
 
 	t.Run("multiple_ips_and_subnets", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{
-				"192.168.1.0/24",
-				"10.0.0.1",
-				"172.16.0.0/16",
-			}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{
+					"192.168.1.0/24",
+					"10.0.0.1",
+					"172.16.0.0/16",
+				})),
+			},
 		}
-		result, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 		assert.Assert(t, result != nil)
-		assert.Equal(t, 3, len(result.AllowedIPs))
+		assert.Equal(t, 3, len(result.Include))
 	})
 
 	t.Run("with_custom_headers", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Headers:  []string{"X-Real-IP", "X-Forwarded-For"},
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+			Headers: []string{"X-Real-IP", "X-Forwarded-For"},
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+			},
 		}
-		result, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 		assert.Assert(t, result != nil)
 		assert.Equal(t, 2, len(result.Headers))
@@ -211,46 +242,56 @@ func TestRelyAuthAllowedIPsFromConfig(t *testing.T) {
 
 	t.Run("invalid_ip", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"invalid-ip"}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"invalid-ip"})),
+			},
 		}
-		result, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.Assert(t, err != nil)
 		assert.Assert(t, result == nil)
 	})
 
 	t.Run("duplicate_ips_removed", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{
-				"192.168.1.0/24",
-				"192.168.1.0/24",
-				"10.0.0.1",
-			}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{
+					"192.168.1.0/24",
+					"192.168.1.0/24",
+					"10.0.0.1",
+				})),
+			},
 		}
-		result, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 		assert.Assert(t, result != nil)
-		assert.Equal(t, 2, len(result.AllowedIPs))
+		assert.Equal(t, 2, len(result.Include))
 	})
 
 	t.Run("empty_strings_ignored", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Headers:  []string{"", "X-Real-IP", ""},
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"  ", "192.168.1.0/24", "  "}),
+			Headers: []string{"", "X-Real-IP", ""},
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"  ", "192.168.1.0/24", "  "})),
+			},
 		}
-		result, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 		assert.Assert(t, result != nil)
 		assert.Equal(t, 1, len(result.Headers))
-		assert.Equal(t, 1, len(result.AllowedIPs))
+		assert.Equal(t, 1, len(result.Include))
 	})
 }
 
 func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 	t.Run("allowed_ip_in_subnet", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{
+					"192.168.1.0/24",
+				})),
+			},
 		}
-		allowedIPs, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		allowedIPs, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 
 		body := &AuthenticateRequestData{
@@ -264,9 +305,13 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 
 	t.Run("disallowed_ip", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{
+					"192.168.1.0/24",
+				})),
+			},
 		}
-		allowedIPs, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		allowedIPs, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 
 		body := &AuthenticateRequestData{
@@ -280,9 +325,13 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 
 	t.Run("ip_not_found", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{
+					"192.168.1.0/24",
+				})),
+			},
 		}
-		allowedIPs, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		allowedIPs, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 
 		body := &AuthenticateRequestData{
@@ -294,10 +343,14 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 
 	t.Run("custom_header", func(t *testing.T) {
 		config := &RelyAuthIPAllowListConfig{
-			Headers:  []string{"X-Custom-IP"},
-			Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+			Headers: []string{"X-Custom-IP"},
+			RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{
+					"192.168.1.0/24",
+				})),
+			},
 		}
-		allowedIPs, err := RelyAuthAllowedIPsFromConfig(config, goenvconf.GetOSEnv)
+		allowedIPs, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
 		assert.NilError(t, err)
 
 		body := &AuthenticateRequestData{
@@ -422,7 +475,11 @@ func TestRelyAuthentication_Authenticate(t *testing.T) {
 	t.Run("with_security_rules_pass", func(t *testing.T) {
 		config := &RelyAuthSecurityRulesConfig{
 			AllowedIPs: &RelyAuthIPAllowListConfig{
-				Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{
+						"192.168.1.0/24",
+					})),
+				},
 			},
 		}
 		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
@@ -456,7 +513,11 @@ func TestRelyAuthentication_Authenticate(t *testing.T) {
 	t.Run("with_security_rules_fail", func(t *testing.T) {
 		config := &RelyAuthSecurityRulesConfig{
 			AllowedIPs: &RelyAuthIPAllowListConfig{
-				Patterns: goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"}),
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{
+						"192.168.1.0/24",
+					})),
+				},
 			},
 		}
 		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
