@@ -9,14 +9,14 @@ import (
 	"github.com/hasura/goenvconf"
 )
 
-// RelyAuthIPAllowList hold security rules of the IP allow list from the parsed config.
+// RelyAuthIPAllowList holds security rules of the IP allow list from the parsed config.
 type RelyAuthIPAllowList struct {
 	Headers []string
 	Include []*net.IPNet
 	Exclude []*net.IPNet
 }
 
-// AllowedIPsFromConfig creates a [RelyAuthAllowedIPs] instance from config.
+// AllowedIPsFromConfig creates a [RelyAuthIPAllowList] instance from config.
 func AllowedIPsFromConfig(
 	conf *RelyAuthIPAllowListConfig,
 	getEnvFunc goenvconf.GetEnvFunc,

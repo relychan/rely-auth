@@ -663,7 +663,7 @@ func TestRelyAuthAllowListMatcherRule_IsValid(t *testing.T) {
 		assert.Assert(t, !matcherRule.IsValid("Token abc"))
 	})
 
-	t.Run("multiple_include_rules_all_must_match", func(t *testing.T) {
+	t.Run("multiple_include_rules_any_can_match", func(t *testing.T) {
 		config := RelyAuthAllowListConfig{
 			Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*", ".*token.*"})),
 		}
