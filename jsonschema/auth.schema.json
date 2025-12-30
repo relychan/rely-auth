@@ -193,7 +193,8 @@
           "required": [
             "algorithm",
             "key"
-          ]
+          ],
+          "title": "JWTFixedKeyConfig"
         },
         {
           "properties": {
@@ -208,7 +209,8 @@
           "type": "object",
           "required": [
             "jwkFromUrl"
-          ]
+          ],
+          "title": "JWTRemoteKeyConfig"
         }
       ]
     },
@@ -510,7 +512,7 @@
           "description": "The URL of the authentication webhook"
         },
         "httpClient": {
-          "$ref": "https://raw.githubusercontent.com/relychan/gorestly/refs/heads/main/jsonschema/gorestly.schema.json",
+          "$ref": "https://raw.githubusercontent.com/relychan/gohttpc/refs/heads/main/jsonschema/gohttpc.schema.json",
           "description": "Configurations for the HTTP client"
         },
         "customResponse": {
@@ -529,16 +531,7 @@
       ]
     },
     "TemplateTransformerConfig": {
-      "properties": {
-        "TemplateTransformerConfig": {
-          "$ref": "#/$defs/TemplateTransformerConfig"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object",
-      "required": [
-        "TemplateTransformerConfig"
-      ]
+      "$ref": "https://raw.githubusercontent.com/relychan/gotransform/refs/heads/main/jsonschema/gotransform.schema.json"
     },
     "TokenLocation": {
       "properties": {

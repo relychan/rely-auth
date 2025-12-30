@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/relychan/goutils/httpheader"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"gotest.tools/v3/assert"
 )
@@ -229,7 +230,8 @@ func TestAuthWebhook(t *testing.T, setupServer SetupTestServerFunc) {
 			},
 			StatusCode: 200,
 			ResponseBody: map[string]any{
-				"x-hasura-role": "admin",
+				"x-hasura-role":  "admin",
+				"x-content-type": "application/json",
 			},
 		},
 		{
@@ -344,6 +346,7 @@ func initWebhookServer(t *testing.T) *httptest.Server {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"x-hasura-role":"admin"}`))
 	})
 
@@ -355,6 +358,7 @@ func initWebhookServer(t *testing.T) *httptest.Server {
 		}
 
 		assert.Equal(t, r.Header.Get("X-Test-Header"), "")
+		assert.Equal(t, r.Header.Get(httpheader.ContentType), httpheader.ContentTypeJSON)
 
 		data, err := io.ReadAll(r.Body)
 		assert.NilError(t, err)

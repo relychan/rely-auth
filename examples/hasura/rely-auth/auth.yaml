@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../jsonschema/auth.schema.json
+# yaml-language-server: $schema=../../../jsonschema/auth.schema.json
 definitions:
   - mode: apiKey
     tokenLocation:

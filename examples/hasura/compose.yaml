@@ -1,28 +1,63 @@
+include:
+  - path: ./hasura/compose.yaml
+  - path: ./ddn/compose.yaml
 services:
-  hasura:
-    image: hasura/graphql-engine:v2.48.7.cli-migrations-v3
+  postgres:
+    image: postgres:18.1
+    restart: always
     ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      auth-hook:
-        condition: service_started
+      - 5432:5432
     volumes:
-      - ./migrations:/hasura-migrations
-      - ./metadata:/hasura-metadata
+      - ./postgres/chinook.sql:/docker-entrypoint-initdb.d/chinook.sql
     environment:
-      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:password@postgres:5432/postgres
-      DATA_DATABASE_URL: postgres://postgres:password@postgres:5432/postgres
-      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
-      HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
-      HASURA_GRAPHQL_AUTH_HOOK: http://auth-hook:8080/auth/hasura
-      HASURA_GRAPHQL_AUTH_HOOK_MODE: POST
-      HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
+      POSTGRES_PASSWORD: "password"
     extra_hosts:
       - local.hasura.dev:host-gateway
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 5
+
+  auth-hook:
+    # Uncomment this to use the pre-built image
+    # image: ghcr.io/relychan/rely-auth:latest
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    volumes:
+      - ./rely-auth:/etc/rely-auth
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://prometheus:9090/api/v1/otlp/v1/metrics
+      OTEL_EXPORTER_OTLP_METRICS_PROTOCOL: http/protobuf
+      OTEL_METRIC_EXPORT_INTERVAL: "1000"
+      LOG_LEVEL: debug
+    ports:
+      - "8080"
+
+  jaeger:
+    image: jaegertracing/jaeger:2.0.0
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+    command: ["--set", "receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317"]
+    extra_hosts:
+      - local.hasura.dev:host-gateway
+    environment:
+      - LOG_LEVEL=debug
+
+  prometheus:
+    image: prom/prometheus:v3.7.3
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+      - "--web.enable-otlp-receiver"
+    ports:
+      - 9090:9090

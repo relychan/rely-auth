@@ -13,7 +13,8 @@ const (
 	AuthModeAPIKey   AuthMode = "apiKey"
 	AuthModeJWT      AuthMode = "jwt"
 	AuthModeWebhook  AuthMode = "webhook"
-	AuthModeComposed AuthMode = "composed"
+	AuthModeCompose  AuthMode = "compose"
+	AuthModeFallback AuthMode = "fallback"
 )
 
 var enumAuthModes = []AuthMode{AuthModeAPIKey, AuthModeJWT, AuthModeWebhook, AuthModeNoAuth}
