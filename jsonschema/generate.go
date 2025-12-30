@@ -75,18 +75,21 @@ func jsonSchemaConfiguration() error {
 		"RelyAuthWebhookConfig",
 	} {
 		reflectSchema.Definitions[key].Properties.Set("securityRules", &jsonschema.Schema{
-			Ref: "#/$defs/RelyAuthSecurityRulesConfig",
+			Description: "Configurations for extra security rules",
+			Ref:         "#/$defs/RelyAuthSecurityRulesConfig",
 		})
 	}
 
 	reflectSchema.Definitions["AllOrListString"] = &jsonschema.Schema{
 		OneOf: []*jsonschema.Schema{
 			{
-				Type: "string",
-				Enum: []any{"*"},
+				Type:        "string",
+				Enum:        []any{"*"},
+				Description: "The wildcard string means all values are allowed",
 			},
 			{
-				Type: "array",
+				Type:        "array",
+				Description: "An explicit list of allowed string values",
 				Items: &jsonschema.Schema{
 					Type: "string",
 				},

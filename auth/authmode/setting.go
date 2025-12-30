@@ -16,7 +16,9 @@ type RelyAuthSettings struct {
 
 // RelyAuthAllowListConfig represents a common setting for allow list.
 type RelyAuthAllowListConfig struct {
+	// List of allowed patterns.
 	Include *goenvconf.EnvStringSlice `json:"include,omitempty" yaml:"include,omitempty"`
+	// List of disallowed patterns.
 	Exclude *goenvconf.EnvStringSlice `json:"exclude,omitempty" yaml:"exclude,omitempty"`
 }
 
@@ -36,6 +38,7 @@ func (hal RelyAuthAllowListConfig) Equal(target RelyAuthAllowListConfig) bool {
 type RelyAuthIPAllowListConfig struct {
 	RelyAuthAllowListConfig `yaml:",inline"`
 
+	// The client IP could be in this header list. Use default client IP headers if empty.
 	Headers []string `json:"headers,omitempty" yaml:"headers,omitempty"`
 }
 
