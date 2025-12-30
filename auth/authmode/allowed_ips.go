@@ -21,7 +21,8 @@ func AllowedIPsFromConfig(
 	conf *RelyAuthIPAllowListConfig,
 	getEnvFunc goenvconf.GetEnvFunc,
 ) (*RelyAuthIPAllowList, error) {
-	if conf == nil || ((conf.Include == nil || conf.Include.IsZero()) && (conf.Exclude == nil || conf.Exclude.IsZero())) {
+	if conf == nil ||
+		((conf.Include == nil || conf.Include.IsZero()) && (conf.Exclude == nil || conf.Exclude.IsZero())) {
 		return nil, ErrEmptyAllowedIPs
 	}
 
@@ -86,7 +87,10 @@ func (ai *RelyAuthIPAllowList) Validate(body *AuthenticateRequestData) error {
 	return ErrDisallowedIP
 }
 
-func parseEnvSubnets(list *goenvconf.EnvStringSlice, getEnvFunc goenvconf.GetEnvFunc) ([]*net.IPNet, error) {
+func parseEnvSubnets(
+	list *goenvconf.EnvStringSlice,
+	getEnvFunc goenvconf.GetEnvFunc,
+) ([]*net.IPNet, error) {
 	if list == nil {
 		return nil, nil
 	}

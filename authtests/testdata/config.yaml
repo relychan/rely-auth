@@ -44,5 +44,6 @@ definitions:
     securityRules:
       headerRules:
         origin:
-          value:
-            - localhost
+          include:
+            value:
+              - localhost

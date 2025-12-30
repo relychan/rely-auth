@@ -89,7 +89,11 @@ func (hr RelyAuthHeaderRules) Validate(body *AuthenticateRequestData) error {
 		}
 
 		if !rule.IsValid(value) {
-			return fmt.Errorf("%w: value of header %s does not satisfy security rules", ErrInvalidHeader, key)
+			return fmt.Errorf(
+				"%w: value of header %s does not satisfy security rules",
+				ErrInvalidHeader,
+				key,
+			)
 		}
 	}
 

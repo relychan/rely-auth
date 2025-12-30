@@ -570,3 +570,553 @@ func (m *mockAuthenticator) Mode() AuthMode {
 func (m *mockAuthenticator) Close() error {
 	return nil
 }
+
+// Tests for RelyAuthAllowListMatcherRule
+
+func TestAllowListMatcherRuleFromConfig(t *testing.T) {
+	t.Run("nil_config", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{}
+		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, 0, len(result.Include))
+		assert.Equal(t, 0, len(result.Exclude))
+	})
+
+	t.Run("with_include_patterns", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{
+			Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*", "^Token .*"})),
+		}
+		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, 2, len(result.Include))
+		assert.Equal(t, 0, len(result.Exclude))
+	})
+
+	t.Run("with_exclude_patterns", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{
+			Exclude: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Blocked.*"})),
+		}
+		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, 0, len(result.Include))
+		assert.Equal(t, 1, len(result.Exclude))
+	})
+
+	t.Run("with_both_include_and_exclude", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{
+			Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			Exclude: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer test.*"})),
+		}
+		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, 1, len(result.Include))
+		assert.Equal(t, 1, len(result.Exclude))
+	})
+
+	t.Run("invalid_include_regex", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{
+			Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"[invalid"})),
+		}
+		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.ErrorContains(t, err, "include")
+		assert.Assert(t, result == nil)
+	})
+
+	t.Run("invalid_exclude_regex", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{
+			Exclude: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"[invalid"})),
+		}
+		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.ErrorContains(t, err, "exclude")
+		assert.Assert(t, result == nil)
+	})
+
+	t.Run("empty_string_in_patterns", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{
+			Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{""})),
+		}
+		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, 0, len(result.Include))
+	})
+}
+
+func TestRelyAuthAllowListMatcherRule_IsValid(t *testing.T) {
+	t.Run("no_rules_always_valid", func(t *testing.T) {
+		rule := RelyAuthAllowListMatcherRule{}
+		assert.Assert(t, rule.IsValid("any value"))
+	})
+
+	t.Run("include_rule_matches", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{
+			Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+		}
+		matcherRule, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		assert.Assert(t, matcherRule.IsValid("Bearer token123"))
+		assert.Assert(t, !matcherRule.IsValid("Token abc"))
+	})
+
+	t.Run("multiple_include_rules_all_must_match", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{
+			Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*", ".*token.*"})),
+		}
+		matcherRule, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		assert.Assert(t, matcherRule.IsValid("Bearer token123"))
+		assert.Assert(t, !matcherRule.IsValid("Bearer abc"))
+		assert.Assert(t, !matcherRule.IsValid("Token token123"))
+	})
+
+	t.Run("exclude_rule_blocks", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{
+			Exclude: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Blocked.*"})),
+		}
+		matcherRule, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		assert.Assert(t, matcherRule.IsValid("Allowed value"))
+		assert.Assert(t, !matcherRule.IsValid("Blocked value"))
+	})
+
+	t.Run("include_and_exclude_rules", func(t *testing.T) {
+		config := RelyAuthAllowListConfig{
+			Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			Exclude: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{".*test.*"})),
+		}
+		matcherRule, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		assert.Assert(t, matcherRule.IsValid("Bearer production"))
+		assert.Assert(t, !matcherRule.IsValid("Bearer test"))
+		assert.Assert(t, !matcherRule.IsValid("Token production"))
+	})
+}
+
+// Tests for HeaderRulesFromConfig
+
+func TestHeaderRulesFromConfig(t *testing.T) {
+	t.Run("nil_config", func(t *testing.T) {
+		result, err := HeaderRulesFromConfig(nil, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, 0, len(result))
+	})
+
+	t.Run("empty_config", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{}
+		result, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, 0, len(result))
+	})
+
+	t.Run("single_header_rule", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"Authorization": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			},
+		}
+		result, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, 1, len(result))
+		_, ok := result["authorization"]
+		assert.Assert(t, ok)
+	})
+
+	t.Run("multiple_header_rules", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"Authorization": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			},
+			"X-API-Key": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^[a-zA-Z0-9]{32}$"})),
+			},
+		}
+		result, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, 2, len(result))
+		_, ok := result["authorization"]
+		assert.Assert(t, ok)
+		_, ok = result["x-api-key"]
+		assert.Assert(t, ok)
+	})
+
+	t.Run("case_insensitive_header_names", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"AUTHORIZATION": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			},
+		}
+		result, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		_, ok := result["authorization"]
+		assert.Assert(t, ok)
+	})
+
+	t.Run("invalid_regex_in_rule", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"Authorization": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"[invalid"})),
+			},
+		}
+		result, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.ErrorContains(t, err, "failed to parse header rule")
+		assert.ErrorContains(t, err, "Authorization")
+		assert.Assert(t, result == nil)
+	})
+}
+
+// Tests for RelyAuthHeaderRules.Validate
+
+func TestRelyAuthHeaderRules_Validate(t *testing.T) {
+	t.Run("empty_rules", func(t *testing.T) {
+		rules := RelyAuthHeaderRules{}
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{},
+		}
+		err := rules.Validate(body)
+		assert.NilError(t, err)
+	})
+
+	t.Run("rules_exist_but_no_headers", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"Authorization": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			},
+		}
+		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{},
+		}
+		err = rules.Validate(body)
+		assert.ErrorContains(t, err, ErrInvalidHeader.Error())
+		assert.ErrorContains(t, err, "headers are required")
+	})
+
+	t.Run("header_missing", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"Authorization": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			},
+		}
+		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"x-api-key": "test",
+			},
+		}
+		err = rules.Validate(body)
+		assert.ErrorContains(t, err, ErrInvalidHeader.Error())
+		assert.ErrorContains(t, err, "does not exist")
+	})
+
+	t.Run("header_value_matches", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"Authorization": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			},
+		}
+		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"authorization": "Bearer token123",
+			},
+		}
+		err = rules.Validate(body)
+		assert.NilError(t, err)
+	})
+
+	t.Run("header_value_does_not_match", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"Authorization": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			},
+		}
+		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"authorization": "Token abc",
+			},
+		}
+		err = rules.Validate(body)
+		assert.ErrorContains(t, err, ErrInvalidHeader.Error())
+		assert.ErrorContains(t, err, "does not satisfy security rules")
+	})
+
+	t.Run("multiple_headers_all_match", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"Authorization": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			},
+			"X-API-Key": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^[a-zA-Z0-9]{32}$"})),
+			},
+		}
+		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"authorization": "Bearer token123",
+				"x-api-key":     "abcdefghijklmnopqrstuvwxyz123456",
+			},
+		}
+		err = rules.Validate(body)
+		assert.NilError(t, err)
+	})
+
+	t.Run("multiple_headers_one_fails", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"Authorization": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+			},
+			"X-API-Key": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^[a-zA-Z0-9]{32}$"})),
+			},
+		}
+		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"authorization": "Bearer token123",
+				"x-api-key":     "short",
+			},
+		}
+		err = rules.Validate(body)
+		assert.ErrorContains(t, err, ErrInvalidHeader.Error())
+	})
+
+	t.Run("exclude_pattern_blocks", func(t *testing.T) {
+		config := map[string]RelyAuthAllowListConfig{
+			"Authorization": {
+				Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+				Exclude: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{".*test.*"})),
+			},
+		}
+		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"authorization": "Bearer test-token",
+			},
+		}
+		err = rules.Validate(body)
+		assert.ErrorContains(t, err, ErrInvalidHeader.Error())
+	})
+}
+
+// Additional tests for RelyAuthSecurityRulesFromConfig with HeaderRules
+
+func TestRelyAuthSecurityRulesFromConfig_WithHeaderRules(t *testing.T) {
+	t.Run("with_header_rules_only", func(t *testing.T) {
+		config := &RelyAuthSecurityRulesConfig{
+			HeaderRules: map[string]RelyAuthAllowListConfig{
+				"Authorization": {
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+				},
+			},
+		}
+		result, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Assert(t, result.AllowedIPs == nil)
+		assert.Equal(t, 1, len(result.HeaderRules))
+	})
+
+	t.Run("with_both_allowed_ips_and_header_rules", func(t *testing.T) {
+		config := &RelyAuthSecurityRulesConfig{
+			AllowedIPs: &RelyAuthIPAllowListConfig{
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+				},
+			},
+			HeaderRules: map[string]RelyAuthAllowListConfig{
+				"Authorization": {
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+				},
+			},
+		}
+		result, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Assert(t, result.AllowedIPs != nil)
+		assert.Equal(t, 1, len(result.HeaderRules))
+	})
+
+	t.Run("invalid_header_rule_regex", func(t *testing.T) {
+		config := &RelyAuthSecurityRulesConfig{
+			HeaderRules: map[string]RelyAuthAllowListConfig{
+				"Authorization": {
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"[invalid"})),
+				},
+			},
+		}
+		result, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.ErrorContains(t, err, "failed to parse header rule")
+		assert.Assert(t, result != nil) // result is still returned even on error
+	})
+
+	t.Run("empty_header_rules_map", func(t *testing.T) {
+		config := &RelyAuthSecurityRulesConfig{
+			HeaderRules: map[string]RelyAuthAllowListConfig{},
+		}
+		result, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+		assert.Assert(t, result != nil)
+		assert.Equal(t, 0, len(result.HeaderRules))
+	})
+}
+
+// Additional tests for RelyAuthSecurityRules.Validate with HeaderRules
+
+func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
+	t.Run("header_rules_only_pass", func(t *testing.T) {
+		config := &RelyAuthSecurityRulesConfig{
+			HeaderRules: map[string]RelyAuthAllowListConfig{
+				"Authorization": {
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+				},
+			},
+		}
+		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"authorization": "Bearer token123",
+			},
+		}
+		err = rules.Validate(body)
+		assert.NilError(t, err)
+	})
+
+	t.Run("header_rules_only_fail", func(t *testing.T) {
+		config := &RelyAuthSecurityRulesConfig{
+			HeaderRules: map[string]RelyAuthAllowListConfig{
+				"Authorization": {
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+				},
+			},
+		}
+		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"authorization": "Token abc",
+			},
+		}
+		err = rules.Validate(body)
+		assert.ErrorContains(t, err, ErrInvalidHeader.Error())
+	})
+
+	t.Run("both_ip_and_header_rules_pass", func(t *testing.T) {
+		config := &RelyAuthSecurityRulesConfig{
+			AllowedIPs: &RelyAuthIPAllowListConfig{
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+				},
+			},
+			HeaderRules: map[string]RelyAuthAllowListConfig{
+				"Authorization": {
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+				},
+			},
+		}
+		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"x-real-ip":     "192.168.1.100",
+				"authorization": "Bearer token123",
+			},
+		}
+		err = rules.Validate(body)
+		assert.NilError(t, err)
+	})
+
+	t.Run("both_ip_and_header_rules_ip_fails", func(t *testing.T) {
+		config := &RelyAuthSecurityRulesConfig{
+			AllowedIPs: &RelyAuthIPAllowListConfig{
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+				},
+			},
+			HeaderRules: map[string]RelyAuthAllowListConfig{
+				"Authorization": {
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+				},
+			},
+		}
+		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"x-real-ip":     "10.0.0.1",
+				"authorization": "Bearer token123",
+			},
+		}
+		err = rules.Validate(body)
+		assert.ErrorContains(t, err, ErrDisallowedIP.Error())
+	})
+
+	t.Run("both_ip_and_header_rules_header_fails", func(t *testing.T) {
+		config := &RelyAuthSecurityRulesConfig{
+			AllowedIPs: &RelyAuthIPAllowListConfig{
+				RelyAuthAllowListConfig: RelyAuthAllowListConfig{
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"192.168.1.0/24"})),
+				},
+			},
+			HeaderRules: map[string]RelyAuthAllowListConfig{
+				"Authorization": {
+					Include: goutils.ToPtr(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
+				},
+			},
+		}
+		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
+		assert.NilError(t, err)
+
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{
+				"x-real-ip":     "192.168.1.100",
+				"authorization": "Token abc",
+			},
+		}
+		err = rules.Validate(body)
+		assert.ErrorContains(t, err, ErrInvalidHeader.Error())
+	})
+
+	t.Run("nil_header_rules", func(t *testing.T) {
+		rules := &RelyAuthSecurityRules{
+			HeaderRules: nil,
+		}
+		body := &AuthenticateRequestData{
+			Headers: map[string]string{},
+		}
+		err := rules.Validate(body)
+		assert.NilError(t, err)
+	})
+}
