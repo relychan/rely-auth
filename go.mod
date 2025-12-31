@@ -6,13 +6,13 @@ require (
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-jose/go-jose/v4 v4.1.3
-	github.com/hasura/goenvconf v0.6.0
+	github.com/hasura/goenvconf v0.6.1
 	github.com/hasura/gotel v0.5.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
-	github.com/relychan/gohttpc v0.0.0-20251224161742-aaca86a4d2c7
+	github.com/relychan/gohttpc v0.0.0-20251230160744-81a1938b13b6
 	github.com/relychan/gohttps v0.0.0-20251206085650-5f2727ade1fa
-	github.com/relychan/gotransform v0.0.0-20251214152200-6dcd174d5492
+	github.com/relychan/gotransform v0.0.0-20251230164839-634794cf57f2
 	github.com/relychan/goutils v0.0.0-20251230062103-93a30b1ea43d
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.opentelemetry.io/otel v1.39.0

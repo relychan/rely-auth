@@ -47,7 +47,7 @@ func (rac RelyAuthConfig) Validate() error {
 type RelyAuthDefinition struct {
 	authmode.RelyAuthDefinitionInterface `yaml:",inline"`
 
-	// Configurations for extra security rules .
+	// Configurations for extra security rules.
 	SecurityRules *authmode.RelyAuthSecurityRulesConfig `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
 }
 
@@ -157,16 +157,20 @@ func (RelyAuthDefinition) JSONSchema() *jsonschema.Schema {
 	return &jsonschema.Schema{
 		OneOf: []*jsonschema.Schema{
 			{
-				Ref: "#/$defs/RelyAuthAPIKeyConfig",
+				Description: "Configurations for HTTP authentication with static secrets",
+				Ref:         "#/$defs/RelyAuthAPIKeyConfig",
 			},
 			{
-				Ref: "#/$defs/RelyAuthJWTConfig",
+				Description: "Configurations to which the incoming JWT will be verified and decoded to extract the session variable claims",
+				Ref:         "#/$defs/RelyAuthJWTConfig",
 			},
 			{
-				Ref: "#/$defs/RelyAuthNoAuthConfig",
+				Description: "The session variables configuration for unauthenticated users",
+				Ref:         "#/$defs/RelyAuthNoAuthConfig",
 			},
 			{
-				Ref: "#/$defs/RelyAuthWebhookConfig",
+				Description: "Configurations for the webhook authentication mode",
+				Ref:         "#/$defs/RelyAuthWebhookConfig",
 			},
 		},
 	}

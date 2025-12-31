@@ -11,7 +11,7 @@ import (
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
-// RelyAuthJWTConfig according to which the incoming JWT will be verified and decoded to extract the session variable claims.
+// RelyAuthJWTConfig holds configurations to which the incoming JWT will be verified and decoded to extract the session variable claims.
 type RelyAuthJWTConfig struct {
 	// Unique identity of the auth config.
 	// If not set, ID will be the index of the array.
@@ -165,7 +165,8 @@ func (j JWTKey) Equal(target JWTKey) bool {
 func (JWTKey) JSONSchema() *jsonschema.Schema {
 	envStringRef := "#/$defs/EnvString"
 	algorithmProp := &jsonschema.Schema{
-		Ref: "#/$defs/JWTSignatureAlgorithm",
+		Description: "Algorithm to be used for verifying the signature",
+		Ref:         "#/$defs/JWTSignatureAlgorithm",
 	}
 
 	keyProps := orderedmap.New[string, *jsonschema.Schema]()
@@ -185,16 +186,18 @@ func (JWTKey) JSONSchema() *jsonschema.Schema {
 	return &jsonschema.Schema{
 		OneOf: []*jsonschema.Schema{
 			{
-				Type:       "object",
-				Title:      "JWTFixedKeyConfig",
-				Required:   []string{"algorithm", "key"},
-				Properties: keyProps,
+				Type:        "object",
+				Title:       "JWTFixedKeyConfig",
+				Required:    []string{"algorithm", "key"},
+				Description: "Configurations for an inline JWT key secret",
+				Properties:  keyProps,
 			},
 			{
-				Type:       "object",
-				Title:      "JWTRemoteKeyConfig",
-				Properties: jwkFromURLProps,
-				Required:   []string{"jwkFromUrl"},
+				Type:        "object",
+				Title:       "JWTRemoteKeyConfig",
+				Properties:  jwkFromURLProps,
+				Description: "Configurations for a remote URL where publishes JSON Web Keys",
+				Required:    []string{"jwkFromUrl"},
 			},
 		},
 	}

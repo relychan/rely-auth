@@ -14,7 +14,7 @@ import (
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
-// RelyAuthWebhookConfig contains the configuration schema for webhook authentication.
+// RelyAuthWebhookConfig contains configurations for the webhook authentication mode.
 type RelyAuthWebhookConfig struct {
 	// Unique identity of the auth config.
 	// If not set, ID will be the index of the array.

@@ -9,25 +9,17 @@
           "type": "string",
           "enum": [
             "*"
-          ]
+          ],
+          "description": "The wildcard string means all values are allowed"
         },
         {
           "items": {
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "description": "An explicit list of allowed string values"
         }
       ]
-    },
-    "AuthMode": {
-      "type": "string",
-      "enum": [
-        "apiKey",
-        "jwt",
-        "webhook",
-        "noAuth"
-      ],
-      "description": "Authentication mode enum"
     },
     "EnvAny": {
       "anyOf": [
@@ -45,9 +37,12 @@
         }
       ],
       "properties": {
-        "value": true,
+        "value": {
+          "description": "Default literal value if the env is empty"
+        },
         "env": {
-          "type": "string"
+          "type": "string",
+          "description": "Environment variable to be evaluated"
         }
       },
       "additionalProperties": false,
@@ -70,10 +65,12 @@
       ],
       "properties": {
         "value": {
-          "type": "string"
+          "type": "string",
+          "description": "Default literal value if the env is empty"
         },
         "env": {
-          "type": "string"
+          "type": "string",
+          "description": "Environment variable to be evaluated"
         }
       },
       "additionalProperties": false,
@@ -99,10 +96,12 @@
           "items": {
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "description": "Default literal value if the env is empty"
         },
         "env": {
-          "type": "string"
+          "type": "string",
+          "description": "Environment variable to be evaluated"
         }
       },
       "additionalProperties": false,
@@ -111,10 +110,12 @@
     "FieldMappingEntryConfig": {
       "properties": {
         "path": {
-          "type": "string"
+          "type": "string",
+          "description": "JMESPath expression to find a value in the input data"
         },
         "default": {
-          "$ref": "#/$defs/EnvAny"
+          "$ref": "#/$defs/EnvAny",
+          "description": "Default value to be used when no value is found"
         }
       },
       "additionalProperties": false,
@@ -182,7 +183,8 @@
         {
           "properties": {
             "algorithm": {
-              "$ref": "#/$defs/JWTSignatureAlgorithm"
+              "$ref": "#/$defs/JWTSignatureAlgorithm",
+              "description": "Algorithm to be used for verifying the signature"
             },
             "key": {
               "$ref": "#/$defs/EnvString",
@@ -194,12 +196,14 @@
             "algorithm",
             "key"
           ],
-          "title": "JWTFixedKeyConfig"
+          "title": "JWTFixedKeyConfig",
+          "description": "Configurations for an inline JWT key secret"
         },
         {
           "properties": {
             "algorithm": {
-              "$ref": "#/$defs/JWTSignatureAlgorithm"
+              "$ref": "#/$defs/JWTSignatureAlgorithm",
+              "description": "Algorithm to be used for verifying the signature"
             },
             "jwkFromUrl": {
               "$ref": "#/$defs/EnvString",
@@ -210,7 +214,8 @@
           "required": [
             "jwkFromUrl"
           ],
-          "title": "JWTRemoteKeyConfig"
+          "title": "JWTRemoteKeyConfig",
+          "description": "Configurations for a remote URL where publishes JSON Web Keys"
         }
       ]
     },
@@ -240,7 +245,10 @@
           "description": "Unique identity of the auth config.\nIf not set, ID will be the index of the array."
         },
         "mode": {
-          "$ref": "#/$defs/AuthMode",
+          "type": "string",
+          "enum": [
+            "apiKey"
+          ],
           "description": "Authentication mode which is always apiKey."
         },
         "description": {
@@ -263,7 +271,8 @@
           "description": "Value of the static API key to be compared."
         },
         "securityRules": {
-          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig",
+          "description": "Configurations for extra security rules"
         }
       },
       "additionalProperties": false,
@@ -279,10 +288,12 @@
     "RelyAuthAllowListConfig": {
       "properties": {
         "include": {
-          "$ref": "#/$defs/EnvStringSlice"
+          "$ref": "#/$defs/EnvStringSlice",
+          "description": "List of allowed patterns."
         },
         "exclude": {
-          "$ref": "#/$defs/EnvStringSlice"
+          "$ref": "#/$defs/EnvStringSlice",
+          "description": "List of disallowed patterns."
         }
       },
       "additionalProperties": false,
@@ -313,32 +324,39 @@
     "RelyAuthDefinition": {
       "oneOf": [
         {
-          "$ref": "#/$defs/RelyAuthAPIKeyConfig"
+          "$ref": "#/$defs/RelyAuthAPIKeyConfig",
+          "description": "Configurations for HTTP authentication with static secrets"
         },
         {
-          "$ref": "#/$defs/RelyAuthJWTConfig"
+          "$ref": "#/$defs/RelyAuthJWTConfig",
+          "description": "Configurations to which the incoming JWT will be verified and decoded to extract the session variable claims"
         },
         {
-          "$ref": "#/$defs/RelyAuthNoAuthConfig"
+          "$ref": "#/$defs/RelyAuthNoAuthConfig",
+          "description": "The session variables configuration for unauthenticated users"
         },
         {
-          "$ref": "#/$defs/RelyAuthWebhookConfig"
+          "$ref": "#/$defs/RelyAuthWebhookConfig",
+          "description": "Configurations for the webhook authentication mode"
         }
       ]
     },
     "RelyAuthIPAllowListConfig": {
       "properties": {
         "include": {
-          "$ref": "#/$defs/EnvStringSlice"
+          "$ref": "#/$defs/EnvStringSlice",
+          "description": "List of allowed patterns."
         },
         "exclude": {
-          "$ref": "#/$defs/EnvStringSlice"
+          "$ref": "#/$defs/EnvStringSlice",
+          "description": "List of disallowed patterns."
         },
         "headers": {
           "items": {
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "description": "The client IP could be in this header list. Use default client IP headers if empty."
         }
       },
       "additionalProperties": false,
@@ -352,7 +370,10 @@
           "description": "Unique identity of the auth config.\nIf not set, ID will be the index of the array."
         },
         "mode": {
-          "$ref": "#/$defs/AuthMode",
+          "type": "string",
+          "enum": [
+            "jwt"
+          ],
           "description": "Authentication mode which is always jwt."
         },
         "description": {
@@ -387,7 +408,8 @@
           "description": "Configuration to describe how and where the engine should look for the claims within the decoded token.\nYou can vary the format and location of the claims."
         },
         "securityRules": {
-          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig",
+          "description": "Configurations for extra security rules"
         }
       },
       "additionalProperties": false,
@@ -398,7 +420,7 @@
         "key",
         "claimsConfig"
       ],
-      "description": "RelyAuthJWTConfig according to which the incoming JWT will be verified and decoded to extract the session variable claims."
+      "description": "RelyAuthJWTConfig holds configurations to which the incoming JWT will be verified and decoded to extract the session variable claims."
     },
     "RelyAuthNoAuthConfig": {
       "properties": {
@@ -407,7 +429,10 @@
           "description": "Unique identity of the auth config.\nIf not set, ID will be the index of the array."
         },
         "mode": {
-          "$ref": "#/$defs/AuthMode",
+          "type": "string",
+          "enum": [
+            "noAuth"
+          ],
           "description": "Authentication mode which is always noAuth."
         },
         "sessionVariables": {
@@ -418,7 +443,8 @@
           "description": "Custom session variables for this auth mode."
         },
         "securityRules": {
-          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig",
+          "description": "Configurations for extra security rules"
         }
       },
       "additionalProperties": false,
@@ -427,7 +453,7 @@
         "mode",
         "sessionVariables"
       ],
-      "description": "RelyAuthNoAuthConfig contains the definition config for unauthenticated users."
+      "description": "RelyAuthNoAuthConfig contains the session variables configuration for unauthenticated users."
     },
     "RelyAuthSecurityRulesConfig": {
       "properties": {
@@ -533,7 +559,8 @@
           "description": "The configuration for transforming response bodies"
         },
         "securityRules": {
-          "$ref": "#/$defs/RelyAuthSecurityRulesConfig"
+          "$ref": "#/$defs/RelyAuthSecurityRulesConfig",
+          "description": "Configurations for extra security rules"
         }
       },
       "type": "object",

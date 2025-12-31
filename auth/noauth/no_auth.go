@@ -6,7 +6,7 @@ import (
 	"github.com/relychan/rely-auth/auth/authmode"
 )
 
-// RelyAuthNoAuthConfig contains the definition config for unauthenticated users.
+// RelyAuthNoAuthConfig contains the session variables configuration for unauthenticated users.
 type RelyAuthNoAuthConfig struct {
 	// Unique identity of the auth config.
 	// If not set, ID will be the index of the array.

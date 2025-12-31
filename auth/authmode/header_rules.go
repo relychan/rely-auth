@@ -10,7 +10,9 @@ import (
 
 // RelyAuthAllowListMatcherRule represents a matcher rule for a field.
 type RelyAuthAllowListMatcherRule struct {
+	// List of regular expressions that are allowed to access.
 	Include []*goutils.RegexpMatcher
+	// List of regular expressions that are denied to access.
 	Exclude []*goutils.RegexpMatcher
 }
 
