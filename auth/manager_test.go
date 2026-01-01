@@ -17,7 +17,7 @@ import (
 
 func TestNewRelyAuthManager(t *testing.T) {
 	config := &RelyAuthConfig{
-		Definitions: []RelyAuthDefinition{
+		Definition: []RelyAuthDefinition{
 			NewRelyAuthDefinition(&noauth.RelyAuthNoAuthConfig{
 				Mode: authmode.AuthModeNoAuth,
 				SessionVariables: map[string]goenvconf.EnvAny{
@@ -37,7 +37,7 @@ func TestNewRelyAuthManager(t *testing.T) {
 
 func TestRelyAuthManager_Authenticate_NoAuth(t *testing.T) {
 	config := &RelyAuthConfig{
-		Definitions: []RelyAuthDefinition{
+		Definition: []RelyAuthDefinition{
 			{
 				RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
 					Mode: authmode.AuthModeNoAuth,
@@ -69,7 +69,7 @@ func TestRelyAuthManager_Authenticate_APIKey(t *testing.T) {
 	t.Setenv("TEST_API_KEY", apiKey)
 
 	config := &RelyAuthConfig{
-		Definitions: []RelyAuthDefinition{
+		Definition: []RelyAuthDefinition{
 			{
 				RelyAuthDefinitionInterface: &apikey.RelyAuthAPIKeyConfig{
 					Mode: authmode.AuthModeAPIKey,
@@ -117,7 +117,7 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 	t.Setenv("FALLBACK_API_KEY", apiKey)
 
 	config := &RelyAuthConfig{
-		Definitions: []RelyAuthDefinition{
+		Definition: []RelyAuthDefinition{
 			{
 				RelyAuthDefinitionInterface: &apikey.RelyAuthAPIKeyConfig{
 					Mode: authmode.AuthModeAPIKey,
@@ -160,7 +160,7 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 
 func TestRelyAuthManager_WithOptions(t *testing.T) {
 	config := &RelyAuthConfig{
-		Definitions: []RelyAuthDefinition{
+		Definition: []RelyAuthDefinition{
 			{
 				RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
 					Mode:             authmode.AuthModeNoAuth,
@@ -187,7 +187,7 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 	t.Setenv("API_KEY_2", apiKey2)
 
 	config := &RelyAuthConfig{
-		Definitions: []RelyAuthDefinition{
+		Definition: []RelyAuthDefinition{
 			{
 				RelyAuthDefinitionInterface: &apikey.RelyAuthAPIKeyConfig{
 					ID:   "auth1",

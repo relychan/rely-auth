@@ -173,7 +173,7 @@ func TestInitAuthManager_Success(t *testing.T) {
 	authConfigPath := filepath.Join(tmpDir, "auth.yaml")
 
 	authConfigContent := `
-definitions:
+definition:
   - mode: apiKey
     tokenLocation:
       in: header
@@ -208,7 +208,7 @@ func TestInitAuthManager_InvalidConfig(t *testing.T) {
 	authConfigPath := filepath.Join(tmpDir, "auth.yaml")
 
 	authConfigContent := `
-definitions:
+definition:
   - mode: invalid
 `
 	err := os.WriteFile(authConfigPath, []byte(authConfigContent), 0644)
@@ -226,7 +226,7 @@ func TestInitAuthManager_WithJWT(t *testing.T) {
 	authConfigPath := filepath.Join(tmpDir, "auth.yaml")
 
 	authConfigContent := `
-definitions:
+definition:
   - mode: jwt
     tokenLocation:
       in: header
@@ -258,7 +258,7 @@ func TestInitAuthManager_WithWebhook(t *testing.T) {
 	authConfigPath := filepath.Join(tmpDir, "auth.yaml")
 
 	authConfigContent := `
-definitions:
+definition:
   - mode: webhook
     url:
       value: "http://localhost:3000/auth"
@@ -283,7 +283,7 @@ func TestInitAuthManager_WithMultipleModes(t *testing.T) {
 	authConfigPath := filepath.Join(tmpDir, "auth.yaml")
 
 	authConfigContent := `
-definitions:
+definition:
   - mode: apiKey
     tokenLocation:
       in: header
@@ -330,7 +330,7 @@ func TestInitAuthManager_WithStrictMode(t *testing.T) {
 	authConfigContent := `
 settings:
   strict: true
-definitions:
+definition:
   - mode: apiKey
     tokenLocation:
       in: header
