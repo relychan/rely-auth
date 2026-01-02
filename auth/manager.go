@@ -159,22 +159,22 @@ func (am *RelyAuthManager) init(
 	options authmode.RelyAuthenticatorOptions,
 ) error {
 	authModes := authmode.GetSupportedAuthModes()
-	definitions := config.Definition
+	definitions := config.Definition.Modes
 
 	// Auth modes are sorted in order:
 	// - API Key: comparing static keys is cheap. So it should be used first.
 	// - JWT: verifying signatures is more expensive. However, because JSON web keys are stored in memory so the verification is still fast.
 	// - Webhook: calling HTTP requests takes highest latency due to network side effects. It should be the lowest priority.
 	// - No Auth: is always the last for unauthenticated users.
-	slices.SortFunc(definitions, func(a, b RelyAuthDefinition) int {
+	slices.SortFunc(definitions, func(a, b RelyAuthMode) int {
 		indexA := slices.Index(authModes, a.GetMode())
 		indexB := slices.Index(authModes, b.GetMode())
 
 		return indexA - indexB
 	})
 
-	if config.Settings != nil {
-		am.settings = *config.Settings
+	if config.Definition.Settings != nil {
+		am.settings = *config.Definition.Settings
 	}
 
 	var jwtAuth *jwt.JWTAuthenticator
@@ -188,7 +188,7 @@ func (am *RelyAuthManager) init(
 			return fmt.Errorf("failed to parse security rules of authenticator %d: %w", i, err)
 		}
 
-		switch def := rawDef.RelyAuthDefinitionInterface.(type) {
+		switch def := rawDef.RelyAuthModeInterface.(type) {
 		case *apikey.RelyAuthAPIKeyConfig:
 			if def.ID == "" {
 				def.ID = strconv.Itoa(i)

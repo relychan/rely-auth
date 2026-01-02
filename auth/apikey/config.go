@@ -24,7 +24,7 @@ type RelyAuthAPIKeyConfig struct {
 	Value goenvconf.EnvString `json:"value" yaml:"value"`
 }
 
-var _ authmode.RelyAuthDefinitionInterface = (*RelyAuthAPIKeyConfig)(nil)
+var _ authmode.RelyAuthModeInterface = (*RelyAuthAPIKeyConfig)(nil)
 
 // NewRelyAuthAPIKeyConfig creates a new APIKeyAuthConfig instance.
 func NewRelyAuthAPIKeyConfig(

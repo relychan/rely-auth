@@ -35,7 +35,7 @@ type RelyAuthWebhookConfig struct {
 	HTTPClient *httpconfig.HTTPClientConfig `json:"httpClient,omitempty" yaml:"httpClient,omitempty"`
 }
 
-var _ authmode.RelyAuthDefinitionInterface = (*RelyAuthWebhookConfig)(nil)
+var _ authmode.RelyAuthModeInterface = (*RelyAuthWebhookConfig)(nil)
 
 // NewRelyAuthWebhookConfig creates a new RelyAuthWebhookConfig instance.
 func NewRelyAuthWebhookConfig(

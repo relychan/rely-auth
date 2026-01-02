@@ -17,13 +17,15 @@ import (
 
 func TestNewRelyAuthManager(t *testing.T) {
 	config := &RelyAuthConfig{
-		Definition: []RelyAuthDefinition{
-			NewRelyAuthDefinition(&noauth.RelyAuthNoAuthConfig{
-				Mode: authmode.AuthModeNoAuth,
-				SessionVariables: map[string]goenvconf.EnvAny{
-					"x-hasura-role": goenvconf.NewEnvAnyValue("anonymous"),
-				},
-			}),
+		Definition: RelyAuthDefinition{
+			Modes: []RelyAuthMode{
+				NewRelyAuthMode(&noauth.RelyAuthNoAuthConfig{
+					Mode: authmode.AuthModeNoAuth,
+					SessionVariables: map[string]goenvconf.EnvAny{
+						"x-hasura-role": goenvconf.NewEnvAnyValue("anonymous"),
+					},
+				}),
+			},
 		},
 	}
 
@@ -37,12 +39,14 @@ func TestNewRelyAuthManager(t *testing.T) {
 
 func TestRelyAuthManager_Authenticate_NoAuth(t *testing.T) {
 	config := &RelyAuthConfig{
-		Definition: []RelyAuthDefinition{
-			{
-				RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
-					Mode: authmode.AuthModeNoAuth,
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("guest"),
+		Definition: RelyAuthDefinition{
+			Modes: []RelyAuthMode{
+				{
+					RelyAuthModeInterface: &noauth.RelyAuthNoAuthConfig{
+						Mode: authmode.AuthModeNoAuth,
+						SessionVariables: map[string]goenvconf.EnvAny{
+							"x-hasura-role": goenvconf.NewEnvAnyValue("guest"),
+						},
 					},
 				},
 			},
@@ -69,17 +73,19 @@ func TestRelyAuthManager_Authenticate_APIKey(t *testing.T) {
 	t.Setenv("TEST_API_KEY", apiKey)
 
 	config := &RelyAuthConfig{
-		Definition: []RelyAuthDefinition{
-			{
-				RelyAuthDefinitionInterface: &apikey.RelyAuthAPIKeyConfig{
-					Mode: authmode.AuthModeAPIKey,
-					TokenLocation: authscheme.TokenLocation{
-						In:   authscheme.InHeader,
-						Name: "Authorization",
-					},
-					Value: goenvconf.NewEnvStringVariable("TEST_API_KEY"),
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("admin"),
+		Definition: RelyAuthDefinition{
+			Modes: []RelyAuthMode{
+				{
+					RelyAuthModeInterface: &apikey.RelyAuthAPIKeyConfig{
+						Mode: authmode.AuthModeAPIKey,
+						TokenLocation: authscheme.TokenLocation{
+							In:   authscheme.InHeader,
+							Name: "Authorization",
+						},
+						Value: goenvconf.NewEnvStringVariable("TEST_API_KEY"),
+						SessionVariables: map[string]goenvconf.EnvAny{
+							"x-hasura-role": goenvconf.NewEnvAnyValue("admin"),
+						},
 					},
 				},
 			},
@@ -117,25 +123,27 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 	t.Setenv("FALLBACK_API_KEY", apiKey)
 
 	config := &RelyAuthConfig{
-		Definition: []RelyAuthDefinition{
-			{
-				RelyAuthDefinitionInterface: &apikey.RelyAuthAPIKeyConfig{
-					Mode: authmode.AuthModeAPIKey,
-					TokenLocation: authscheme.TokenLocation{
-						In:   authscheme.InHeader,
-						Name: "Authorization",
-					},
-					Value: goenvconf.NewEnvStringVariable("FALLBACK_API_KEY"),
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("user"),
+		Definition: RelyAuthDefinition{
+			Modes: []RelyAuthMode{
+				{
+					RelyAuthModeInterface: &apikey.RelyAuthAPIKeyConfig{
+						Mode: authmode.AuthModeAPIKey,
+						TokenLocation: authscheme.TokenLocation{
+							In:   authscheme.InHeader,
+							Name: "Authorization",
+						},
+						Value: goenvconf.NewEnvStringVariable("FALLBACK_API_KEY"),
+						SessionVariables: map[string]goenvconf.EnvAny{
+							"x-hasura-role": goenvconf.NewEnvAnyValue("user"),
+						},
 					},
 				},
-			},
-			{
-				RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
-					Mode: authmode.AuthModeNoAuth,
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("anonymous"),
+				{
+					RelyAuthModeInterface: &noauth.RelyAuthNoAuthConfig{
+						Mode: authmode.AuthModeNoAuth,
+						SessionVariables: map[string]goenvconf.EnvAny{
+							"x-hasura-role": goenvconf.NewEnvAnyValue("anonymous"),
+						},
 					},
 				},
 			},
@@ -160,11 +168,13 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 
 func TestRelyAuthManager_WithOptions(t *testing.T) {
 	config := &RelyAuthConfig{
-		Definition: []RelyAuthDefinition{
-			{
-				RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
-					Mode:             authmode.AuthModeNoAuth,
-					SessionVariables: map[string]goenvconf.EnvAny{},
+		Definition: RelyAuthDefinition{
+			Modes: []RelyAuthMode{
+				{
+					RelyAuthModeInterface: &noauth.RelyAuthNoAuthConfig{
+						Mode:             authmode.AuthModeNoAuth,
+						SessionVariables: map[string]goenvconf.EnvAny{},
+					},
 				},
 			},
 		},
@@ -187,32 +197,34 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 	t.Setenv("API_KEY_2", apiKey2)
 
 	config := &RelyAuthConfig{
-		Definition: []RelyAuthDefinition{
-			{
-				RelyAuthDefinitionInterface: &apikey.RelyAuthAPIKeyConfig{
-					ID:   "auth1",
-					Mode: authmode.AuthModeAPIKey,
-					TokenLocation: authscheme.TokenLocation{
-						In:   authscheme.InHeader,
-						Name: "X-API-Key-1",
-					},
-					Value: goenvconf.NewEnvStringVariable("API_KEY_1"),
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("service1"),
+		Definition: RelyAuthDefinition{
+			Modes: []RelyAuthMode{
+				{
+					RelyAuthModeInterface: &apikey.RelyAuthAPIKeyConfig{
+						ID:   "auth1",
+						Mode: authmode.AuthModeAPIKey,
+						TokenLocation: authscheme.TokenLocation{
+							In:   authscheme.InHeader,
+							Name: "X-API-Key-1",
+						},
+						Value: goenvconf.NewEnvStringVariable("API_KEY_1"),
+						SessionVariables: map[string]goenvconf.EnvAny{
+							"x-hasura-role": goenvconf.NewEnvAnyValue("service1"),
+						},
 					},
 				},
-			},
-			{
-				RelyAuthDefinitionInterface: &apikey.RelyAuthAPIKeyConfig{
-					ID:   "auth2",
-					Mode: authmode.AuthModeAPIKey,
-					TokenLocation: authscheme.TokenLocation{
-						In:   authscheme.InHeader,
-						Name: "X-API-Key-2",
-					},
-					Value: goenvconf.NewEnvStringVariable("API_KEY_2"),
-					SessionVariables: map[string]goenvconf.EnvAny{
-						"x-hasura-role": goenvconf.NewEnvAnyValue("service2"),
+				{
+					RelyAuthModeInterface: &apikey.RelyAuthAPIKeyConfig{
+						ID:   "auth2",
+						Mode: authmode.AuthModeAPIKey,
+						TokenLocation: authscheme.TokenLocation{
+							In:   authscheme.InHeader,
+							Name: "X-API-Key-2",
+						},
+						Value: goenvconf.NewEnvStringVariable("API_KEY_2"),
+						SessionVariables: map[string]goenvconf.EnvAny{
+							"x-hasura-role": goenvconf.NewEnvAnyValue("service2"),
+						},
 					},
 				},
 			},

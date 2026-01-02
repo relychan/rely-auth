@@ -19,17 +19,15 @@ type RelyAuthConfig struct {
 	Version string `json:"version" yaml:"version" jsonschema:"enum=v1"`
 	// Kind of the resource which is always AuthConfig.
 	Kind string `json:"kind" yaml:"kind" jsonschema:"enum=AuthConfig"`
-	// Global settings of the auth config.
-	Settings *authmode.RelyAuthSettings `json:"settings,omitempty" yaml:"settings,omitempty"`
 	// List of authenticator configurations.
-	Definition []RelyAuthDefinition `json:"definition" yaml:"definition"`
+	Definition RelyAuthDefinition `json:"definition" yaml:"definition"`
 }
 
 // Validate checks if the configuration is valid.
 func (rac RelyAuthConfig) Validate() error {
-	var noAuth *RelyAuthDefinition
+	var noAuth *RelyAuthMode
 
-	for i, def := range rac.Definition {
+	for i, def := range rac.Definition.Modes {
 		err := def.Validate()
 		if err != nil {
 			return fmt.Errorf("invalid auth definition at %d: %w", i, err)
@@ -47,36 +45,44 @@ func (rac RelyAuthConfig) Validate() error {
 	return nil
 }
 
-// RelyAuthDefinition wraps authentication configurations for an auth mode.
+// RelyAuthDefinition defines authentication modes and settings.
 type RelyAuthDefinition struct {
-	authmode.RelyAuthDefinitionInterface `yaml:",inline"`
+	// Global settings of the auth config.
+	Settings *authmode.RelyAuthSettings `json:"settings,omitempty" yaml:"settings,omitempty"`
+	// List of authenticator modes.
+	Modes []RelyAuthMode `json:"modes" yaml:"modes"`
+}
+
+// RelyAuthMode wraps authentication configurations for an auth mode.
+type RelyAuthMode struct {
+	authmode.RelyAuthModeInterface `yaml:",inline"`
 
 	// Configurations for extra security rules.
 	SecurityRules *authmode.RelyAuthSecurityRulesConfig `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
 }
 
-// NewRelyAuthDefinition creates a new [RelyAuthDefinition] instance.
-func NewRelyAuthDefinition[T authmode.RelyAuthDefinitionInterface](inner T) RelyAuthDefinition {
-	return RelyAuthDefinition{
-		RelyAuthDefinitionInterface: inner,
+// NewRelyAuthMode creates a new [RelyAuthMode] instance.
+func NewRelyAuthMode[T authmode.RelyAuthModeInterface](inner T) RelyAuthMode {
+	return RelyAuthMode{
+		RelyAuthModeInterface: inner,
 	}
 }
 
-type rawRelyAuthDefinition struct {
+type rawRelyAuthMode struct {
 	Mode          authmode.AuthMode                     `json:"mode" yaml:"mode"`
 	SecurityRules *authmode.RelyAuthSecurityRulesConfig `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *RelyAuthDefinition) UnmarshalJSON(b []byte) error {
-	var temp rawRelyAuthDefinition
+func (j *RelyAuthMode) UnmarshalJSON(b []byte) error {
+	var temp rawRelyAuthMode
 
 	err := json.Unmarshal(b, &temp)
 	if err != nil {
 		return err
 	}
 
-	var config authmode.RelyAuthDefinitionInterface
+	var config authmode.RelyAuthModeInterface
 
 	switch temp.Mode {
 	case authmode.AuthModeNoAuth:
@@ -102,21 +108,21 @@ func (j *RelyAuthDefinition) UnmarshalJSON(b []byte) error {
 	}
 
 	j.SecurityRules = temp.SecurityRules
-	j.RelyAuthDefinitionInterface = config
+	j.RelyAuthModeInterface = config
 
 	return nil
 }
 
 // UnmarshalYAML implements the custom behavior for the yaml.Unmarshaler interface.
-func (j *RelyAuthDefinition) UnmarshalYAML(value *yaml.Node) error {
-	var temp rawRelyAuthDefinition
+func (j *RelyAuthMode) UnmarshalYAML(value *yaml.Node) error {
+	var temp rawRelyAuthMode
 
 	err := value.Decode(&temp)
 	if err != nil {
 		return err
 	}
 
-	var config authmode.RelyAuthDefinitionInterface
+	var config authmode.RelyAuthModeInterface
 
 	switch temp.Mode {
 	case authmode.AuthModeNoAuth:
@@ -142,22 +148,22 @@ func (j *RelyAuthDefinition) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	j.SecurityRules = temp.SecurityRules
-	j.RelyAuthDefinitionInterface = config
+	j.RelyAuthModeInterface = config
 
 	return nil
 }
 
 // Validate if the current instance is valid.
-func (j RelyAuthDefinition) Validate() error {
-	if j.RelyAuthDefinitionInterface == nil {
+func (j RelyAuthMode) Validate() error {
+	if j.RelyAuthModeInterface == nil {
 		return authmode.ErrAuthConfigRequired
 	}
 
-	return j.RelyAuthDefinitionInterface.Validate()
+	return j.RelyAuthModeInterface.Validate()
 }
 
 // JSONSchema defines a custom definition for JSON schema.
-func (RelyAuthDefinition) JSONSchema() *jsonschema.Schema {
+func (RelyAuthMode) JSONSchema() *jsonschema.Schema {
 	return &jsonschema.Schema{
 		OneOf: []*jsonschema.Schema{
 			{
