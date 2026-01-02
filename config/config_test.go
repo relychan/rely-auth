@@ -174,6 +174,7 @@ func TestInitAuthManager_Success(t *testing.T) {
 
 	authConfigContent := `
 definition:
+  modes:
   - mode: apiKey
     tokenLocation:
       in: header
@@ -227,6 +228,7 @@ func TestInitAuthManager_WithJWT(t *testing.T) {
 
 	authConfigContent := `
 definition:
+  modes:
   - mode: jwt
     tokenLocation:
       in: header
@@ -259,6 +261,7 @@ func TestInitAuthManager_WithWebhook(t *testing.T) {
 
 	authConfigContent := `
 definition:
+  modes:
   - mode: webhook
     url:
       value: "http://localhost:3000/auth"
@@ -284,6 +287,7 @@ func TestInitAuthManager_WithMultipleModes(t *testing.T) {
 
 	authConfigContent := `
 definition:
+  modes:
   - mode: apiKey
     tokenLocation:
       in: header
@@ -328,9 +332,10 @@ func TestInitAuthManager_WithStrictMode(t *testing.T) {
 	authConfigPath := filepath.Join(tmpDir, "auth.yaml")
 
 	authConfigContent := `
-settings:
-  strict: true
 definition:
+  settings:
+    strict: true
+  modes:
   - mode: apiKey
     tokenLocation:
       in: header
@@ -358,23 +363,25 @@ func TestInitAuthManager_JSONConfig(t *testing.T) {
 	authConfigPath := filepath.Join(tmpDir, "auth.json")
 
 	authConfigContent := `{
-  "definitions": [
-    {
-      "mode": "apiKey",
-      "tokenLocation": {
-      	"in": "header",
-      	"name": "Authorization"
-	  },
-      "value": {
-        "value": "json-secret"
-      },
-      "sessionVariables": {
-        "x-hasura-role": {
-          "value": "admin"
-        }
-      }
-    }
-  ]
+  "definition": {
+    "modes": [
+	  {
+		"mode": "apiKey",
+		"tokenLocation": {
+			"in": "header",
+			"name": "Authorization"
+		},
+		"value": {
+			"value": "json-secret"
+		},
+		"sessionVariables": {
+			"x-hasura-role": {
+			"value": "admin"
+			}
+		}
+	  }
+	]
+  }
 }`
 	err := os.WriteFile(authConfigPath, []byte(authConfigContent), 0644)
 	assert.NilError(t, err)

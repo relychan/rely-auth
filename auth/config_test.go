@@ -22,20 +22,22 @@ func TestRelyAuthConfig_Validate(t *testing.T) {
 		{
 			Name: "valid_config_with_multiple_modes",
 			Config: RelyAuthConfig{
-				Definition: []RelyAuthDefinition{
-					{
-						RelyAuthDefinitionInterface: &apikey.RelyAuthAPIKeyConfig{
-							Mode: authmode.AuthModeAPIKey,
-							TokenLocation: authscheme.TokenLocation{
-								In:   authscheme.InHeader,
-								Name: "Authorization",
+				Definition: RelyAuthDefinition{
+					Modes: []RelyAuthMode{
+						{
+							RelyAuthModeInterface: &apikey.RelyAuthAPIKeyConfig{
+								Mode: authmode.AuthModeAPIKey,
+								TokenLocation: authscheme.TokenLocation{
+									In:   authscheme.InHeader,
+									Name: "Authorization",
+								},
+								Value: goenvconf.NewEnvStringValue("secret"),
 							},
-							Value: goenvconf.NewEnvStringValue("secret"),
 						},
-					},
-					{
-						RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
-							Mode: authmode.AuthModeNoAuth,
+						{
+							RelyAuthModeInterface: &noauth.RelyAuthNoAuthConfig{
+								Mode: authmode.AuthModeNoAuth,
+							},
 						},
 					},
 				},
@@ -45,15 +47,17 @@ func TestRelyAuthConfig_Validate(t *testing.T) {
 		{
 			Name: "multiple_noauth_not_allowed",
 			Config: RelyAuthConfig{
-				Definition: []RelyAuthDefinition{
-					{
-						RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
-							Mode: authmode.AuthModeNoAuth,
+				Definition: RelyAuthDefinition{
+					Modes: []RelyAuthMode{
+						{
+							RelyAuthModeInterface: &noauth.RelyAuthNoAuthConfig{
+								Mode: authmode.AuthModeNoAuth,
+							},
 						},
-					},
-					{
-						RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
-							Mode: authmode.AuthModeNoAuth,
+						{
+							RelyAuthModeInterface: &noauth.RelyAuthNoAuthConfig{
+								Mode: authmode.AuthModeNoAuth,
+							},
 						},
 					},
 				},
@@ -63,9 +67,11 @@ func TestRelyAuthConfig_Validate(t *testing.T) {
 		{
 			Name: "invalid_definition",
 			Config: RelyAuthConfig{
-				Definition: []RelyAuthDefinition{
-					{
-						RelyAuthDefinitionInterface: nil,
+				Definition: RelyAuthDefinition{
+					Modes: []RelyAuthMode{
+						{
+							RelyAuthModeInterface: nil,
+						},
 					},
 				},
 			},
@@ -85,7 +91,7 @@ func TestRelyAuthConfig_Validate(t *testing.T) {
 	}
 }
 
-func TestRelyAuthDefinition_UnmarshalJSON(t *testing.T) {
+func TestRelyAuthMode_UnmarshalJSON(t *testing.T) {
 	testCases := []struct {
 		Name        string
 		JSON        string
@@ -154,7 +160,7 @@ func TestRelyAuthDefinition_UnmarshalJSON(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			var def RelyAuthDefinition
+			var def RelyAuthMode
 			err := json.Unmarshal([]byte(tc.JSON), &def)
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
@@ -166,7 +172,7 @@ func TestRelyAuthDefinition_UnmarshalJSON(t *testing.T) {
 	}
 }
 
-func TestRelyAuthDefinition_UnmarshalYAML(t *testing.T) {
+func TestRelyAuthMode_UnmarshalYAML(t *testing.T) {
 	testCases := []struct {
 		Name        string
 		YAML        string
@@ -204,7 +210,7 @@ mode: invalid
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			var def RelyAuthDefinition
+			var def RelyAuthMode
 			err := yaml.Unmarshal([]byte(tc.YAML), &def)
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)

@@ -316,15 +316,8 @@
           ],
           "description": "Kind of the resource which is always AuthConfig."
         },
-        "settings": {
-          "$ref": "#/$defs/RelyAuthSettings",
-          "description": "Global settings of the auth config."
-        },
         "definition": {
-          "items": {
-            "$ref": "#/$defs/RelyAuthDefinition"
-          },
-          "type": "array",
+          "$ref": "#/$defs/RelyAuthDefinition",
           "description": "List of authenticator configurations."
         }
       },
@@ -338,24 +331,25 @@
       "description": "RelyAuthConfig is the data structure for authentication configurations."
     },
     "RelyAuthDefinition": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/RelyAuthAPIKeyConfig",
-          "description": "Configurations for HTTP authentication with static secrets"
+      "properties": {
+        "settings": {
+          "$ref": "#/$defs/RelyAuthSettings",
+          "description": "Global settings of the auth config."
         },
-        {
-          "$ref": "#/$defs/RelyAuthJWTConfig",
-          "description": "Configurations to which the incoming JWT will be verified and decoded to extract the session variable claims"
-        },
-        {
-          "$ref": "#/$defs/RelyAuthNoAuthConfig",
-          "description": "The session variables configuration for unauthenticated users"
-        },
-        {
-          "$ref": "#/$defs/RelyAuthWebhookConfig",
-          "description": "Configurations for the webhook authentication mode"
+        "modes": {
+          "items": {
+            "$ref": "#/$defs/RelyAuthMode"
+          },
+          "type": "array",
+          "description": "List of authenticator modes."
         }
-      ]
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "modes"
+      ],
+      "description": "RelyAuthDefinition defines authentication modes and settings."
     },
     "RelyAuthIPAllowListConfig": {
       "properties": {
@@ -437,6 +431,26 @@
         "claimsConfig"
       ],
       "description": "RelyAuthJWTConfig holds configurations to which the incoming JWT will be verified and decoded to extract the session variable claims."
+    },
+    "RelyAuthMode": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RelyAuthAPIKeyConfig",
+          "description": "Configurations for HTTP authentication with static secrets"
+        },
+        {
+          "$ref": "#/$defs/RelyAuthJWTConfig",
+          "description": "Configurations to which the incoming JWT will be verified and decoded to extract the session variable claims"
+        },
+        {
+          "$ref": "#/$defs/RelyAuthNoAuthConfig",
+          "description": "The session variables configuration for unauthenticated users"
+        },
+        {
+          "$ref": "#/$defs/RelyAuthWebhookConfig",
+          "description": "Configurations for the webhook authentication mode"
+        }
+      ]
     },
     "RelyAuthNoAuthConfig": {
       "properties": {

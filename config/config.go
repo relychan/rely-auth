@@ -75,7 +75,7 @@ func InitAuthManager(
 		return nil, fmt.Errorf("failed to load auth config: %w", err)
 	}
 
-	if slices.ContainsFunc(authConfig.Definition, func(def auth.RelyAuthDefinition) bool {
+	if slices.ContainsFunc(authConfig.Definition.Modes, func(def auth.RelyAuthMode) bool {
 		mode := def.GetMode()
 		// enable http client metrics if JWT or Auth webhook mode exists
 		return mode == authmode.AuthModeJWT || mode == authmode.AuthModeWebhook

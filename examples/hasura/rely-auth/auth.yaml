@@ -2,35 +2,36 @@
 version: v1
 kind: AuthConfig
 definition:
-  - mode: apiKey
-    tokenLocation:
-      in: header
-      name: Authorization
-    value:
-      value: "randomsecret"
-    sessionVariables:
-      x-hasura-role:
-        value: user
-      x-hasura-user-id:
-        value: "1"
-  - id: test_jwt
-    mode: jwt
-    tokenLocation:
-      in: header
-      name: Authorization
-      scheme: bearer
-    key:
-      algorithm: HS256
-      key:
-        value: NTNv7j0TuYARvmNMmWXo6fKvM4o6nvxyz
-    claimsConfig:
-      namespace:
-        location: '"claims.jwt.hasura.io"'
-        claimsFormat: Json
-      locations:
+  modes:
+    - mode: apiKey
+      tokenLocation:
+        in: header
+        name: Authorization
+      value:
+        value: "randomsecret"
+      sessionVariables:
+        x-hasura-role:
+          value: user
         x-hasura-user-id:
-          path: sub
-  - mode: noAuth
-    sessionVariables:
-      x-hasura-role:
-        value: anonymous
+          value: "1"
+    - id: test_jwt
+      mode: jwt
+      tokenLocation:
+        in: header
+        name: Authorization
+        scheme: bearer
+      key:
+        algorithm: HS256
+        key:
+          value: NTNv7j0TuYARvmNMmWXo6fKvM4o6nvxyz
+      claimsConfig:
+        namespace:
+          location: '"claims.jwt.hasura.io"'
+          claimsFormat: Json
+        locations:
+          x-hasura-user-id:
+            path: sub
+    - mode: noAuth
+      sessionVariables:
+        x-hasura-role:
+          value: anonymous

@@ -37,7 +37,7 @@ type RelyAuthJWTConfig struct {
 	ClaimsConfig JWTClaimsConfig `json:"claimsConfig" yaml:"claimsConfig"`
 }
 
-var _ authmode.RelyAuthDefinitionInterface = (*RelyAuthJWTConfig)(nil)
+var _ authmode.RelyAuthModeInterface = (*RelyAuthJWTConfig)(nil)
 
 // NewRelyAuthJWTConfig creates a new JWTAuthDefinition instance.
 func NewRelyAuthJWTConfig(key JWTKey, tokenLocation authscheme.TokenLocation) *RelyAuthJWTConfig {

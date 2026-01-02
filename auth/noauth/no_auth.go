@@ -17,7 +17,7 @@ type RelyAuthNoAuthConfig struct {
 	SessionVariables map[string]goenvconf.EnvAny `json:"sessionVariables" yaml:"sessionVariables"`
 }
 
-var _ authmode.RelyAuthDefinitionInterface = (*RelyAuthNoAuthConfig)(nil)
+var _ authmode.RelyAuthModeInterface = (*RelyAuthNoAuthConfig)(nil)
 
 // NewNoAuthDefinition creates a new NoAuthConfig instance.
 func NewNoAuthDefinition(sessionVariables map[string]goenvconf.EnvAny) *RelyAuthNoAuthConfig {

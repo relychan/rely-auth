@@ -57,8 +57,8 @@ type RelyAuthenticator interface {
 	Close() error
 }
 
-// RelyAuthDefinitionInterface abstracts the interface of an auth mode definition.
-type RelyAuthDefinitionInterface interface {
+// RelyAuthModeInterface abstracts the interface of an auth mode definition.
+type RelyAuthModeInterface interface {
 	goutils.IsZeroer
 
 	// GetMode returns the auth mode of the current config.
