@@ -1,7 +1,9 @@
 # yaml-language-server: $schema=../../jsonschema/auth.schema.json
+version: v1
+kind: AuthConfig
 settings:
   reloadInterval: 0
-definitions:
+definition:
   - id: test_jwt
     mode: jwt
     tokenLocation:

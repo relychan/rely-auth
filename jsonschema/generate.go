@@ -67,6 +67,9 @@ func jsonSchemaConfiguration() error {
 	reflectSchema.Definitions["TemplateTransformerConfig"] = &jsonschema.Schema{
 		Ref: "https://raw.githubusercontent.com/relychan/gotransform/refs/heads/main/jsonschema/gotransform.schema.json",
 	}
+	reflectSchema.Definitions["TokenLocation"] = &jsonschema.Schema{
+		Ref: "https://raw.githubusercontent.com/relychan/gohttpc/refs/heads/main/jsonschema/gohttpc.schema.json#/$defs/TokenLocation",
+	}
 
 	for _, key := range []string{
 		"RelyAuthNoAuthConfig",

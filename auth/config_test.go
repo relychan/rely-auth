@@ -22,7 +22,7 @@ func TestRelyAuthConfig_Validate(t *testing.T) {
 		{
 			Name: "valid_config_with_multiple_modes",
 			Config: RelyAuthConfig{
-				Definitions: []RelyAuthDefinition{
+				Definition: []RelyAuthDefinition{
 					{
 						RelyAuthDefinitionInterface: &apikey.RelyAuthAPIKeyConfig{
 							Mode: authmode.AuthModeAPIKey,
@@ -45,7 +45,7 @@ func TestRelyAuthConfig_Validate(t *testing.T) {
 		{
 			Name: "multiple_noauth_not_allowed",
 			Config: RelyAuthConfig{
-				Definitions: []RelyAuthDefinition{
+				Definition: []RelyAuthDefinition{
 					{
 						RelyAuthDefinitionInterface: &noauth.RelyAuthNoAuthConfig{
 							Mode: authmode.AuthModeNoAuth,
@@ -63,7 +63,7 @@ func TestRelyAuthConfig_Validate(t *testing.T) {
 		{
 			Name: "invalid_definition",
 			Config: RelyAuthConfig{
-				Definitions: []RelyAuthDefinition{
+				Definition: []RelyAuthDefinition{
 					{
 						RelyAuthDefinitionInterface: nil,
 					},

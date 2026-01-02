@@ -302,11 +302,25 @@
     },
     "RelyAuthConfig": {
       "properties": {
+        "version": {
+          "type": "string",
+          "enum": [
+            "v1"
+          ],
+          "description": "Version of the authentication config."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "AuthConfig"
+          ],
+          "description": "Kind of the resource which is always AuthConfig."
+        },
         "settings": {
           "$ref": "#/$defs/RelyAuthSettings",
           "description": "Global settings of the auth config."
         },
-        "definitions": {
+        "definition": {
           "items": {
             "$ref": "#/$defs/RelyAuthDefinition"
           },
@@ -317,7 +331,9 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "definitions"
+        "version",
+        "kind",
+        "definition"
       ],
       "description": "RelyAuthConfig is the data structure for authentication configurations."
     },
@@ -574,30 +590,7 @@
       "$ref": "https://raw.githubusercontent.com/relychan/gotransform/refs/heads/main/jsonschema/gotransform.schema.json"
     },
     "TokenLocation": {
-      "properties": {
-        "in": {
-          "type": "string",
-          "enum": [
-            "header",
-            "query",
-            "cookie"
-          ],
-          "default": "header"
-        },
-        "name": {
-          "type": "string",
-          "default": "Authorization"
-        },
-        "scheme": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object",
-      "required": [
-        "in",
-        "name"
-      ]
+      "$ref": "https://raw.githubusercontent.com/relychan/gohttpc/refs/heads/main/jsonschema/gohttpc.schema.json#/$defs/TokenLocation"
     },
     "WebhookAuthCustomResponseConfig": {
       "properties": {

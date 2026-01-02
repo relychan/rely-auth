@@ -15,17 +15,21 @@ import (
 
 // RelyAuthConfig is the data structure for authentication configurations.
 type RelyAuthConfig struct {
+	// Version of the authentication config.
+	Version string `json:"version" yaml:"version" jsonschema:"enum=v1"`
+	// Kind of the resource which is always AuthConfig.
+	Kind string `json:"kind" yaml:"kind" jsonschema:"enum=AuthConfig"`
 	// Global settings of the auth config.
 	Settings *authmode.RelyAuthSettings `json:"settings,omitempty" yaml:"settings,omitempty"`
 	// List of authenticator configurations.
-	Definitions []RelyAuthDefinition `json:"definitions" yaml:"definitions"`
+	Definition []RelyAuthDefinition `json:"definition" yaml:"definition"`
 }
 
 // Validate checks if the configuration is valid.
 func (rac RelyAuthConfig) Validate() error {
 	var noAuth *RelyAuthDefinition
 
-	for i, def := range rac.Definitions {
+	for i, def := range rac.Definition {
 		err := def.Validate()
 		if err != nil {
 			return fmt.Errorf("invalid auth definition at %d: %w", i, err)

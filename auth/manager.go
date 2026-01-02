@@ -159,7 +159,7 @@ func (am *RelyAuthManager) init(
 	options authmode.RelyAuthenticatorOptions,
 ) error {
 	authModes := authmode.GetSupportedAuthModes()
-	definitions := config.Definitions
+	definitions := config.Definition
 
 	// Auth modes are sorted in order:
 	// - API Key: comparing static keys is cheap. So it should be used first.
