@@ -33,7 +33,6 @@ var _ authmode.RelyAuthenticator = (*WebhookAuthenticator)(nil)
 
 // NewWebhookAuthenticator creates a webhook authenticator instance.
 func NewWebhookAuthenticator(
-	ctx context.Context,
 	config *RelyAuthWebhookConfig,
 	opts authmode.RelyAuthenticatorOptions,
 ) (*WebhookAuthenticator, error) {

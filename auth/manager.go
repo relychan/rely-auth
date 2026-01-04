@@ -228,7 +228,7 @@ func (am *RelyAuthManager) init(
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := webhook.NewWebhookAuthenticator(ctx, def, options)
+			authenticator, err := webhook.NewWebhookAuthenticator(def, options)
 			if err != nil {
 				return fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}

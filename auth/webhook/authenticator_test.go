@@ -37,7 +37,7 @@ func TestWebhookAuthenticator_Authenticate_Success(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -71,7 +71,7 @@ func TestWebhookAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -99,7 +99,7 @@ func TestWebhookAuthenticator_Authenticate_EmptyBody(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -119,7 +119,7 @@ func TestWebhookAuthenticator_Mode(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -145,7 +145,7 @@ func TestWebhookAuthenticator_GET_Method(t *testing.T) {
 		Method: http.MethodGet,
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -237,7 +237,7 @@ func TestWebhookAuthenticator_InvalidURL(t *testing.T) {
 		Method: http.MethodGet,
 	}
 
-	_, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	_, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.ErrorContains(t, err, "required field")
 }
 
@@ -256,7 +256,7 @@ func TestWebhookAuthenticator_MalformedResponseJSON(t *testing.T) {
 		Method: http.MethodGet,
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -282,11 +282,11 @@ func TestWebhookAuthenticator_Equal(t *testing.T) {
 			Method: http.MethodGet,
 		}
 
-		auth1, err := NewWebhookAuthenticator(context.TODO(), config1, authmode.NewRelyAuthenticatorOptions())
+		auth1, err := NewWebhookAuthenticator(config1, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer auth1.Close()
 
-		auth2, err := NewWebhookAuthenticator(context.TODO(), config2, authmode.NewRelyAuthenticatorOptions())
+		auth2, err := NewWebhookAuthenticator(config2, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer auth2.Close()
 
@@ -308,11 +308,11 @@ func TestWebhookAuthenticator_Equal(t *testing.T) {
 			Method: http.MethodPost,
 		}
 
-		auth1, err := NewWebhookAuthenticator(context.TODO(), config1, authmode.NewRelyAuthenticatorOptions())
+		auth1, err := NewWebhookAuthenticator(config1, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer auth1.Close()
 
-		auth2, err := NewWebhookAuthenticator(context.TODO(), config2, authmode.NewRelyAuthenticatorOptions())
+		auth2, err := NewWebhookAuthenticator(config2, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 		defer auth2.Close()
 
@@ -327,7 +327,7 @@ func TestWebhookAuthenticator_Close(t *testing.T) {
 		Method: http.MethodGet,
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	err = authenticator.Close()
@@ -449,7 +449,7 @@ func TestWebhookAuthenticator_ServerError(t *testing.T) {
 		Method: http.MethodGet,
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.RelyAuthenticatorOptions{})
+	authenticator, err := NewWebhookAuthenticator(config, authmode.RelyAuthenticatorOptions{})
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -474,7 +474,7 @@ func TestWebhookAuthenticator_NonJSONResponse(t *testing.T) {
 		Method: http.MethodGet,
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -501,7 +501,7 @@ func TestWebhookAuthenticator_WithCustomHeaders(t *testing.T) {
 		Method: http.MethodGet,
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
@@ -534,7 +534,7 @@ func TestWebhookAuthenticator_ContextCancellation(t *testing.T) {
 		Method: http.MethodGet,
 	}
 
-	authenticator, err := NewWebhookAuthenticator(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	defer authenticator.Close()
 
