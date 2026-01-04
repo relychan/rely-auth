@@ -182,7 +182,7 @@ func (am *RelyAuthManager) init(
 	for i, rawDef := range definitions {
 		securityRules, err := authmode.RelyAuthSecurityRulesFromConfig(
 			rawDef.SecurityRules,
-			options.GetEnvFunc(ctx),
+			options.GetEnvFunc(),
 		)
 		if err != nil {
 			return fmt.Errorf("failed to parse security rules of authenticator %d: %w", i, err)
@@ -194,7 +194,7 @@ func (am *RelyAuthManager) init(
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := apikey.NewAPIKeyAuthenticator(ctx, def, options)
+			authenticator, err := apikey.NewAPIKeyAuthenticator(def, options)
 			if err != nil {
 				return fmt.Errorf("failed to create API Key auth %s: %w", def.ID, err)
 			}
@@ -228,7 +228,7 @@ func (am *RelyAuthManager) init(
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := webhook.NewWebhookAuthenticator(ctx, def, options)
+			authenticator, err := webhook.NewWebhookAuthenticator(def, options)
 			if err != nil {
 				return fmt.Errorf("failed to create webhook auth %s: %w", def.ID, err)
 			}
@@ -245,7 +245,7 @@ func (am *RelyAuthManager) init(
 				def.ID = strconv.Itoa(i)
 			}
 
-			authenticator, err := noauth.NewNoAuth(ctx, def, options)
+			authenticator, err := noauth.NewNoAuth(def, options)
 			if err != nil {
 				return fmt.Errorf("failed to create noAuth: %w", err)
 			}

@@ -21,7 +21,7 @@ func TestNoAuth_Authenticate(t *testing.T) {
 		SessionVariables: sessionVariables,
 	}
 
-	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 	assert.Equal(t, authmode.AuthModeNoAuth, authenticator.Mode())
 
@@ -43,7 +43,7 @@ func TestNoAuth_Close(t *testing.T) {
 		SessionVariables: map[string]goenvconf.EnvAny{},
 	}
 
-	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	// Test close
@@ -94,10 +94,10 @@ func TestNoAuth_Equal(t *testing.T) {
 			SessionVariables: sessionVars,
 		}
 
-		auth1, err := NewNoAuth(context.TODO(), config1, authmode.NewRelyAuthenticatorOptions())
+		auth1, err := NewNoAuth(config1, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
-		auth2, err := NewNoAuth(context.TODO(), config2, authmode.NewRelyAuthenticatorOptions())
+		auth2, err := NewNoAuth(config2, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
 		assert.Assert(t, auth1.Equal(*auth2))
@@ -120,10 +120,10 @@ func TestNoAuth_Equal(t *testing.T) {
 			SessionVariables: sessionVars,
 		}
 
-		auth1, err := NewNoAuth(context.TODO(), config1, authmode.NewRelyAuthenticatorOptions())
+		auth1, err := NewNoAuth(config1, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
-		auth2, err := NewNoAuth(context.TODO(), config2, authmode.NewRelyAuthenticatorOptions())
+		auth2, err := NewNoAuth(config2, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
 		assert.Assert(t, !auth1.Equal(*auth2))
@@ -146,10 +146,10 @@ func TestNoAuth_Equal(t *testing.T) {
 			},
 		}
 
-		auth1, err := NewNoAuth(context.TODO(), config1, authmode.NewRelyAuthenticatorOptions())
+		auth1, err := NewNoAuth(config1, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
-		auth2, err := NewNoAuth(context.TODO(), config2, authmode.NewRelyAuthenticatorOptions())
+		auth2, err := NewNoAuth(config2, authmode.NewRelyAuthenticatorOptions())
 		assert.NilError(t, err)
 
 		assert.Assert(t, !auth1.Equal(*auth2))
@@ -272,7 +272,7 @@ func TestNewNoAuth_WithEnvironmentVariables(t *testing.T) {
 		SessionVariables: sessionVariables,
 	}
 
-	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
@@ -291,7 +291,7 @@ func TestNewNoAuth_EmptySessionVariables(t *testing.T) {
 		SessionVariables: map[string]goenvconf.EnvAny{},
 	}
 
-	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
@@ -319,7 +319,7 @@ func TestNewNoAuth_ComplexSessionVariables(t *testing.T) {
 		SessionVariables: sessionVariables,
 	}
 
-	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
@@ -344,7 +344,7 @@ func TestNewNoAuth_WithoutID(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewNoAuth(context.TODO(), config, authmode.NewRelyAuthenticatorOptions())
+	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
 	assert.NilError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
@@ -364,7 +364,7 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 		},
 	}
 
-	authenticator, err := NewNoAuth(context.TODO(), config, authmode.RelyAuthenticatorOptions{})
+	authenticator, err := NewNoAuth(config, authmode.RelyAuthenticatorOptions{})
 	assert.NilError(t, err)
 
 	t.Run("with headers", func(t *testing.T) {

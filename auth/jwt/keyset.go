@@ -136,7 +136,7 @@ func (j *JWTKeySet) TransformClaims(rawBytes []byte, desiredRole string) (map[st
 }
 
 func (j *JWTKeySet) init(ctx context.Context, options authmode.RelyAuthenticatorOptions) error {
-	getEnvFunc := options.GetEnvFunc(ctx)
+	getEnvFunc := options.GetEnvFunc()
 	// load locations
 	locations, err := jmes.EvaluateObjectFieldMappingEntries(
 		j.config.ClaimsConfig.Locations,

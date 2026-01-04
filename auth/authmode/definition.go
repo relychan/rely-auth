@@ -69,7 +69,7 @@ type RelyAuthModeInterface interface {
 
 // RelyAuthenticatorOptions define common options for the authenticator.
 type RelyAuthenticatorOptions struct {
-	CustomEnvGetter  func(ctx context.Context) goenvconf.GetEnvFunc
+	GetEnv           goenvconf.GetEnvFunc
 	Logger           *slog.Logger
 	HTTPClient       *gohttpc.Client
 	CustomAttributes []attribute.KeyValue
@@ -81,8 +81,8 @@ type RelyAuthenticatorOptions struct {
 // NewRelyAuthenticatorOptions creates a new [RelyAuthenticatorOptions] instance.
 func NewRelyAuthenticatorOptions(options ...RelyAuthenticatorOption) RelyAuthenticatorOptions {
 	result := RelyAuthenticatorOptions{
-		CustomEnvGetter: goenvconf.OSEnvGetter,
-		Logger:          slog.Default(),
+		GetEnv: goenvconf.GetOSEnv,
+		Logger: slog.Default(),
 	}
 
 	for _, opt := range options {
@@ -93,12 +93,12 @@ func NewRelyAuthenticatorOptions(options ...RelyAuthenticatorOption) RelyAuthent
 }
 
 // GetEnvFunc return the get-env function. Default is OS environment.
-func (rao RelyAuthenticatorOptions) GetEnvFunc(ctx context.Context) goenvconf.GetEnvFunc {
-	if rao.CustomEnvGetter == nil {
+func (rao RelyAuthenticatorOptions) GetEnvFunc() goenvconf.GetEnvFunc {
+	if rao.GetEnv == nil {
 		return goenvconf.GetOSEnv
 	}
 
-	return rao.CustomEnvGetter(ctx)
+	return rao.GetEnv
 }
 
 // RelyAuthenticatorOption abstracts a function to modify [RelyAuthenticatorOptions].
@@ -134,14 +134,14 @@ func WithCustomAttributes(attrs []attribute.KeyValue) RelyAuthenticatorOption {
 
 // WithCustomEnvGetter returns a function to set the GetEnvFunc getter to [RelyAuthenticatorOptions].
 func WithCustomEnvGetter(
-	getter func(ctx context.Context) goenvconf.GetEnvFunc,
+	getEnv goenvconf.GetEnvFunc,
 ) RelyAuthenticatorOption {
 	return func(ramo *RelyAuthenticatorOptions) {
-		if getter == nil {
+		if getEnv == nil {
 			return
 		}
 
-		ramo.CustomEnvGetter = getter
+		ramo.GetEnv = getEnv
 	}
 }
 

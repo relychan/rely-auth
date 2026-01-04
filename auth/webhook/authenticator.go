@@ -33,7 +33,6 @@ var _ authmode.RelyAuthenticator = (*WebhookAuthenticator)(nil)
 
 // NewWebhookAuthenticator creates a webhook authenticator instance.
 func NewWebhookAuthenticator(
-	ctx context.Context,
 	config *RelyAuthWebhookConfig,
 	opts authmode.RelyAuthenticatorOptions,
 ) (*WebhookAuthenticator, error) {
@@ -42,7 +41,7 @@ func NewWebhookAuthenticator(
 		method: config.Method,
 	}
 
-	err := result.init(ctx, config, opts)
+	err := result.init(config, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -114,11 +113,10 @@ func (wa *WebhookAuthenticator) Close() error {
 }
 
 func (wa *WebhookAuthenticator) init(
-	ctx context.Context,
 	config *RelyAuthWebhookConfig,
 	options authmode.RelyAuthenticatorOptions,
 ) error {
-	getEnvFunc := options.GetEnvFunc(ctx)
+	getEnvFunc := options.GetEnvFunc()
 
 	endpoint, err := config.URL.GetCustom(getEnvFunc)
 	if err != nil {
@@ -155,9 +153,8 @@ func (wa *WebhookAuthenticator) init(
 	}
 
 	httpClient, err := httpconfig.NewClientFromConfig(
-		ctx,
 		httpConfig,
-		gohttpc.WithCustomEnvGetter(options.CustomEnvGetter),
+		gohttpc.WithGetEnvFunc(options.GetEnv),
 	)
 	if err != nil {
 		return err
