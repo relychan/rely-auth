@@ -27,7 +27,6 @@ var _ authmode.RelyAuthenticator = (*APIKeyAuthenticator)(nil)
 
 // NewAPIKeyAuthenticator creates an API key authenticator instance.
 func NewAPIKeyAuthenticator(
-	ctx context.Context,
 	config *RelyAuthAPIKeyConfig,
 	options authmode.RelyAuthenticatorOptions,
 ) (*APIKeyAuthenticator, error) {
@@ -37,7 +36,7 @@ func NewAPIKeyAuthenticator(
 	}
 
 	config.TokenLocation = tokenLocation
-	getEnvFunc := options.GetEnvFunc(ctx)
+	getEnvFunc := options.GetEnvFunc()
 
 	value, err := config.Value.GetCustom(getEnvFunc)
 	if err != nil {

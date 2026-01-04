@@ -20,7 +20,6 @@ var _ authmode.RelyAuthenticator = (*NoAuth)(nil)
 
 // NewNoAuth creates an API key authenticator instance.
 func NewNoAuth(
-	ctx context.Context,
 	config *RelyAuthNoAuthConfig,
 	options authmode.RelyAuthenticatorOptions,
 ) (*NoAuth, error) {
@@ -30,7 +29,7 @@ func NewNoAuth(
 
 	mode := result.Mode()
 	sessionVariables := make(map[string]any)
-	getEnvFunc := options.GetEnvFunc(ctx)
+	getEnvFunc := options.GetEnvFunc()
 
 	for key, envValue := range config.SessionVariables {
 		value, err := envValue.GetCustom(getEnvFunc)
