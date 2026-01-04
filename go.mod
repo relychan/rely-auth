@@ -10,7 +10,7 @@ require (
 	github.com/hasura/gotel v0.5.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
-	github.com/relychan/gohttpc v0.0.0-20260104074932-1df9dc7d7675
+	github.com/relychan/gohttpc v0.0.0-20260104111349-50d7c6894216
 	github.com/relychan/gohttps v0.0.0-20251206085650-5f2727ade1fa
 	github.com/relychan/gotransform v0.0.0-20260102021651-b47ff69e3c82
 	github.com/relychan/goutils v0.0.0-20251230062103-93a30b1ea43d
