@@ -88,8 +88,8 @@ github.com/prometheus/procfs v0.19.2 h1:zUMhqEW66Ex7OXIiDkll3tl9a1ZdilUOd/F6ZXw4
 github.com/prometheus/procfs v0.19.2/go.mod h1:M0aotyiemPhBCM0z5w87kL22CxfcH05ZpYlu+b4J7mw=
 github.com/relychan/gocompress v0.1.1 h1:1IjIj4KLGc3LJwpT7otlfMDMBEGzc9FDDUW1OuATEIg=
 github.com/relychan/gocompress v0.1.1/go.mod h1:1O88NmUt+1Ioi+7v8l5Gm65vFSDMSTOgB4dkSuGpGE8=
-github.com/relychan/gohttpc v0.0.0-20260104111349-50d7c6894216 h1:1gWeex2ng4af5D7bAw7YaT/dvI+mpj9I/LKDi7oUVZ8=
-github.com/relychan/gohttpc v0.0.0-20260104111349-50d7c6894216/go.mod h1:SrtJMeWhMubXBbBtMEIQp+WgN3wgIPSfT0wkzKAlHOg=
+github.com/relychan/gohttpc v0.0.0-20260105072806-2bdb705536d9 h1:kU8Ll2V8EQMaodlbxHETAOT3B5HuJzPOcH8DzRl7e7E=
+github.com/relychan/gohttpc v0.0.0-20260105072806-2bdb705536d9/go.mod h1:SrtJMeWhMubXBbBtMEIQp+WgN3wgIPSfT0wkzKAlHOg=
 github.com/relychan/gohttps v0.0.0-20251206085650-5f2727ade1fa h1:IKG7M145hiVMpXRNoFhJ6nOsEeRn+ixOy6Y3fqTg/R8=
 github.com/relychan/gohttps v0.0.0-20251206085650-5f2727ade1fa/go.mod h1:J4ZyZSHr4oGeFlxn+VgYKZ4r5hzZfnoj+yg+1py/UMM=
 github.com/relychan/gotransform v0.0.0-20260102021651-b47ff69e3c82 h1:BMnvuchm/1K8W7VC+tNN+EZC2SKpKM4ob9e0DWSIVD0=
