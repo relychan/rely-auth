@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../jsonschema/auth.schema.json
 version: v1
-kind: AuthConfig
+kind: RelyAuth
 definition:
   settings:
     reloadInterval: 0

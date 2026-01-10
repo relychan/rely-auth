@@ -17,8 +17,8 @@ import (
 type RelyAuthConfig struct {
 	// Version of the authentication config.
 	Version string `json:"version" yaml:"version" jsonschema:"enum=v1"`
-	// Kind of the resource which is always AuthConfig.
-	Kind string `json:"kind" yaml:"kind" jsonschema:"enum=AuthConfig"`
+	// Kind of the resource which is always RelyAuth.
+	Kind string `json:"kind" yaml:"kind" jsonschema:"enum=RelyAuth"`
 	// List of authenticator configurations.
 	Definition RelyAuthDefinition `json:"definition" yaml:"definition"`
 }

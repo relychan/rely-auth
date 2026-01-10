@@ -312,9 +312,9 @@
         "kind": {
           "type": "string",
           "enum": [
-            "AuthConfig"
+            "RelyAuth"
           ],
-          "description": "Kind of the resource which is always AuthConfig."
+          "description": "Kind of the resource which is always RelyAuth."
         },
         "definition": {
           "$ref": "#/$defs/RelyAuthDefinition",
