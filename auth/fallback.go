@@ -106,13 +106,13 @@ func (a *FallbackAuthenticator) Authenticate(
 
 // IDs returns identities of this authenticator.
 func (a *FallbackAuthenticator) IDs() []string {
-	results := []string{}
+	results := make([]string, 0, len(a.Authenticators))
 
 	for _, au := range a.Authenticators {
 		results = append(results, au.IDs()...)
 	}
 
-	return results
+	return slices.Compact(results)
 }
 
 // Close terminates all underlying authenticator resources.
