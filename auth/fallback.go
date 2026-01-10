@@ -112,7 +112,7 @@ func (a *FallbackAuthenticator) IDs() []string {
 		results = append(results, au.IDs()...)
 	}
 
-	return slices.Compact(results)
+	return results
 }
 
 // Close terminates all underlying authenticator resources.
