@@ -49,6 +49,13 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
   - **ALWAYS verify** the target file doesn't already have a `package` declaration before adding one
   - If replacing file content, include only ONE `package` declaration in the new content
   - **NEVER** create files with multiple `package` lines or duplicate declarations
+- **When writing tests**:
+  - Test files use the same package name as the code they test (white-box testing)
+  - For black-box testing, append `_test` to package name: `package authmode_test`
+  - Most tests should be white-box unless specifically testing public API only
+- **Common mistake to avoid**:
+  - DO NOT copy package declarations from other files without checking the directory
+  - DO NOT assume package name from import path - always verify existing files
 
 ### Variables and Functions
 
@@ -104,6 +111,14 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
 - Name error variables `err`
 - Keep error messages lowercase and don't end with punctuation
 
+### Error Testing
+
+- Always test error cases, not just happy paths
+- Use `assert.ErrorContains(t, err, "expected message")` to verify error messages
+- Test that errors are properly wrapped with context using `%w`
+- Verify that appropriate error types/sentinels are returned
+- Test error propagation through call chains
+
 ## Architecture and Project Structure
 
 ### Package Organization
@@ -134,12 +149,26 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
 
 ### Pointers vs Values
 
-- Use pointer receivers for large structs or when you need to modify the receiver
-- Use value receivers for small structs and when immutability is desired
-- Use pointer parameters when you need to modify the argument or for large structs
-- Use value parameters for small structs and when you want to prevent modification
-- Be consistent within a type's method set
-- Consider the zero value when choosing pointer vs value receivers
+- **Method receivers**:
+  - Use pointer receivers when the method modifies the receiver
+  - Use pointer receivers for large structs (>64 bytes as a guideline)
+  - Use value receivers for small structs and when immutability is desired
+  - Be consistent within a type's method set - don't mix pointer and value receivers
+  - Consider the zero value when choosing pointer vs value receivers
+
+- **Function parameters**:
+  - Use pointer parameters when you need to modify the argument or for large structs
+  - Use value parameters for small structs and when you want to prevent modification
+
+- **Configuration structs**:
+  - Use pointers for optional configuration fields
+  - Allows distinguishing between "not set" (nil) and "set to zero value"
+  - Example: `AllowedIPs *RelyAuthIPAllowListConfig`
+
+- **Return values**:
+  - Return pointers for large structs or when nil has meaning
+  - Return `(*Type, error)` when the type might not be created
+  - Return `(Type, error)` for small structs or when zero value is valid
 
 ### Interfaces and Composition
 
@@ -293,6 +322,33 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
 - Test both success and error cases
 - Consider using `testify` or similar libraries when they add value, but don't over-complicate simple tests
 
+### Test Naming and Organization
+
+- Use descriptive subtest names: `t.Run("descriptive_scenario", ...)`
+- Name should describe what is being tested and the expected outcome
+- Use underscores for readability in test names (e.g., `with_custom_headers`, `invalid_ip_fails`)
+- Group related tests together in the same test function using subtests
+- Order tests logically: happy path first, then edge cases, then error cases
+
+### Test Coverage
+
+- Before adding tests, check current coverage: `go test -coverprofile=coverage.out`
+- Identify gaps: `go tool cover -func=coverage.out | grep <filename>`
+- Focus on untested or low-coverage functions first
+- Verify coverage improvement after adding tests
+- Aim for high coverage but focus on meaningful tests, not just coverage numbers
+- Test both success and failure paths
+- Include edge cases: nil values, empty inputs, boundary conditions
+
+### Mock Objects
+
+- Create minimal mock implementations for interfaces
+- Place mocks at the bottom of test files
+- Document what the mock is simulating
+- Keep mocks simple and focused on the test scenario
+- Implement only the methods needed for the test
+- Use struct fields to control mock behavior (return values, errors)
+
 ### Test Helpers
 
 - Mark helper functions with `t.Helper()`
@@ -358,6 +414,103 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
 - Write meaningful commit messages
 - Review diffs before committing
 
+## Collections (Slices and Maps)
+
+### Initialization
+
+- Initialize maps with `make()` when you know they'll be populated: `make(map[string]Type)`
+- For slices with known capacity: `make([]Type, 0, capacity)`
+- Empty slices can be declared as `var slice []Type` (nil) or `[]Type{}` (non-nil empty)
+- Nil slices and empty slices behave the same for most operations (len, cap, range)
+
+### Iteration and Modification
+
+- When filtering slices, preallocate with capacity: `result := make([]Type, 0, len(input))`
+- Sort slices after building them if order matters: `slices.Sort()`
+- Use `strings.ToLower()` for case-insensitive map keys
+- Remove duplicates by using a map as a set, then converting back to slice
+
+### Testing Collections
+
+- Test nil vs empty collections
+- Test single-element collections
+- Test duplicate handling
+- Test ordering (if relevant)
+
+## Regular Expressions
+
+### Pattern Compilation
+
+- Always validate regex patterns at configuration time, not request time
+- Use `regexp.MustCompile()` for patterns known at compile time
+- Use `regexp.Compile()` for runtime patterns and handle errors
+- Test both valid and invalid regex patterns
+- Return clear error messages for invalid patterns
+
+### Testing Regex Matchers
+
+- Test exact matches and non-matches
+- Test edge cases: empty strings, special characters
+- Test multiple patterns (AND vs OR logic)
+- Test include and exclude patterns separately and combined
+- Document the expected matching behavior in test names
+
+## Validation Patterns
+
+### Configuration Validation
+
+- Implement `Validate() error` methods for configuration structs
+- Validate at initialization time, not at runtime
+- Return specific errors with context: `fmt.Errorf("field %s: %w", fieldName, ErrInvalid)`
+- Chain validations: validate dependencies after individual fields
+- Use sentinel errors for common validation failures
+
+### Request Validation
+
+- Validate early: check required fields before processing
+- Use sentinel errors for common validation failures
+- Provide clear error messages indicating what's wrong and what's expected
+- Example: `fmt.Errorf("%w: expected [header query cookie]; got: %s", ErrInvalidLocation, actual)`
+
+### Testing Validation
+
+- Test each validation rule independently
+- Test combinations of valid/invalid fields
+- Verify error messages are helpful
+- Test that validation happens at the right time (config load vs request time)
+
+## Configuration and Environment Variables
+
+### Testing with goenvconf
+
+- When testing functions that use `goenvconf.GetEnvFunc`, pass `goenvconf.GetOSEnv` explicitly
+- Test both nil and non-nil `getEnvFunc` parameters
+- Use `goenvconf.NewEnvStringSliceValue()` for creating test configurations
+- Test environment variable expansion if applicable
+
+### Configuration Validation
+
+- Test zero values: `IsZero()` methods
+- Test equality: `Equal()` methods
+- Test nil configurations
+- Test empty vs nil distinctions
+- Test invalid configurations return appropriate errors
+
+## Context Usage
+
+### When to Accept Context
+
+- All functions that perform I/O should accept `context.Context` as first parameter
+- Authentication/authorization functions should accept context
+- Long-running operations should accept context
+- Pass context through the call chain, don't create new contexts unless necessary
+
+### Context in Tests
+
+- Use `context.Background()` in tests unless testing context cancellation
+- Test context cancellation for long-running operations
+- Don't create contexts with timeouts in library code - let callers control that
+
 ## Common Pitfalls to Avoid
 
 - Not checking errors
@@ -371,3 +524,6 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
 - Over-using unconstrained types (e.g., `any`); prefer specific types or generic type parameters with constraints. If an unconstrained type is required, use `any` rather than `interface{}`
 - Not considering the zero value of types
 - **Creating duplicate `package` declarations** - this is a compile error; always check existing files before adding package declarations
+- Assuming slices/maps are safe for concurrent access without synchronization
+- Not testing error paths and edge cases
+- Validating at request time instead of configuration time
