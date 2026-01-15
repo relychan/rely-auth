@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"time"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/hasura/gotel"
@@ -44,7 +45,10 @@ func LoadServerConfig() (*RelyAuthServerConfig, error) {
 
 	serverConfigPath := os.Getenv("RELY_AUTH_SERVER_CONFIG_PATH")
 	if serverConfigPath != "" {
-		result, err = goutils.ReadJSONOrYAMLFile[RelyAuthServerConfig](serverConfigPath)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		result, err = goutils.ReadJSONOrYAMLFile[RelyAuthServerConfig](ctx, serverConfigPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load RELY_AUTH_SERVER_CONFIG_PATH: %w", err)
 		}
@@ -70,7 +74,10 @@ func InitAuthManager(
 	configPath string,
 	exporters *gotel.OTelExporters,
 ) (*auth.RelyAuthManager, error) {
-	authConfig, err := goutils.ReadJSONOrYAMLFile[auth.RelyAuthConfig](configPath)
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+
+	authConfig, err := goutils.ReadJSONOrYAMLFile[auth.RelyAuthConfig](ctx, configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load auth config: %w", err)
 	}
