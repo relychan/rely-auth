@@ -257,6 +257,7 @@ func (am *RelyAuthManager) init(
 					SecurityRules:     securityRules,
 				},
 			)
+		default:
 		}
 	}
 
