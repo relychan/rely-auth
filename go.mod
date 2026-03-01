@@ -10,15 +10,15 @@ require (
 	github.com/hasura/gotel v0.6.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
-	github.com/relychan/gohttpc v0.0.0-20260228043133-3a6f87a45422
-	github.com/relychan/gohttps v0.0.0-20260228054110-ff9dcf752313
-	github.com/relychan/gotransform v0.0.0-20260102021651-b47ff69e3c82
-	github.com/relychan/goutils v0.0.0-20260227030433-84fbf4827e6b
+	github.com/relychan/gohttpc v0.0.0-20260301075631-8f0fad7d4b4e
+	github.com/relychan/gohttps v0.0.0-20260301080830-a778284828e2
+	github.com/relychan/gotransform v0.0.0-20260301082246-5d9d893c6baa
+	github.com/relychan/goutils v0.0.0-20260301074023-2eb673a4894e
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.opentelemetry.io/otel v1.40.0
 	go.opentelemetry.io/otel/metric v1.40.0
 	go.opentelemetry.io/otel/trace v1.40.0
-	go.yaml.in/yaml/v4 v4.0.0-rc.3
+	go.yaml.in/yaml/v4 v4.0.0-rc.4.0.20260301020847-9162c2211af3
 	golang.org/x/sync v0.19.0
 	gotest.tools/v3 v3.5.2
 )
@@ -52,7 +52,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
-	github.com/prometheus/procfs v0.20.0 // indirect
+	github.com/prometheus/procfs v0.20.1 // indirect
 	github.com/relychan/gocompress v0.1.2 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
