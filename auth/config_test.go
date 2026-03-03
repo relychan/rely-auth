@@ -13,6 +13,28 @@ import (
 	"gotest.tools/v3/assert"
 )
 
+var testAuthConfigWithSecurityRules = `
+mode: apiKey
+tokenLocation:
+  in: header
+  name: Authorization
+value:
+  value: secret
+securityRules:
+  allowedIPs:
+    include:
+      value:
+        - 192.168.1.0/24
+  headerRules:
+    Authorization:
+      include:
+        value:
+          - "^Bearer .*"
+      exclude:
+        value:
+          - ".*test.*"
+`
+
 func TestRelyAuthConfig_Validate(t *testing.T) {
 	testCases := []struct {
 		Name        string
@@ -174,10 +196,11 @@ func TestRelyAuthMode_UnmarshalJSON(t *testing.T) {
 
 func TestRelyAuthMode_UnmarshalYAML(t *testing.T) {
 	testCases := []struct {
-		Name        string
-		YAML        string
-		ExpectMode  authmode.AuthMode
-		ExpectError string
+		Name                string
+		YAML                string
+		ExpectMode          authmode.AuthMode
+		ExpectSecurityRules bool
+		ExpectError         string
 	}{
 		{
 			Name: "apikey_mode",
@@ -200,6 +223,95 @@ sessionVariables: {}
 			ExpectMode: authmode.AuthModeNoAuth,
 		},
 		{
+			Name: "jwt_mode",
+			YAML: `
+mode: jwt
+tokenLocation:
+  in: header
+  name: Authorization
+key:
+  algorithm: HS256
+  key:
+    value: secret
+claimsConfig:
+  locations:
+    x-hasura-role:
+      default:
+        value: user
+`,
+			ExpectMode: authmode.AuthModeJWT,
+		},
+		{
+			Name: "webhook_mode",
+			YAML: `
+mode: webhook
+url:
+  value: http://example.com
+method: POST
+`,
+			ExpectMode: authmode.AuthModeWebhook,
+		},
+		{
+			Name: "apikey_mode_with_allowed_ips_security_rules",
+			YAML: `
+mode: apiKey
+tokenLocation:
+  in: header
+  name: Authorization
+value:
+  value: secret
+securityRules:
+  allowedIPs:
+    include:
+      value:
+        - 192.168.1.0/24
+        - 10.0.0.0/8
+    headers:
+      - X-Forwarded-For
+`,
+			ExpectMode:          authmode.AuthModeAPIKey,
+			ExpectSecurityRules: true,
+		},
+		{
+			Name: "apikey_mode_with_header_rules_security_rules",
+			YAML: `
+mode: apiKey
+tokenLocation:
+  in: header
+  name: Authorization
+value:
+  value: secret
+securityRules:
+  headerRules:
+    Authorization:
+      include:
+        value:
+          - "^Bearer .*"
+`,
+			ExpectMode:          authmode.AuthModeAPIKey,
+			ExpectSecurityRules: true,
+		},
+		{
+			Name:                "apikey_mode_with_combined_security_rules",
+			YAML:                testAuthConfigWithSecurityRules,
+			ExpectMode:          authmode.AuthModeAPIKey,
+			ExpectSecurityRules: true,
+		},
+		{
+			Name: "noauth_mode_with_security_rules",
+			YAML: `
+mode: noAuth
+sessionVariables: {}
+securityRules:
+  allowedIPs:
+    include:
+      value:
+        - 10.0.0.0/8
+`,
+			ExpectMode:          authmode.AuthModeNoAuth,
+			ExpectSecurityRules: true,
+		},
+		{
 			Name: "unsupported_mode",
 			YAML: `
 mode: invalid
@@ -217,6 +329,11 @@ mode: invalid
 			} else {
 				assert.NilError(t, err)
 				assert.Equal(t, tc.ExpectMode, def.GetMode())
+				if tc.ExpectSecurityRules {
+					assert.Assert(t, def.SecurityRules != nil)
+				} else {
+					assert.Assert(t, def.SecurityRules == nil)
+				}
 			}
 		})
 	}

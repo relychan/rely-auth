@@ -23,6 +23,8 @@ const (
 var (
 	// ErrAuthConfigRequired occurs when the auth config is null.
 	ErrAuthConfigRequired = errors.New("auth definition is empty")
+	// ErrAuthModeRequired occurs when the auth mode is null.
+	ErrAuthModeRequired = errors.New("auth mode is empty")
 	// ErrAuthConfigValueRequired occurs when the auth value is empty.
 	ErrAuthConfigValueRequired = errors.New("auth definition value is empty")
 	// ErrOnlyOneNoAuthModeAllowed occurs when there are many auth config definitions with noAuth mode.
