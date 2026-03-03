@@ -73,19 +73,19 @@ func AllowedIPsFromConfig(
 
 // Validate checks if the request satisfies the security rule.
 func (ai *RelyAuthIPAllowList) Validate(ctx context.Context, body *AuthenticateRequestData) error {
-	clientIPs := GetClientIPFromHeaders(body.Headers, ai.Headers...)
+	clientIPs := GetClientIPsFromHeader(body.Headers, ai.Headers...)
 	if len(clientIPs) == 0 {
 		return ErrIPNotFound
 	}
 
 	for _, ip := range clientIPs {
 		err := goutils.ValidateIP(ctx, ip, ai.ValidateIPOptions)
-		if err == nil {
-			return nil
+		if err != nil {
+			return err
 		}
 	}
 
-	return goutils.ErrBlockedIP
+	return nil
 }
 
 func parseEnvSubnets(

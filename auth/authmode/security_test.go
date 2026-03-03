@@ -368,7 +368,7 @@ func TestGetClientIP(t *testing.T) {
 		headers := map[string]string{
 			"x-real-ip": "192.168.1.100",
 		}
-		ips := GetClientIPFromHeaders(headers)
+		ips := GetClientIPsFromHeader(headers)
 		assert.Equal(t, "192.168.1.100", ips[0])
 	})
 
@@ -376,7 +376,7 @@ func TestGetClientIP(t *testing.T) {
 		headers := map[string]string{
 			"x-forwarded-for": "10.0.0.1",
 		}
-		ips := GetClientIPFromHeaders(headers)
+		ips := GetClientIPsFromHeader(headers)
 		assert.Equal(t, "10.0.0.1", ips[0])
 	})
 
@@ -384,7 +384,7 @@ func TestGetClientIP(t *testing.T) {
 		headers := map[string]string{
 			"cf-connecting-ip": "172.16.0.1",
 		}
-		ips := GetClientIPFromHeaders(headers)
+		ips := GetClientIPsFromHeader(headers)
 		assert.Equal(t, "172.16.0.1", ips[0])
 	})
 
@@ -392,13 +392,13 @@ func TestGetClientIP(t *testing.T) {
 		headers := map[string]string{
 			"x-custom-ip": "192.168.1.50",
 		}
-		ips := GetClientIPFromHeaders(headers, "x-custom-ip")
+		ips := GetClientIPsFromHeader(headers, "x-custom-ip")
 		assert.Equal(t, "192.168.1.50", ips[0])
 	})
 
 	t.Run("empty_headers", func(t *testing.T) {
 		headers := map[string]string{}
-		ips := GetClientIPFromHeaders(headers)
+		ips := GetClientIPsFromHeader(headers)
 		assert.Assert(t, len(ips) == 0)
 	})
 }
