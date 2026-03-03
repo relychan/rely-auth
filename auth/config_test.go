@@ -13,28 +13,6 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-var testAuthConfigWithSecurityRules = `
-mode: apiKey
-tokenLocation:
-  in: header
-  name: Authorization
-value:
-  value: secret
-securityRules:
-  allowedIPs:
-    include:
-      value:
-        - 192.168.1.0/24
-  headerRules:
-    Authorization:
-      include:
-        value:
-          - "^Bearer .*"
-      exclude:
-        value:
-          - ".*test.*"
-`
-
 func TestRelyAuthConfig_Validate(t *testing.T) {
 	testCases := []struct {
 		Name        string
@@ -199,7 +177,7 @@ func TestRelyAuthMode_UnmarshalYAML(t *testing.T) {
 		Name                string
 		YAML                string
 		ExpectMode          authmode.AuthMode
-		ExpectSecurityRules bool
+		ExpectSecurityRules *authmode.RelyAuthSecurityRulesConfig
 		ExpectError         string
 	}{
 		{
@@ -269,8 +247,20 @@ securityRules:
     headers:
       - X-Forwarded-For
 `,
-			ExpectMode:          authmode.AuthModeAPIKey,
-			ExpectSecurityRules: true,
+			ExpectMode: authmode.AuthModeAPIKey,
+			ExpectSecurityRules: &authmode.RelyAuthSecurityRulesConfig{
+				AllowedIPs: &authmode.RelyAuthIPAllowListConfig{
+					RelyAuthAllowListConfig: authmode.RelyAuthAllowListConfig{
+						Include: &goenvconf.EnvStringSlice{
+							Value: []string{
+								"192.168.1.0/24",
+								"10.0.0.0/8",
+							},
+						},
+					},
+					Headers: []string{"X-Forwarded-For"},
+				},
+			},
 		},
 		{
 			Name: "apikey_mode_with_header_rules_security_rules",
@@ -288,14 +278,62 @@ securityRules:
         value:
           - "^Bearer .*"
 `,
-			ExpectMode:          authmode.AuthModeAPIKey,
-			ExpectSecurityRules: true,
+			ExpectMode: authmode.AuthModeAPIKey,
+			ExpectSecurityRules: &authmode.RelyAuthSecurityRulesConfig{
+				HeaderRules: map[string]authmode.RelyAuthAllowListConfig{
+					"Authorization": {
+						Include: &goenvconf.EnvStringSlice{
+							Value: []string{"^Bearer .*"},
+						},
+					},
+				},
+			},
 		},
 		{
-			Name:                "apikey_mode_with_combined_security_rules",
-			YAML:                testAuthConfigWithSecurityRules,
-			ExpectMode:          authmode.AuthModeAPIKey,
-			ExpectSecurityRules: true,
+			Name: "apikey_mode_with_combined_security_rules",
+			YAML: `
+mode: apiKey
+tokenLocation:
+  in: header
+  name: Authorization
+value:
+  value: secret
+securityRules:
+  allowedIPs:
+    include:
+      value:
+        - 192.168.1.0/24
+  headerRules:
+    Authorization:
+      include:
+        value:
+          - "^Bearer .*"
+      exclude:
+        value:
+          - ".*test.*"
+`,
+			ExpectMode: authmode.AuthModeAPIKey,
+			ExpectSecurityRules: &authmode.RelyAuthSecurityRulesConfig{
+				AllowedIPs: &authmode.RelyAuthIPAllowListConfig{
+					RelyAuthAllowListConfig: authmode.RelyAuthAllowListConfig{
+						Include: &goenvconf.EnvStringSlice{
+							Value: []string{
+								"192.168.1.0/24",
+							},
+						},
+					},
+				},
+				HeaderRules: map[string]authmode.RelyAuthAllowListConfig{
+					"Authorization": {
+						Include: &goenvconf.EnvStringSlice{
+							Value: []string{"^Bearer .*"},
+						},
+						Exclude: &goenvconf.EnvStringSlice{
+							Value: []string{".*test.*"},
+						},
+					},
+				},
+			},
 		},
 		{
 			Name: "noauth_mode_with_security_rules",
@@ -308,8 +346,18 @@ securityRules:
       value:
         - 10.0.0.0/8
 `,
-			ExpectMode:          authmode.AuthModeNoAuth,
-			ExpectSecurityRules: true,
+			ExpectMode: authmode.AuthModeNoAuth,
+			ExpectSecurityRules: &authmode.RelyAuthSecurityRulesConfig{
+				AllowedIPs: &authmode.RelyAuthIPAllowListConfig{
+					RelyAuthAllowListConfig: authmode.RelyAuthAllowListConfig{
+						Include: &goenvconf.EnvStringSlice{
+							Value: []string{
+								"10.0.0.0/8",
+							},
+						},
+					},
+				},
+			},
 		},
 		{
 			Name: "unsupported_mode",
@@ -329,8 +377,8 @@ mode: invalid
 			} else {
 				assert.NilError(t, err)
 				assert.Equal(t, tc.ExpectMode, def.GetMode())
-				if tc.ExpectSecurityRules {
-					assert.Assert(t, def.SecurityRules != nil)
+				if tc.ExpectSecurityRules != nil {
+					assert.DeepEqual(t, tc.ExpectSecurityRules, def.SecurityRules)
 				} else {
 					assert.Assert(t, def.SecurityRules == nil)
 				}

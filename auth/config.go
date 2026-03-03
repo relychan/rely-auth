@@ -94,6 +94,8 @@ func (j *RelyAuthMode) UnmarshalJSON(b []byte) error {
 		config = new(jwt.RelyAuthJWTConfig)
 	case authmode.AuthModeWebhook:
 		config = new(webhook.RelyAuthWebhookConfig)
+	case "":
+		return authmode.ErrAuthModeRequired
 	default:
 		return fmt.Errorf("%w: %s", authmode.ErrUnsupportedAuthMode, temp.Mode)
 	}
@@ -121,7 +123,7 @@ func (j *RelyAuthMode) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 
-	if authMode == nil {
+	if authMode == nil || *authMode == "" {
 		return authmode.ErrAuthModeRequired
 	}
 
@@ -158,7 +160,7 @@ func (j *RelyAuthMode) UnmarshalYAML(value *yaml.Node) error {
 	if securityRuleNode != nil {
 		var securityRules authmode.RelyAuthSecurityRulesConfig
 
-		err = value.Load(&securityRules)
+		err = securityRuleNode.Load(&securityRules)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal securityRules: %w", err)
 		}
