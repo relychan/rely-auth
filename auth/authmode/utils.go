@@ -19,8 +19,8 @@ var ipHeaders = []string{
 	"x-forwarded-for",
 }
 
-// GetClientIPFromHeaders gets the client IP from request headers.
-func GetClientIPFromHeaders(headers map[string]string, allowedHeaders ...string) []string {
+// GetClientIPsFromHeaders gets the client IPs from request headers.
+func GetClientIPsFromHeaders(headers map[string]string, allowedHeaders ...string) []string {
 	if len(headers) == 0 {
 		return nil
 	}
