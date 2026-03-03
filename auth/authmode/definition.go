@@ -158,7 +158,7 @@ func (ra *RelyAuthentication) Authenticate(
 	body *AuthenticateRequestData,
 ) (AuthenticatedOutput, error) {
 	if ra.SecurityRules != nil {
-		err := ra.SecurityRules.Validate(body)
+		err := ra.SecurityRules.Validate(ctx, body)
 		if err != nil {
 			return AuthenticatedOutput{
 				Mode: ra.Mode(),

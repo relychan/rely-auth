@@ -45,8 +45,6 @@ var (
 	ErrInvalidIP = errors.New("invalid IP")
 	// ErrIPNotFound occurs when the IP does not exist in request headers.
 	ErrIPNotFound = errors.New("ip not found")
-	// ErrDisallowedIP occurs when the IP string does not satisfy the allow list.
-	ErrDisallowedIP = errors.New("ip address does not satisfy the allow list")
 	// ErrInvalidHeader occurs when the header does not satisfy the security rule.
 	ErrInvalidHeader = errors.New("invalid header")
 )

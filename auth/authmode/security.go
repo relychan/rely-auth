@@ -1,6 +1,10 @@
 package authmode
 
-import "github.com/hasura/goenvconf"
+import (
+	"context"
+
+	"github.com/hasura/goenvconf"
+)
 
 // RelyAuthSecurityRules defines rules to harden the security.
 type RelyAuthSecurityRules struct {
@@ -45,9 +49,12 @@ func RelyAuthSecurityRulesFromConfig(
 }
 
 // Validate checks if the webhook request satisfies security rules.
-func (sr *RelyAuthSecurityRules) Validate(body *AuthenticateRequestData) error {
+func (sr *RelyAuthSecurityRules) Validate(
+	ctx context.Context,
+	body *AuthenticateRequestData,
+) error {
 	if sr.AllowedIPs != nil {
-		err := sr.AllowedIPs.Validate(body)
+		err := sr.AllowedIPs.Validate(ctx, body)
 		if err != nil {
 			return err
 		}

@@ -254,7 +254,7 @@ func verifyClaims(
 	claims *jwt.Claims,
 	sig *jose.JSONWebSignature,
 ) ([]byte, error) {
-	err := key.ValidateSecurityRules(body)
+	err := key.ValidateSecurityRules(ctx, body)
 	if err != nil {
 		return nil, err
 	}

@@ -38,6 +38,8 @@ func (hal RelyAuthAllowListConfig) Equal(target RelyAuthAllowListConfig) bool {
 type RelyAuthIPAllowListConfig struct {
 	RelyAuthAllowListConfig `yaml:",inline"`
 
+	// Allow public IPs only.
+	PublicOnly bool `json:"publicOnly,omitempty" yaml:"publicOnly,omitempty"`
 	// The client IP could be in this header list. Use default client IP headers if empty.
 	Headers []string `json:"headers,omitempty" yaml:"headers,omitempty"`
 }

@@ -1,19 +1,21 @@
 package authmode
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"slices"
 	"strings"
 
 	"github.com/hasura/goenvconf"
+	"github.com/relychan/goutils"
 )
 
 // RelyAuthIPAllowList holds security rules of the IP allow list from the parsed config.
 type RelyAuthIPAllowList struct {
+	goutils.ValidateIPOptions
+
 	Headers []string
-	Include []*net.IPNet
-	Exclude []*net.IPNet
 }
 
 // AllowedIPsFromConfig creates a [RelyAuthIPAllowList] instance from config.
@@ -44,6 +46,7 @@ func AllowedIPsFromConfig(
 		}
 
 		slices.Sort(headers)
+		headers = slices.Compact(headers)
 	}
 
 	include, err := parseEnvSubnets(conf.Include, getEnvFunc)
@@ -57,38 +60,32 @@ func AllowedIPsFromConfig(
 	}
 
 	result := &RelyAuthIPAllowList{
-		Headers: slices.Compact(headers),
-		Include: include,
-		Exclude: exclude,
+		ValidateIPOptions: goutils.ValidateIPOptions{
+			AllowedIPRanges: include,
+			BlockedIPRanges: exclude,
+			PublicIPOnly:    conf.PublicOnly,
+		},
+		Headers: headers,
 	}
 
 	return result, nil
 }
 
 // Validate checks if the request satisfies the security rule.
-func (ai *RelyAuthIPAllowList) Validate(body *AuthenticateRequestData) error {
-	clientIP, err := GetClientIP(body.Headers, ai.Headers...)
-	if err != nil {
-		return err
+func (ai *RelyAuthIPAllowList) Validate(ctx context.Context, body *AuthenticateRequestData) error {
+	clientIPs := GetClientIPFromHeaders(body.Headers, ai.Headers...)
+	if len(clientIPs) == 0 {
+		return ErrIPNotFound
 	}
 
-	for _, subnet := range ai.Exclude {
-		if subnet.Contains(clientIP) {
-			return ErrDisallowedIP
-		}
-	}
-
-	if len(ai.Include) == 0 {
-		return nil
-	}
-
-	for _, subnet := range ai.Include {
-		if subnet.Contains(clientIP) {
+	for _, ip := range clientIPs {
+		err := goutils.ValidateIP(ctx, ip, ai.ValidateIPOptions)
+		if err == nil {
 			return nil
 		}
 	}
 
-	return ErrDisallowedIP
+	return goutils.ErrBlockedIP
 }
 
 func parseEnvSubnets(
@@ -120,7 +117,7 @@ func parseEnvSubnets(
 			continue
 		}
 
-		ip, err := ParseSubnet(trimmed)
+		ip, err := goutils.ParseSubnet(trimmed)
 		if err != nil {
 			return nil, err
 		}
@@ -128,5 +125,5 @@ func parseEnvSubnets(
 		results = append(results, ip)
 	}
 
-	return slices.Compact(results), nil
+	return slices.Clip(results), nil
 }
