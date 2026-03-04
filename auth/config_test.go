@@ -187,7 +187,7 @@ tokenLocation:
   in: header
   name: Authorization
 `,
-			ExpectError: "auth mode required",
+			ExpectError: "auth mode is empty",
 		},
 		{
 			Name: "empty_mode",
@@ -197,7 +197,7 @@ tokenLocation:
   in: header
   name: Authorization
 `,
-			ExpectError: "auth mode required",
+			ExpectError: "auth mode is empty",
 		},
 		{
 			Name: "apikey_mode",

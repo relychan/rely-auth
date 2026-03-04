@@ -74,7 +74,7 @@ L:
 				return []net.IP{ips[0], ips[len(ips)-1]}
 			case IPPositionLeftmost:
 				return []net.IP{ips[0]}
-			case IPPositionRightmost:
+			default:
 				return []net.IP{ips[len(ips)-1]}
 			}
 		}

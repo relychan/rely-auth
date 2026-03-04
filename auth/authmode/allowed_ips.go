@@ -11,7 +11,7 @@ import (
 	"github.com/relychan/goutils"
 )
 
-// ForwardedIPPosition represents the position of the IP to select from X-Forward-For header.
+// ForwardedIPPosition represents the position of the IP to select from X-Forwarded-For header.
 type ForwardedIPPosition string
 
 const (
@@ -46,7 +46,7 @@ func (j ForwardedIPPosition) Validate() error {
 func (ForwardedIPPosition) JSONSchema() *jsonschema.Schema {
 	return &jsonschema.Schema{
 		Type:        "string",
-		Description: "The position of the IP to select if the X-Forward-For header has many IPs. Default is rightmost.",
+		Description: "The position of the IP to select if the X-Forwarded-For header has many IPs. Default is rightmost.",
 		Enum:        goutils.ToAnySlice(GetForwardedIPPositions()),
 		Default:     IPPositionRightmost,
 	}
