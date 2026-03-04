@@ -190,5 +190,5 @@ func parseEnvSubnets(
 		results = append(results, ip)
 	}
 
-	return slices.Clip(results), nil
+	return results, nil
 }
