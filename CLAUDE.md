@@ -176,7 +176,7 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
 - Keep interfaces small (1-3 methods is ideal)
 - Use embedding for composition
 - Define interfaces close to where they're used, not where they're implemented
-- Don't export interfaces unless necessary
+- Export interfaces when consumers need to implement or satisfy them (e.g., plugin points, extension interfaces); keep unexported what is only used internally
 
 ## Concurrency
 
@@ -239,9 +239,8 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
 - Use middleware for cross-cutting concerns
 - Set appropriate status codes and headers
 - Handle errors gracefully and return appropriate error responses
-- Router usage by Go version:
-  - If `go >= 1.22`, prefer the enhanced `net/http` `ServeMux` with pattern-based routing and method matching
-  - If `go < 1.22`, use the classic `ServeMux` and handle methods/paths manually (or use a third-party router when justified)
+- This project uses `github.com/go-chi/chi/v5` as the router; use `chi.Router` and chi middleware for routing and cross-cutting concerns
+- Do not introduce `net/http` `ServeMux` as a replacement; chi is the established choice here
 
 ### JSON APIs
 
@@ -280,22 +279,7 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
   - Keep the original payload as `[]byte` and set `req.Body = io.NopCloser(bytes.NewReader(buf))` before each send
   - Prefer configuring `req.GetBody` so the transport can recreate the body for redirects/retries: `req.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(buf)), nil }`
 - To duplicate a stream while reading, use `io.TeeReader` (copy to a buffer while passing through) or write to multiple sinks with `io.MultiWriter`
-- Reusing buffered readers: call `(*bufio.Reader).Reset(r)` to attach to a new underlying reader; do not expect it to “rewind” unless the source supports seeking
-- For large payloads, avoid unbounded buffering; consider streaming, `io.LimitReader`, or on-disk temporary storage to control memory
-
-- Use `io.Pipe` to stream without buffering the whole payload:
-  - Write to `*io.PipeWriter` in a separate goroutine while the reader consumes
-  - Always close the writer; use `CloseWithError(err)` on failures
-  - `io.Pipe` is for streaming, not rewinding or making readers reusable
-
-- **Warning:** When using `io.Pipe` (especially with multipart writers), all writes must be performed in strict, sequential order. Do not write concurrently or out of order—multipart boundaries and chunk order must be preserved. Out-of-order or parallel writes can corrupt the stream and result in errors.
-
-- Streaming multipart/form-data with `io.Pipe`:
-  - `pr, pw := io.Pipe()`; `mw := multipart.NewWriter(pw)`; use `pr` as the HTTP request body
-  - Set `Content-Type` to `mw.FormDataContentType()`
-  - In a goroutine: write all parts to `mw` in the correct order; on error `pw.CloseWithError(err)`; on success `mw.Close()` then `pw.Close()`
-  - Do not store request/in-flight form state on a long-lived client; build per call
-  - Streamed bodies are not rewindable; for retries/redirects, buffer small payloads or provide `GetBody`
+- For large payloads, avoid unbounded buffering; consider `io.LimitReader` to control memory
 
 ### Profiling
 
@@ -373,6 +357,18 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
 - Use crypto/rand for random number generation
 - Store passwords using bcrypt, scrypt, or argon2 (consider golang.org/x/crypto for additional options)
 - Use TLS for network communication
+
+### JWT and OIDC (go-jose/v4)
+
+This project uses `github.com/go-jose/go-jose/v4` for JWT/JOSE operations. Follow these practices:
+
+- **Algorithm pinning**: always specify the expected signing algorithm explicitly when parsing tokens; never allow the library to accept any algorithm from the token header (`alg` must be validated against an allowlist)
+- **Claim validation**: always validate standard claims — `exp` (expiration), `nbf` (not before), `iss` (issuer), and `aud` (audience) — before trusting token contents
+- **Clock skew**: apply a small, bounded clock skew tolerance (e.g., ≤ 60 seconds) when checking `exp` and `nbf`; never disable expiry checks
+- **Key rotation**: design key fetching to support rotation; cache JWKS with a TTL and re-fetch on unknown `kid` rather than caching indefinitely
+- **Key source**: fetch public keys from a trusted JWKS endpoint; never accept keys embedded in the token itself (e.g., `jwk`, `jku` header parameters should be ignored or validated against an allowlist)
+- **Signature verification**: verify the signature before reading any claims; never parse claims from an unverified token
+- **Sensitive data**: avoid placing sensitive data in JWT payloads unless the token is encrypted (JWE); JWS tokens are only signed, not encrypted
 
 ## Documentation
 

@@ -7,13 +7,69 @@ import (
 	"strings"
 
 	"github.com/hasura/goenvconf"
+	"github.com/invopop/jsonschema"
+	"github.com/relychan/goutils"
 )
+
+// ForwardedIPPosition represents the position of the IP to select from X-Forwarded-For header.
+type ForwardedIPPosition string
+
+const (
+	// IPPositionLeftmost presents the leftmost position.
+	IPPositionLeftmost ForwardedIPPosition = "leftmost"
+	// IPPositionRightmost presents the rightmost position.
+	IPPositionRightmost ForwardedIPPosition = "rightmost"
+	// IPPositionEdge presents the edge position.
+	IPPositionEdge ForwardedIPPosition = "edge"
+)
+
+var enumValueForwardedIPPositions = []ForwardedIPPosition{
+	IPPositionLeftmost,
+	IPPositionRightmost,
+	IPPositionEdge,
+}
+
+// Validate if the current instance is valid.
+func (j ForwardedIPPosition) Validate() error {
+	if !slices.Contains(enumValueForwardedIPPositions, j) {
+		return fmt.Errorf(
+			"%w, got <%s>",
+			ErrInvalidForwardedIPLocation,
+			j,
+		)
+	}
+
+	return nil
+}
+
+// JSONSchema defines a custom definition for JSON schema.
+func (ForwardedIPPosition) JSONSchema() *jsonschema.Schema {
+	return &jsonschema.Schema{
+		Type:        "string",
+		Description: "The position of the IP to select if the X-Forwarded-For header has many IPs. Default is rightmost.",
+		Enum:        goutils.ToAnySlice(GetForwardedIPPositions()),
+		Default:     IPPositionRightmost,
+	}
+}
+
+// ParseForwardedIPPosition parses a ForwardedIPPosition from string.
+func ParseForwardedIPPosition(value string) (ForwardedIPPosition, error) {
+	result := ForwardedIPPosition(value)
+
+	return result, result.Validate()
+}
+
+// GetForwardedIPPositions get the list of forwarded IP position enum.
+func GetForwardedIPPositions() []ForwardedIPPosition {
+	return enumValueForwardedIPPositions
+}
 
 // RelyAuthIPAllowList holds security rules of the IP allow list from the parsed config.
 type RelyAuthIPAllowList struct {
-	Headers []string
-	Include []*net.IPNet
-	Exclude []*net.IPNet
+	goutils.ValidateIPOptions
+
+	Position ForwardedIPPosition
+	Headers  []string
 }
 
 // AllowedIPsFromConfig creates a [RelyAuthIPAllowList] instance from config.
@@ -44,6 +100,7 @@ func AllowedIPsFromConfig(
 		}
 
 		slices.Sort(headers)
+		headers = slices.Compact(headers)
 	}
 
 	include, err := parseEnvSubnets(conf.Include, getEnvFunc)
@@ -56,10 +113,24 @@ func AllowedIPsFromConfig(
 		return nil, fmt.Errorf("failed to parse disallowed IP: %w", err)
 	}
 
+	position := conf.Position
+	if position == "" {
+		position = IPPositionRightmost
+	} else {
+		err := conf.Position.Validate()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	result := &RelyAuthIPAllowList{
-		Headers: slices.Compact(headers),
-		Include: include,
-		Exclude: exclude,
+		ValidateIPOptions: goutils.ValidateIPOptions{
+			AllowedIPRanges: include,
+			BlockedIPRanges: exclude,
+			PublicIPOnly:    conf.PublicOnly,
+		},
+		Position: position,
+		Headers:  headers,
 	}
 
 	return result, nil
@@ -67,28 +138,19 @@ func AllowedIPsFromConfig(
 
 // Validate checks if the request satisfies the security rule.
 func (ai *RelyAuthIPAllowList) Validate(body *AuthenticateRequestData) error {
-	clientIP, err := GetClientIP(body.Headers, ai.Headers...)
-	if err != nil {
-		return err
+	clientIPs := GetClientIPsFromHeader(body.Headers, ai.Position, ai.Headers...)
+	if len(clientIPs) == 0 {
+		return ErrIPNotFound
 	}
 
-	for _, subnet := range ai.Exclude {
-		if subnet.Contains(clientIP) {
-			return ErrDisallowedIP
+	for _, ip := range clientIPs {
+		err := goutils.ValidateIP(ip, ai.ValidateIPOptions)
+		if err != nil {
+			return err
 		}
 	}
 
-	if len(ai.Include) == 0 {
-		return nil
-	}
-
-	for _, subnet := range ai.Include {
-		if subnet.Contains(clientIP) {
-			return nil
-		}
-	}
-
-	return ErrDisallowedIP
+	return nil
 }
 
 func parseEnvSubnets(
@@ -120,7 +182,7 @@ func parseEnvSubnets(
 			continue
 		}
 
-		ip, err := ParseSubnet(trimmed)
+		ip, err := goutils.ParseSubnet(trimmed)
 		if err != nil {
 			return nil, err
 		}
@@ -128,5 +190,5 @@ func parseEnvSubnets(
 		results = append(results, ip)
 	}
 
-	return slices.Compact(results), nil
+	return results, nil
 }

@@ -174,11 +174,31 @@ func TestRelyAuthMode_UnmarshalJSON(t *testing.T) {
 
 func TestRelyAuthMode_UnmarshalYAML(t *testing.T) {
 	testCases := []struct {
-		Name        string
-		YAML        string
-		ExpectMode  authmode.AuthMode
-		ExpectError string
+		Name                string
+		YAML                string
+		ExpectMode          authmode.AuthMode
+		ExpectSecurityRules *authmode.RelyAuthSecurityRulesConfig
+		ExpectError         string
 	}{
+		{
+			Name: "missing_mode",
+			YAML: `
+tokenLocation:
+  in: header
+  name: Authorization
+`,
+			ExpectError: "auth mode is empty",
+		},
+		{
+			Name: "empty_mode",
+			YAML: `
+mode: ""
+tokenLocation:
+  in: header
+  name: Authorization
+`,
+			ExpectError: "auth mode is empty",
+		},
 		{
 			Name: "apikey_mode",
 			YAML: `
@@ -200,6 +220,165 @@ sessionVariables: {}
 			ExpectMode: authmode.AuthModeNoAuth,
 		},
 		{
+			Name: "jwt_mode",
+			YAML: `
+mode: jwt
+tokenLocation:
+  in: header
+  name: Authorization
+key:
+  algorithm: HS256
+  key:
+    value: secret
+claimsConfig:
+  locations:
+    x-hasura-role:
+      default:
+        value: user
+`,
+			ExpectMode: authmode.AuthModeJWT,
+		},
+		{
+			Name: "webhook_mode",
+			YAML: `
+mode: webhook
+url:
+  value: http://example.com
+method: POST
+`,
+			ExpectMode: authmode.AuthModeWebhook,
+		},
+		{
+			Name: "apikey_mode_with_allowed_ips_security_rules",
+			YAML: `
+mode: apiKey
+tokenLocation:
+  in: header
+  name: Authorization
+value:
+  value: secret
+securityRules:
+  allowedIPs:
+    include:
+      value:
+        - 192.168.1.0/24
+        - 10.0.0.0/8
+    headers:
+      - X-Forwarded-For
+`,
+			ExpectMode: authmode.AuthModeAPIKey,
+			ExpectSecurityRules: &authmode.RelyAuthSecurityRulesConfig{
+				AllowedIPs: &authmode.RelyAuthIPAllowListConfig{
+					RelyAuthAllowListConfig: authmode.RelyAuthAllowListConfig{
+						Include: &goenvconf.EnvStringSlice{
+							Value: []string{
+								"192.168.1.0/24",
+								"10.0.0.0/8",
+							},
+						},
+					},
+					Headers: []string{"X-Forwarded-For"},
+				},
+			},
+		},
+		{
+			Name: "apikey_mode_with_header_rules_security_rules",
+			YAML: `
+mode: apiKey
+tokenLocation:
+  in: header
+  name: Authorization
+value:
+  value: secret
+securityRules:
+  headerRules:
+    Authorization:
+      include:
+        value:
+          - "^Bearer .*"
+`,
+			ExpectMode: authmode.AuthModeAPIKey,
+			ExpectSecurityRules: &authmode.RelyAuthSecurityRulesConfig{
+				HeaderRules: map[string]authmode.RelyAuthAllowListConfig{
+					"Authorization": {
+						Include: &goenvconf.EnvStringSlice{
+							Value: []string{"^Bearer .*"},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "apikey_mode_with_combined_security_rules",
+			YAML: `
+mode: apiKey
+tokenLocation:
+  in: header
+  name: Authorization
+value:
+  value: secret
+securityRules:
+  allowedIPs:
+    include:
+      value:
+        - 192.168.1.0/24
+  headerRules:
+    Authorization:
+      include:
+        value:
+          - "^Bearer .*"
+      exclude:
+        value:
+          - ".*test.*"
+`,
+			ExpectMode: authmode.AuthModeAPIKey,
+			ExpectSecurityRules: &authmode.RelyAuthSecurityRulesConfig{
+				AllowedIPs: &authmode.RelyAuthIPAllowListConfig{
+					RelyAuthAllowListConfig: authmode.RelyAuthAllowListConfig{
+						Include: &goenvconf.EnvStringSlice{
+							Value: []string{
+								"192.168.1.0/24",
+							},
+						},
+					},
+				},
+				HeaderRules: map[string]authmode.RelyAuthAllowListConfig{
+					"Authorization": {
+						Include: &goenvconf.EnvStringSlice{
+							Value: []string{"^Bearer .*"},
+						},
+						Exclude: &goenvconf.EnvStringSlice{
+							Value: []string{".*test.*"},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "noauth_mode_with_security_rules",
+			YAML: `
+mode: noAuth
+sessionVariables: {}
+securityRules:
+  allowedIPs:
+    include:
+      value:
+        - 10.0.0.0/8
+`,
+			ExpectMode: authmode.AuthModeNoAuth,
+			ExpectSecurityRules: &authmode.RelyAuthSecurityRulesConfig{
+				AllowedIPs: &authmode.RelyAuthIPAllowListConfig{
+					RelyAuthAllowListConfig: authmode.RelyAuthAllowListConfig{
+						Include: &goenvconf.EnvStringSlice{
+							Value: []string{
+								"10.0.0.0/8",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			Name: "unsupported_mode",
 			YAML: `
 mode: invalid
@@ -217,6 +396,11 @@ mode: invalid
 			} else {
 				assert.NilError(t, err)
 				assert.Equal(t, tc.ExpectMode, def.GetMode())
+				if tc.ExpectSecurityRules != nil {
+					assert.DeepEqual(t, tc.ExpectSecurityRules, def.SecurityRules)
+				} else {
+					assert.Assert(t, def.SecurityRules == nil)
+				}
 			}
 		})
 	}

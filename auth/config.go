@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/invopop/jsonschema"
+	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/relychan/rely-auth/auth/jwt"
@@ -93,6 +94,8 @@ func (j *RelyAuthMode) UnmarshalJSON(b []byte) error {
 		config = new(jwt.RelyAuthJWTConfig)
 	case authmode.AuthModeWebhook:
 		config = new(webhook.RelyAuthWebhookConfig)
+	case "":
+		return authmode.ErrAuthModeRequired
 	default:
 		return fmt.Errorf("%w: %s", authmode.ErrUnsupportedAuthMode, temp.Mode)
 	}
@@ -115,16 +118,18 @@ func (j *RelyAuthMode) UnmarshalJSON(b []byte) error {
 
 // UnmarshalYAML implements the custom behavior for the yaml.Unmarshaler interface.
 func (j *RelyAuthMode) UnmarshalYAML(value *yaml.Node) error {
-	var temp rawRelyAuthMode
-
-	err := value.Decode(&temp)
+	authMode, err := goutils.GetStringValueFromYAMLMap(value, "mode")
 	if err != nil {
 		return err
 	}
 
+	if authMode == nil || *authMode == "" {
+		return authmode.ErrAuthModeRequired
+	}
+
 	var config authmode.RelyAuthModeInterface
 
-	switch temp.Mode {
+	switch authmode.AuthMode(*authMode) {
 	case authmode.AuthModeNoAuth:
 		config = new(noauth.RelyAuthNoAuthConfig)
 	case authmode.AuthModeAPIKey:
@@ -134,7 +139,7 @@ func (j *RelyAuthMode) UnmarshalYAML(value *yaml.Node) error {
 	case authmode.AuthModeWebhook:
 		config = new(webhook.RelyAuthWebhookConfig)
 	default:
-		return fmt.Errorf("%w: %s", authmode.ErrUnsupportedAuthMode, temp.Mode)
+		return fmt.Errorf("%w: %s", authmode.ErrUnsupportedAuthMode, *authMode)
 	}
 
 	err = value.Decode(config)
@@ -147,7 +152,22 @@ func (j *RelyAuthMode) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 
-	j.SecurityRules = temp.SecurityRules
+	securityRuleNode, err := goutils.GetNodeValueFromYAMLMap(value, "securityRules")
+	if err != nil {
+		return err
+	}
+
+	if securityRuleNode != nil {
+		var securityRules authmode.RelyAuthSecurityRulesConfig
+
+		err = securityRuleNode.Load(&securityRules)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal securityRules: %w", err)
+		}
+
+		j.SecurityRules = &securityRules
+	}
+
 	j.RelyAuthModeInterface = config
 
 	return nil

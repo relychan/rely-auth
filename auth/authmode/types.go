@@ -23,6 +23,8 @@ const (
 var (
 	// ErrAuthConfigRequired occurs when the auth config is null.
 	ErrAuthConfigRequired = errors.New("auth definition is empty")
+	// ErrAuthModeRequired occurs when the auth mode is null.
+	ErrAuthModeRequired = errors.New("auth mode is empty")
 	// ErrAuthConfigValueRequired occurs when the auth value is empty.
 	ErrAuthConfigValueRequired = errors.New("auth definition value is empty")
 	// ErrOnlyOneNoAuthModeAllowed occurs when there are many auth config definitions with noAuth mode.
@@ -43,10 +45,13 @@ var (
 	ErrInvalidIP = errors.New("invalid IP")
 	// ErrIPNotFound occurs when the IP does not exist in request headers.
 	ErrIPNotFound = errors.New("ip not found")
-	// ErrDisallowedIP occurs when the IP string does not satisfy the allow list.
-	ErrDisallowedIP = errors.New("ip address does not satisfy the allow list")
 	// ErrInvalidHeader occurs when the header does not satisfy the security rule.
 	ErrInvalidHeader = errors.New("invalid header")
+	// ErrInvalidForwardedIPLocation occurs when the forwarded IP position enum is invalid.
+	ErrInvalidForwardedIPLocation = fmt.Errorf(
+		"invalid ForwardedIPPosition. Expected one of %v",
+		GetForwardedIPPositions(),
+	)
 )
 
 // NewAuthFieldRequiredError creates a required auth field error.

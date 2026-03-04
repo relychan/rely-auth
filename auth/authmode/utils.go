@@ -2,7 +2,6 @@ package authmode
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -20,53 +19,32 @@ var ipHeaders = []string{
 	"x-forwarded-for",
 }
 
-// ParseSubnet parses the subnet from a raw string.
-func ParseSubnet(value string) (*net.IPNet, error) {
-	if value == "" {
-		return nil, ErrInvalidSubnet
-	}
-
-	if !strings.Contains(value, "/") {
-		ip := net.ParseIP(value)
-		if ip == nil {
-			return nil, ErrInvalidSubnet
-		}
-
-		if ip.To4() != nil {
-			value += "/32"
-		} else {
-			value += "/128"
-		}
-	}
-
-	_, subnet, err := net.ParseCIDR(value)
-	if err != nil {
-		return nil, err
-	}
-
-	return subnet, err
-}
-
-// GetClientIP gets the client IP from request headers.
-func GetClientIP(headers map[string]string, allowedHeaders ...string) (net.IP, error) {
+// GetClientIPsFromHeader gets the client IPs from request headers.
+func GetClientIPsFromHeader(
+	headers map[string]string,
+	position ForwardedIPPosition,
+	allowedHeaders ...string,
+) []net.IP {
 	if len(headers) == 0 {
-		return nil, ErrIPNotFound
+		return nil
 	}
 
 	if len(allowedHeaders) == 0 {
 		allowedHeaders = ipHeaders
 	}
 
-	errs := []error{}
-
+L:
 	for _, name := range allowedHeaders {
 		value, ok := headers[name]
 		if !ok || value == "" {
 			continue
 		}
 
+		rawIPs := strings.Split(value, ",")
+		ips := make([]net.IP, 0, len(rawIPs))
+
 		// Some headers (e.g., X-Forwarded-For) may contain a comma-separated list of IPs.
-		for part := range strings.SplitSeq(value, ",") {
+		for i, part := range rawIPs {
 			part = strings.TrimSpace(part)
 			if part == "" {
 				continue
@@ -74,18 +52,35 @@ func GetClientIP(headers map[string]string, allowedHeaders ...string) (net.IP, e
 
 			ip := net.ParseIP(part)
 			if ip != nil {
-				return ip, nil
+				ips = append(ips, ip)
+
+				continue
 			}
 
-			errs = append(errs, fmt.Errorf("%s: %w", part, ErrInvalidIP))
+			if i == 0 || i == len(rawIPs)-1 {
+				// invalid IP, ignore this header.
+				continue L
+			}
+		}
+
+		switch len(ips) {
+		case 0:
+			// no valid IP. ignore this header
+		case 1:
+			return ips
+		default:
+			switch position {
+			case IPPositionEdge:
+				return []net.IP{ips[0], ips[len(ips)-1]}
+			case IPPositionLeftmost:
+				return []net.IP{ips[0]}
+			default:
+				return []net.IP{ips[len(ips)-1]}
+			}
 		}
 	}
 
-	if len(errs) > 0 {
-		return nil, errors.Join(errs...)
-	}
-
-	return nil, ErrIPNotFound
+	return nil
 }
 
 // GetAuthModeHeader gets the authentication mode from request headers.
