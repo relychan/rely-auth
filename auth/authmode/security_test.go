@@ -299,7 +299,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 				"x-real-ip": "192.168.1.100",
 			},
 		}
-		err = allowedIPs.Validate(context.TODO(), body)
+		err = allowedIPs.Validate(body)
 		assert.NilError(t, err)
 	})
 
@@ -319,7 +319,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 				"x-real-ip": "10.0.0.1",
 			},
 		}
-		err = allowedIPs.Validate(context.TODO(), body)
+		err = allowedIPs.Validate(body)
 		assert.ErrorContains(t, err, goutils.ErrBlockedIP.Error())
 	})
 
@@ -337,7 +337,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{},
 		}
-		err = allowedIPs.Validate(context.Background(), body)
+		err = allowedIPs.Validate(body)
 		assert.ErrorContains(t, err, ErrIPNotFound.Error())
 	})
 
@@ -358,7 +358,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 				"x-custom-ip": "192.168.1.50",
 			},
 		}
-		err = allowedIPs.Validate(context.Background(), body)
+		err = allowedIPs.Validate(body)
 		assert.NilError(t, err)
 	})
 }
@@ -368,7 +368,7 @@ func TestGetClientIP(t *testing.T) {
 		headers := map[string]string{
 			"x-real-ip": "192.168.1.100",
 		}
-		ips := GetClientIPsFromHeader(headers)
+		ips := GetClientIPsFromHeader(headers, IPPositionRightmost)
 		assert.Equal(t, "192.168.1.100", ips[0])
 	})
 
@@ -376,7 +376,7 @@ func TestGetClientIP(t *testing.T) {
 		headers := map[string]string{
 			"x-forwarded-for": "10.0.0.1",
 		}
-		ips := GetClientIPsFromHeader(headers)
+		ips := GetClientIPsFromHeader(headers, IPPositionRightmost)
 		assert.Equal(t, "10.0.0.1", ips[0])
 	})
 
@@ -384,7 +384,7 @@ func TestGetClientIP(t *testing.T) {
 		headers := map[string]string{
 			"cf-connecting-ip": "172.16.0.1",
 		}
-		ips := GetClientIPsFromHeader(headers)
+		ips := GetClientIPsFromHeader(headers, IPPositionRightmost)
 		assert.Equal(t, "172.16.0.1", ips[0])
 	})
 
@@ -398,7 +398,7 @@ func TestGetClientIP(t *testing.T) {
 
 	t.Run("empty_headers", func(t *testing.T) {
 		headers := map[string]string{}
-		ips := GetClientIPsFromHeader(headers)
+		ips := GetClientIPsFromHeader(headers, IPPositionRightmost)
 		assert.Assert(t, len(ips) == 0)
 	})
 }
@@ -965,7 +965,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 				"authorization": "Bearer token123",
 			},
 		}
-		err = rules.Validate(context.TODO(), body)
+		err = rules.Validate(body)
 		assert.NilError(t, err)
 	})
 
@@ -985,7 +985,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 				"authorization": "Token abc",
 			},
 		}
-		err = rules.Validate(context.TODO(), body)
+		err = rules.Validate(body)
 		assert.ErrorContains(t, err, ErrInvalidHeader.Error())
 	})
 
@@ -1011,7 +1011,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 				"authorization": "Bearer token123",
 			},
 		}
-		err = rules.Validate(context.TODO(), body)
+		err = rules.Validate(body)
 		assert.NilError(t, err)
 	})
 
@@ -1037,7 +1037,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 				"authorization": "Bearer token123",
 			},
 		}
-		err = rules.Validate(context.TODO(), body)
+		err = rules.Validate(body)
 		assert.ErrorContains(t, err, goutils.ErrBlockedIP.Error())
 	})
 
@@ -1063,7 +1063,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 				"authorization": "Token abc",
 			},
 		}
-		err = rules.Validate(context.TODO(), body)
+		err = rules.Validate(body)
 		assert.ErrorContains(t, err, ErrInvalidHeader.Error())
 	})
 
@@ -1074,7 +1074,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{},
 		}
-		err := rules.Validate(context.TODO(), body)
+		err := rules.Validate(body)
 		assert.NilError(t, err)
 	})
 }

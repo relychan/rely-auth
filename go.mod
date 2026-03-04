@@ -10,10 +10,10 @@ require (
 	github.com/hasura/gotel v0.6.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
-	github.com/relychan/gohttpc v0.0.0-20260302170523-5af4e00f023b
-	github.com/relychan/gohttps v0.0.0-20260301080830-a778284828e2
+	github.com/relychan/gohttpc v0.0.0-20260304024524-2ab9caa4de03
+	github.com/relychan/gohttps v0.0.0-20260304030029-d4f002d86ee6
 	github.com/relychan/gotransform v0.0.0-20260302171832-9031e28dc866
-	github.com/relychan/goutils v0.0.0-20260302082857-81daa3c6a49a
+	github.com/relychan/goutils v0.0.0-20260303101739-0530dc9e1fb4
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.opentelemetry.io/otel v1.41.0
 	go.opentelemetry.io/otel/metric v1.41.0

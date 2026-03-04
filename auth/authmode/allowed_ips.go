@@ -1,21 +1,75 @@
 package authmode
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"slices"
 	"strings"
 
 	"github.com/hasura/goenvconf"
+	"github.com/invopop/jsonschema"
 	"github.com/relychan/goutils"
 )
+
+// ForwardedIPPosition represents the position of the IP to select from X-Forward-For header.
+type ForwardedIPPosition string
+
+const (
+	// IPPositionLeftmost presents the leftmost position.
+	IPPositionLeftmost ForwardedIPPosition = "leftmost"
+	// IPPositionRightmost presents the rightmost position.
+	IPPositionRightmost ForwardedIPPosition = "rightmost"
+	// IPPositionEdge presents the edge position.
+	IPPositionEdge ForwardedIPPosition = "edge"
+)
+
+var enumValueForwardedIPPositions = []ForwardedIPPosition{
+	IPPositionLeftmost,
+	IPPositionRightmost,
+	IPPositionEdge,
+}
+
+// Validate if the current instance is valid.
+func (j ForwardedIPPosition) Validate() error {
+	if !slices.Contains(enumValueForwardedIPPositions, j) {
+		return fmt.Errorf(
+			"%w, got <%s>",
+			ErrInvalidForwardedIPLocation,
+			j,
+		)
+	}
+
+	return nil
+}
+
+// JSONSchema defines a custom definition for JSON schema.
+func (ForwardedIPPosition) JSONSchema() *jsonschema.Schema {
+	return &jsonschema.Schema{
+		Type:        "string",
+		Description: "The position of the IP to select if the X-Forward-For header has many IPs. Default is rightmost.",
+		Enum:        goutils.ToAnySlice(GetForwardedIPPositions()),
+		Default:     IPPositionRightmost,
+	}
+}
+
+// ParseForwardedIPPosition parses a ForwardedIPPosition from string.
+func ParseForwardedIPPosition(value string) (ForwardedIPPosition, error) {
+	result := ForwardedIPPosition(value)
+
+	return result, result.Validate()
+}
+
+// GetForwardedIPPositions get the list of forwarded IP position enum.
+func GetForwardedIPPositions() []ForwardedIPPosition {
+	return enumValueForwardedIPPositions
+}
 
 // RelyAuthIPAllowList holds security rules of the IP allow list from the parsed config.
 type RelyAuthIPAllowList struct {
 	goutils.ValidateIPOptions
 
-	Headers []string
+	Position ForwardedIPPosition
+	Headers  []string
 }
 
 // AllowedIPsFromConfig creates a [RelyAuthIPAllowList] instance from config.
@@ -59,27 +113,38 @@ func AllowedIPsFromConfig(
 		return nil, fmt.Errorf("failed to parse disallowed IP: %w", err)
 	}
 
+	position := conf.Position
+	if position == "" {
+		position = IPPositionRightmost
+	} else {
+		err := conf.Position.Validate()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	result := &RelyAuthIPAllowList{
 		ValidateIPOptions: goutils.ValidateIPOptions{
 			AllowedIPRanges: include,
 			BlockedIPRanges: exclude,
 			PublicIPOnly:    conf.PublicOnly,
 		},
-		Headers: headers,
+		Position: position,
+		Headers:  headers,
 	}
 
 	return result, nil
 }
 
 // Validate checks if the request satisfies the security rule.
-func (ai *RelyAuthIPAllowList) Validate(ctx context.Context, body *AuthenticateRequestData) error {
-	clientIPs := GetClientIPsFromHeader(body.Headers, ai.Headers...)
+func (ai *RelyAuthIPAllowList) Validate(body *AuthenticateRequestData) error {
+	clientIPs := GetClientIPsFromHeader(body.Headers, ai.Position, ai.Headers...)
 	if len(clientIPs) == 0 {
 		return ErrIPNotFound
 	}
 
 	for _, ip := range clientIPs {
-		err := goutils.ValidateIP(ctx, ip, ai.ValidateIPOptions)
+		err := goutils.ValidateIP(ip, ai.ValidateIPOptions)
 		if err != nil {
 			return err
 		}

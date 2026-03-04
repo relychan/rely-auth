@@ -74,14 +74,13 @@ func (j *JWTKeySet) GetSignatureAlgorithms() []jose.SignatureAlgorithm {
 
 // ValidateSecurityRules validates security rules of the current JWT key set config.
 func (j *JWTKeySet) ValidateSecurityRules(
-	ctx context.Context,
 	body *authmode.AuthenticateRequestData,
 ) error {
 	if j.securityRules == nil {
 		return nil
 	}
 
-	return j.securityRules.Validate(ctx, body)
+	return j.securityRules.Validate(body)
 }
 
 // VerifySignature verifies a JWT signature using the configured signature verifier.

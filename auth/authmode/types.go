@@ -47,6 +47,11 @@ var (
 	ErrIPNotFound = errors.New("ip not found")
 	// ErrInvalidHeader occurs when the header does not satisfy the security rule.
 	ErrInvalidHeader = errors.New("invalid header")
+	// ErrInvalidForwardedIPLocation occurs when the forwarded IP position enum is invalid.
+	ErrInvalidForwardedIPLocation = fmt.Errorf(
+		"invalid ForwardedIPPosition. Expected one of %v",
+		GetForwardedIPPositions(),
+	)
 )
 
 // NewAuthFieldRequiredError creates a required auth field error.

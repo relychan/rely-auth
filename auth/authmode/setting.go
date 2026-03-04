@@ -35,9 +35,13 @@ func (hal RelyAuthAllowListConfig) Equal(target RelyAuthAllowListConfig) bool {
 }
 
 // RelyAuthIPAllowListConfig represents a setting for IP allow list.
+// Note that IP headers aren't safe and can be spoofed by the client. Therefore, make sure that the header of origin IPs is trusted.
+// Read more details at https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-For#security_and_privacy_concerns
 type RelyAuthIPAllowListConfig struct {
 	RelyAuthAllowListConfig `yaml:",inline"`
 
+	// The position of the IP to select if the X-Forward-For header has many IPs. Default is rightmost.
+	Position ForwardedIPPosition `json:"position,omitempty" yaml:"position,omitempty"`
 	// Allow public IPs only.
 	PublicOnly bool `json:"publicOnly,omitempty" yaml:"publicOnly,omitempty"`
 	// The client IP could be in this header list. Use default client IP headers if empty.
@@ -46,13 +50,16 @@ type RelyAuthIPAllowListConfig struct {
 
 // IsZero if the current instance is empty.
 func (hal RelyAuthIPAllowListConfig) IsZero() bool {
-	return len(hal.Headers) == 0 && hal.RelyAuthAllowListConfig.IsZero()
+	return len(hal.Headers) == 0 && hal.RelyAuthAllowListConfig.IsZero() &&
+		hal.Position == "" && !hal.PublicOnly
 }
 
 // Equal checks if the target value is equal.
 func (hal RelyAuthIPAllowListConfig) Equal(target RelyAuthIPAllowListConfig) bool {
 	return slices.Equal(hal.Headers, target.Headers) &&
-		hal.RelyAuthAllowListConfig.Equal(target.RelyAuthAllowListConfig)
+		hal.RelyAuthAllowListConfig.Equal(target.RelyAuthAllowListConfig) &&
+		hal.Position == target.Position &&
+		hal.PublicOnly == target.PublicOnly
 }
 
 // RelyAuthSecurityRulesConfig defines configurations of security rules.

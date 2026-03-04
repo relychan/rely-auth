@@ -3,9 +3,9 @@ package authmode
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
-	"slices"
 	"strings"
 
 	"github.com/relychan/gohttpc/authc/authscheme"
@@ -20,7 +20,11 @@ var ipHeaders = []string{
 }
 
 // GetClientIPsFromHeader gets the client IPs from request headers.
-func GetClientIPsFromHeader(headers map[string]string, allowedHeaders ...string) []string {
+func GetClientIPsFromHeader(
+	headers map[string]string,
+	position ForwardedIPPosition,
+	allowedHeaders ...string,
+) []net.IP {
 	if len(headers) == 0 {
 		return nil
 	}
@@ -29,6 +33,7 @@ func GetClientIPsFromHeader(headers map[string]string, allowedHeaders ...string)
 		allowedHeaders = ipHeaders
 	}
 
+L:
 	for _, name := range allowedHeaders {
 		value, ok := headers[name]
 		if !ok || value == "" {
@@ -36,20 +41,42 @@ func GetClientIPsFromHeader(headers map[string]string, allowedHeaders ...string)
 		}
 
 		rawIPs := strings.Split(value, ",")
-		ips := make([]string, 0, len(rawIPs))
+		ips := make([]net.IP, 0, len(rawIPs))
 
 		// Some headers (e.g., X-Forwarded-For) may contain a comma-separated list of IPs.
-		for _, part := range rawIPs {
+		for i, part := range rawIPs {
 			part = strings.TrimSpace(part)
 			if part == "" {
 				continue
 			}
 
-			ips = append(ips, part)
+			ip := net.ParseIP(part)
+			if ip != nil {
+				ips = append(ips, ip)
+
+				continue
+			}
+
+			if i == 0 || i == len(rawIPs)-1 {
+				// invalid IP, ignore this header.
+				continue L
+			}
 		}
 
-		if len(ips) > 0 {
-			return slices.Clip(ips)
+		switch len(ips) {
+		case 0:
+			// no valid IP. ignore this header
+		case 1:
+			return ips
+		default:
+			switch position {
+			case IPPositionEdge:
+				return []net.IP{ips[0], ips[len(ips)-1]}
+			case IPPositionLeftmost:
+				return []net.IP{ips[0]}
+			case IPPositionRightmost:
+				return []net.IP{ips[len(ips)-1]}
+			}
 		}
 	}
 
