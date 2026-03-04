@@ -363,7 +363,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 	})
 }
 
-func TestGetClientIP(t *testing.T) {
+func TestGetClientIPsFromHeader(t *testing.T) {
 	t.Run("from_x_real_ip", func(t *testing.T) {
 		headers := map[string]string{
 			"x-real-ip": "192.168.1.100",

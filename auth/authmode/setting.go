@@ -40,7 +40,7 @@ func (hal RelyAuthAllowListConfig) Equal(target RelyAuthAllowListConfig) bool {
 type RelyAuthIPAllowListConfig struct {
 	RelyAuthAllowListConfig `yaml:",inline"`
 
-	// The position of the IP to select if the X-Forward-For header has many IPs. Default is rightmost.
+	// The position of the IP to select if the X-Forwarded-For header has many IPs. Default is rightmost.
 	Position ForwardedIPPosition `json:"position,omitempty" yaml:"position,omitempty"`
 	// Allow public IPs only.
 	PublicOnly bool `json:"publicOnly,omitempty" yaml:"publicOnly,omitempty"`

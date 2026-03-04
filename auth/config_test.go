@@ -181,6 +181,25 @@ func TestRelyAuthMode_UnmarshalYAML(t *testing.T) {
 		ExpectError         string
 	}{
 		{
+			Name: "missing_mode",
+			YAML: `
+tokenLocation:
+  in: header
+  name: Authorization
+`,
+			ExpectError: "auth mode required",
+		},
+		{
+			Name: "empty_mode",
+			YAML: `
+mode: ""
+tokenLocation:
+  in: header
+  name: Authorization
+`,
+			ExpectError: "auth mode required",
+		},
+		{
 			Name: "apikey_mode",
 			YAML: `
 mode: apiKey
