@@ -13,7 +13,7 @@ require (
 	github.com/relychan/gohttpc v0.0.0-20260307054627-ccab404f9b52
 	github.com/relychan/gohttps v0.0.0-20260307151922-eadbceef101b
 	github.com/relychan/gotransform v0.0.0-20260302171832-9031e28dc866
-	github.com/relychan/goutils v0.0.0-20260307050651-4562f8dd3658
+	github.com/relychan/goutils v0.0.0-20260307160917-b53c889070ba
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.opentelemetry.io/otel v1.42.0
 	go.opentelemetry.io/otel/metric v1.42.0
