@@ -94,8 +94,8 @@ github.com/relychan/gohttps v0.0.0-20260307151922-eadbceef101b h1:978Q8aJjLi4h9f
 github.com/relychan/gohttps v0.0.0-20260307151922-eadbceef101b/go.mod h1:UN7bZhOEjVsOtVGFj2MNOmGrdDbfKzU3jRUaj2TRlpU=
 github.com/relychan/gotransform v0.0.0-20260302171832-9031e28dc866 h1:9busEmGFTKvByNkZpfmsYaE+UROy6wrVsw7iZFzni3U=
 github.com/relychan/gotransform v0.0.0-20260302171832-9031e28dc866/go.mod h1:Fm/zos+gWQVfcuf66baSicv50C/oQouuvWJTqe9nOck=
-github.com/relychan/goutils v0.0.0-20260307050651-4562f8dd3658 h1:vup78FkmIqzOYRcaWu2V1dxX8h2luwQ+c7jf+d288/U=
-github.com/relychan/goutils v0.0.0-20260307050651-4562f8dd3658/go.mod h1:dQsp/ZcUuC5gyzhPaAvtpAdZXo6Qw5THpCjXMCao5Lk=
+github.com/relychan/goutils v0.0.0-20260307160917-b53c889070ba h1:Oylbc8pfjVoXdk/xntRx0jquddQsyb3NCKj3JXw0dGM=
+github.com/relychan/goutils v0.0.0-20260307160917-b53c889070ba/go.mod h1:dQsp/ZcUuC5gyzhPaAvtpAdZXo6Qw5THpCjXMCao5Lk=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/shopspring/decimal v1.4.0 h1:bxl37RwXBklmTi0C79JfXCEBD1cqqHt0bbgBAGFp81k=
