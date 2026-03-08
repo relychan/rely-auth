@@ -133,6 +133,16 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "ForwardedIPPosition": {
+      "type": "string",
+      "enum": [
+        "leftmost",
+        "rightmost",
+        "edge"
+      ],
+      "description": "The position of the IP to select if the X-Forwarded-For header has many IPs. Default is rightmost.",
+      "default": "rightmost"
+    },
     "JWTClaimsConfig": {
       "properties": {
         "namespace": {
@@ -361,6 +371,14 @@
           "$ref": "#/$defs/EnvStringSlice",
           "description": "List of disallowed patterns."
         },
+        "position": {
+          "$ref": "#/$defs/ForwardedIPPosition",
+          "description": "The position of the IP to select if the X-Forwarded-For header has many IPs. Default is rightmost."
+        },
+        "publicOnly": {
+          "type": "boolean",
+          "description": "Allow public IPs only."
+        },
         "headers": {
           "items": {
             "type": "string"
@@ -371,7 +389,7 @@
       },
       "additionalProperties": false,
       "type": "object",
-      "description": "RelyAuthIPAllowListConfig represents a setting for IP allow list."
+      "description": "RelyAuthIPAllowListConfig represents a setting for IP allow list.\nNote that IP headers aren't safe and can be spoofed by the client. Therefore, make sure that the header of origin IPs is trusted.\nRead more details at https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-For#security_and_privacy_concerns"
     },
     "RelyAuthJWTConfig": {
       "properties": {
