@@ -21,6 +21,7 @@ definition:
           claimsFormat: Json
         locations:
           x-hasura-user-id:
+            type: field
             path: sub
     - mode: apiKey
       tokenLocation:

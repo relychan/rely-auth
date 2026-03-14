@@ -126,7 +126,7 @@ func (RelyAuthWebhookConfig) JSONSchema() *jsonschema.Schema {
 	})
 	commonProps.Set("httpClient", &jsonschema.Schema{
 		Description: "Configurations for the HTTP client",
-		Ref:         "https://raw.githubusercontent.com/relychan/gohttpc/refs/heads/main/jsonschema/gohttpc.schema.json",
+		Ref:         "#/$defs/HTTPClientConfig",
 	})
 	commonProps.Set("customResponse", &jsonschema.Schema{
 		Description: "The configuration for transforming response bodies",
@@ -158,7 +158,7 @@ func (RelyAuthWebhookConfig) JSONSchema() *jsonschema.Schema {
 	})
 
 	postWebhookConfig.Set("body", &jsonschema.Schema{
-		Ref: "https://raw.githubusercontent.com/relychan/gotransform/refs/heads/main/jsonschema/gotransform.schema.json",
+		Ref: "#/$defs/TemplateTransformerConfig",
 	})
 
 	postProps := orderedmap.New[string, *jsonschema.Schema]()

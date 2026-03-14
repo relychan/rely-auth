@@ -18,6 +18,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"maps"
+	"net/http"
 	"os"
 
 	"github.com/invopop/jsonschema"
@@ -78,11 +81,13 @@ func jsonSchemaConfiguration() error {
 		Enum:        goutils.ToAnySlice(jwt.GetSupportedSignatureAlgorithms()),
 	}
 
-	reflectSchema.Definitions["TemplateTransformerConfig"] = &jsonschema.Schema{
-		Ref: "https://raw.githubusercontent.com/relychan/gotransform/refs/heads/main/jsonschema/gotransform.schema.json",
+	remoteSchemas, err := downloadRemoteSchemas()
+	if err != nil {
+		return err
 	}
-	reflectSchema.Definitions["TokenLocation"] = &jsonschema.Schema{
-		Ref: "https://raw.githubusercontent.com/relychan/gohttpc/refs/heads/main/jsonschema/gohttpc.schema.json#/$defs/TokenLocation",
+
+	for _, rc := range remoteSchemas {
+		maps.Copy(reflectSchema.Definitions, rc.Definitions)
 	}
 
 	for _, key := range []string{
@@ -120,4 +125,44 @@ func jsonSchemaConfiguration() error {
 	}
 
 	return os.WriteFile("auth.schema.json", schemaBytes, 0o644) //nolint:gosec
+}
+
+func downloadRemoteSchemas() ([]*jsonschema.Schema, error) {
+	fileURLs := []string{
+		"https://raw.githubusercontent.com/relychan/gohttpc/refs/heads/main/jsonschema/gohttpc.schema.json",
+		"https://raw.githubusercontent.com/relychan/gotransform/refs/heads/main/jsonschema/gotransform.schema.json",
+	}
+
+	results := make([]*jsonschema.Schema, 0, len(fileURLs))
+
+	for _, fileURL := range fileURLs {
+		rawResp, err := http.Get(fileURL) //nolint:bodyclose,noctx,gosec
+		if err != nil {
+			return nil, fmt.Errorf("failed to download file %s: %w", fileURL, err)
+		}
+
+		if rawResp != nil && rawResp.Body != nil {
+			defer goutils.CatchWarnErrorFunc(rawResp.Body.Close) //nolint:revive
+		}
+
+		if rawResp.StatusCode != http.StatusOK {
+			rawBody, err := io.ReadAll(rawResp.Body)
+			if err != nil {
+				return nil, fmt.Errorf("failed to download %s schema: %s", fileURL, rawResp.Status) //nolint
+			}
+
+			return nil, fmt.Errorf("failed to download %s schema: %s", fileURL, string(rawBody)) //nolint
+		}
+
+		jsonSchema := new(jsonschema.Schema)
+
+		err = json.NewDecoder(rawResp.Body).Decode(jsonSchema)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode gohttpc schema: %w", err)
+		}
+
+		results = append(results, jsonSchema)
+	}
+
+	return results, nil
 }
