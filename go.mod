@@ -10,10 +10,10 @@ require (
 	github.com/hasura/gotel v0.6.2
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
-	github.com/relychan/gohttpc v0.0.0-20260313152233-b703fc170be0
-	github.com/relychan/gohttps v0.0.0-20260307151922-eadbceef101b
-	github.com/relychan/gotransform v0.0.0-20260302171832-9031e28dc866
-	github.com/relychan/goutils v0.0.0-20260307160917-b53c889070ba
+	github.com/relychan/gohttpc v0.0.0-20260314151655-967644ccb8ce
+	github.com/relychan/gohttps v0.0.0-20260314153311-46abcdca1520
+	github.com/relychan/gotransform v0.0.0-20260314155631-e5218f89403d
+	github.com/relychan/goutils v0.0.0-20260314112334-2ca76d8ee0f6
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.opentelemetry.io/otel v1.42.0
 	go.opentelemetry.io/otel/metric v1.42.0
@@ -44,7 +44,7 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/influxdata/tdigest v0.0.1 // indirect
 	github.com/klauspost/compress v1.18.4 // indirect
-	github.com/mailru/easyjson v0.9.1 // indirect
+	github.com/mailru/easyjson v0.9.2 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
