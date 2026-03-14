@@ -1,3 +1,17 @@
+// Copyright 2026 RelyChan Pte. Ltd
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package jwt
 
 import (
@@ -7,7 +21,6 @@ import (
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/gotransform/jmes"
-	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"gotest.tools/v3/assert"
 )
@@ -28,7 +41,7 @@ func TestRelyAuthJWTConfig_Validate(t *testing.T) {
 				},
 				Key: JWTKey{
 					Algorithm: jose.HS256,
-					Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("secret")),
+					Key:       new(goenvconf.NewEnvStringValue("secret")),
 				},
 				ClaimsConfig: JWTClaimsConfig{
 					Namespace: &JWTClaimsNamespace{
@@ -49,12 +62,12 @@ func TestRelyAuthJWTConfig_Validate(t *testing.T) {
 				},
 				Key: JWTKey{
 					Algorithm: jose.HS256,
-					Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("secret")),
+					Key:       new(goenvconf.NewEnvStringValue("secret")),
 				},
 				ClaimsConfig: JWTClaimsConfig{
 					Locations: map[string]jmes.FieldMappingEntryConfig{
 						"x-hasura-user-id": {
-							Path: goutils.ToPtr("sub"),
+							Path: new("sub"),
 						},
 					},
 				},
@@ -71,7 +84,7 @@ func TestRelyAuthJWTConfig_Validate(t *testing.T) {
 				},
 				Key: JWTKey{
 					Algorithm: jose.HS256,
-					Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("secret")),
+					Key:       new(goenvconf.NewEnvStringValue("secret")),
 				},
 				ClaimsConfig: JWTClaimsConfig{},
 			},
@@ -86,12 +99,12 @@ func TestRelyAuthJWTConfig_Validate(t *testing.T) {
 				},
 				Key: JWTKey{
 					Algorithm: jose.HS256,
-					Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("secret")),
+					Key:       new(goenvconf.NewEnvStringValue("secret")),
 				},
 				ClaimsConfig: JWTClaimsConfig{
 					Locations: map[string]jmes.FieldMappingEntryConfig{
 						"x-hasura-user-id": {
-							Path: goutils.ToPtr("sub"),
+							Path: new("sub"),
 						},
 					},
 				},
@@ -108,12 +121,12 @@ func TestRelyAuthJWTConfig_Validate(t *testing.T) {
 				},
 				Key: JWTKey{
 					Algorithm: "INVALID",
-					Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("secret")),
+					Key:       new(goenvconf.NewEnvStringValue("secret")),
 				},
 				ClaimsConfig: JWTClaimsConfig{
 					Locations: map[string]jmes.FieldMappingEntryConfig{
 						"x-hasura-user-id": {
-							Path: goutils.ToPtr("sub"),
+							Path: new("sub"),
 						},
 					},
 				},
@@ -142,7 +155,7 @@ func TestRelyAuthJWTConfig_GetMode(t *testing.T) {
 func TestNewJWTAuthDefinition(t *testing.T) {
 	key := JWTKey{
 		Algorithm: jose.HS256,
-		Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("secret")),
+		Key:       new(goenvconf.NewEnvStringValue("secret")),
 	}
 	tokenLocation := authscheme.TokenLocation{
 		In:   authscheme.InHeader,
@@ -165,14 +178,14 @@ func TestJWTKey_Validate(t *testing.T) {
 			Name: "valid_with_key",
 			Key: JWTKey{
 				Algorithm: jose.HS256,
-				Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("secret")),
+				Key:       new(goenvconf.NewEnvStringValue("secret")),
 			},
 			ExpectError: "",
 		},
 		{
 			Name: "valid_with_jwk_url",
 			Key: JWTKey{
-				JWKFromURL: goutils.ToPtr(goenvconf.NewEnvStringValue("https://example.com/.well-known/jwks.json")),
+				JWKFromURL: new(goenvconf.NewEnvStringValue("https://example.com/.well-known/jwks.json")),
 			},
 			ExpectError: "",
 		},
@@ -187,7 +200,7 @@ func TestJWTKey_Validate(t *testing.T) {
 			Name: "invalid_algorithm_with_key",
 			Key: JWTKey{
 				Algorithm: "INVALID",
-				Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("secret")),
+				Key:       new(goenvconf.NewEnvStringValue("secret")),
 			},
 			ExpectError: ErrInvalidSignatureAlgorithm.Error(),
 		},
@@ -226,7 +239,7 @@ func TestJWTClaimsConfig_Validate(t *testing.T) {
 			Config: JWTClaimsConfig{
 				Locations: map[string]jmes.FieldMappingEntryConfig{
 					"x-hasura-user-id": {
-						Path: goutils.ToPtr("sub"),
+						Path: new("sub"),
 					},
 				},
 			},

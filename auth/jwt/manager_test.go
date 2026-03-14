@@ -1,3 +1,17 @@
+// Copyright 2026 RelyChan Pte. Ltd
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package jwt
 
 import (
@@ -14,7 +28,6 @@ import (
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/gotransform/jmes"
-	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"gotest.tools/v3/assert"
 )
@@ -39,12 +52,12 @@ func TestNewJWTAuthenticator(t *testing.T) {
 		},
 		Key: JWTKey{
 			Algorithm: jose.HS256,
-			Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("test-secret-key")),
+			Key:       new(goenvconf.NewEnvStringValue("test-secret-key")),
 		},
 		ClaimsConfig: JWTClaimsConfig{
 			Locations: map[string]jmes.FieldMappingEntryConfig{
 				"x-hasura-user-id": {
-					Path: goutils.ToPtr("sub"),
+					Path: new("sub"),
 				},
 			},
 		},
@@ -66,12 +79,12 @@ func TestJWTAuthenticator_Mode(t *testing.T) {
 		},
 		Key: JWTKey{
 			Algorithm: jose.HS256,
-			Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("test-secret")),
+			Key:       new(goenvconf.NewEnvStringValue("test-secret")),
 		},
 		ClaimsConfig: JWTClaimsConfig{
 			Locations: map[string]jmes.FieldMappingEntryConfig{
 				"x-hasura-user-id": {
-					Path: goutils.ToPtr("sub"),
+					Path: new("sub"),
 				},
 			},
 		},
@@ -97,15 +110,15 @@ func TestJWTAuthenticator_Authenticate_HMAC(t *testing.T) {
 		},
 		Key: JWTKey{
 			Algorithm: jose.HS256,
-			Key:       goutils.ToPtr(goenvconf.NewEnvStringValue(secret)),
+			Key:       new(goenvconf.NewEnvStringValue(secret)),
 		},
 		ClaimsConfig: JWTClaimsConfig{
 			Locations: map[string]jmes.FieldMappingEntryConfig{
 				"x-hasura-user-id": {
-					Path: goutils.ToPtr("sub"),
+					Path: new("sub"),
 				},
 				"x-hasura-role": {
-					Default: goutils.ToPtr(goenvconf.NewEnvAnyValue("user")),
+					Default: new(goenvconf.NewEnvAnyValue("user")),
 				},
 			},
 		},
@@ -151,12 +164,12 @@ func TestJWTAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 		},
 		Key: JWTKey{
 			Algorithm: jose.HS256,
-			Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("secret")),
+			Key:       new(goenvconf.NewEnvStringValue("secret")),
 		},
 		ClaimsConfig: JWTClaimsConfig{
 			Locations: map[string]jmes.FieldMappingEntryConfig{
 				"x-hasura-user-id": {
-					Path: goutils.ToPtr("sub"),
+					Path: new("sub"),
 				},
 			},
 		},
@@ -199,15 +212,15 @@ func TestJWTAuthenticator_Authenticate_RSA(t *testing.T) {
 		},
 		Key: JWTKey{
 			Algorithm: jose.RS256,
-			Key:       goutils.ToPtr(goenvconf.NewEnvStringValue(publicKeyPEM)),
+			Key:       new(goenvconf.NewEnvStringValue(publicKeyPEM)),
 		},
 		ClaimsConfig: JWTClaimsConfig{
 			Locations: map[string]jmes.FieldMappingEntryConfig{
 				"x-hasura-user-id": {
-					Path: goutils.ToPtr("sub"),
+					Path: new("sub"),
 				},
 				"x-hasura-role": {
-					Default: goutils.ToPtr(goenvconf.NewEnvAnyValue("admin")),
+					Default: new(goenvconf.NewEnvAnyValue("admin")),
 				},
 			},
 		},
@@ -257,12 +270,12 @@ func TestJWTAuthenticator_Authenticate_WithIssuerValidation(t *testing.T) {
 		Issuer: expectedIssuer,
 		Key: JWTKey{
 			Algorithm: jose.HS256,
-			Key:       goutils.ToPtr(goenvconf.NewEnvStringValue(secret)),
+			Key:       new(goenvconf.NewEnvStringValue(secret)),
 		},
 		ClaimsConfig: JWTClaimsConfig{
 			Locations: map[string]jmes.FieldMappingEntryConfig{
 				"x-hasura-user-id": {
-					Path: goutils.ToPtr("sub"),
+					Path: new("sub"),
 				},
 			},
 		},
@@ -307,11 +320,11 @@ func TestJWTAuthenticator_Equal(t *testing.T) {
 			},
 			Key: JWTKey{
 				Algorithm: jose.HS256,
-				Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("my-secret-key-for-testing-at-least-32-bytes-long")),
+				Key:       new(goenvconf.NewEnvStringValue("my-secret-key-for-testing-at-least-32-bytes-long")),
 			},
 			ClaimsConfig: JWTClaimsConfig{
 				Locations: map[string]jmes.FieldMappingEntryConfig{
-					"x-hasura-user-id": {Path: goutils.ToPtr("sub")},
+					"x-hasura-user-id": {Path: new("sub")},
 				},
 			},
 		}
@@ -339,11 +352,11 @@ func TestJWTAuthenticator_Equal(t *testing.T) {
 			},
 			Key: JWTKey{
 				Algorithm: jose.HS256,
-				Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("my-secret-key-for-testing-at-least-32-bytes-long")),
+				Key:       new(goenvconf.NewEnvStringValue("my-secret-key-for-testing-at-least-32-bytes-long")),
 			},
 			ClaimsConfig: JWTClaimsConfig{
 				Locations: map[string]jmes.FieldMappingEntryConfig{
-					"x-hasura-user-id": {Path: goutils.ToPtr("sub")},
+					"x-hasura-user-id": {Path: new("sub")},
 				},
 			},
 		}
@@ -357,11 +370,11 @@ func TestJWTAuthenticator_Equal(t *testing.T) {
 			},
 			Key: JWTKey{
 				Algorithm: jose.HS256,
-				Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("different-secret-key-for-testing-at-least-32-bytes")),
+				Key:       new(goenvconf.NewEnvStringValue("different-secret-key-for-testing-at-least-32-bytes")),
 			},
 			ClaimsConfig: JWTClaimsConfig{
 				Locations: map[string]jmes.FieldMappingEntryConfig{
-					"x-hasura-user-id": {Path: goutils.ToPtr("sub")},
+					"x-hasura-user-id": {Path: new("sub")},
 				},
 			},
 		}
@@ -401,11 +414,11 @@ func TestJWTAuthenticator_Add(t *testing.T) {
 		},
 		Key: JWTKey{
 			Algorithm: jose.HS256,
-			Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("my-secret-key-for-testing-at-least-32-bytes-long")),
+			Key:       new(goenvconf.NewEnvStringValue("my-secret-key-for-testing-at-least-32-bytes-long")),
 		},
 		ClaimsConfig: JWTClaimsConfig{
 			Locations: map[string]jmes.FieldMappingEntryConfig{
-				"x-hasura-user-id": {Path: goutils.ToPtr("sub")},
+				"x-hasura-user-id": {Path: new("sub")},
 			},
 		},
 	}
@@ -425,11 +438,11 @@ func TestJWTAuthenticator_MultipleConfigs(t *testing.T) {
 		},
 		Key: JWTKey{
 			Algorithm: jose.HS256,
-			Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("my-secret-key-for-testing-at-least-32-bytes-long")),
+			Key:       new(goenvconf.NewEnvStringValue("my-secret-key-for-testing-at-least-32-bytes-long")),
 		},
 		ClaimsConfig: JWTClaimsConfig{
 			Locations: map[string]jmes.FieldMappingEntryConfig{
-				"x-hasura-user-id": {Path: goutils.ToPtr("sub")},
+				"x-hasura-user-id": {Path: new("sub")},
 			},
 		},
 	}
@@ -443,11 +456,11 @@ func TestJWTAuthenticator_MultipleConfigs(t *testing.T) {
 		},
 		Key: JWTKey{
 			Algorithm: jose.HS256,
-			Key:       goutils.ToPtr(goenvconf.NewEnvStringValue("another-secret-key-for-testing-at-least-32-bytes")),
+			Key:       new(goenvconf.NewEnvStringValue("another-secret-key-for-testing-at-least-32-bytes")),
 		},
 		ClaimsConfig: JWTClaimsConfig{
 			Locations: map[string]jmes.FieldMappingEntryConfig{
-				"x-hasura-user-id": {Path: goutils.ToPtr("sub")},
+				"x-hasura-user-id": {Path: new("sub")},
 			},
 		},
 	}
