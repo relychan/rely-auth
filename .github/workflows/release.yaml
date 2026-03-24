@@ -71,7 +71,7 @@ jobs:
             VERSION=${{ steps.get-version.outputs.tagged_version }}
 
       - name: Scan High/Critical Vulnerabilities
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: "image"
           image-ref: ${{ env.GHCR_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.get-version.outputs.tagged_version }}
