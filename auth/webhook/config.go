@@ -19,13 +19,13 @@ import (
 	"net/http"
 
 	"github.com/hasura/goenvconf"
-	"github.com/invopop/jsonschema"
+	orderedmap "github.com/pb33f/ordered-map/v2"
 	"github.com/relychan/gohttpc/httpconfig"
 	"github.com/relychan/gotransform"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/goutils"
+	"github.com/relychan/jsonschema"
 	"github.com/relychan/rely-auth/auth/authmode"
-	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
 // RelyAuthWebhookConfig contains configurations for the webhook authentication mode.

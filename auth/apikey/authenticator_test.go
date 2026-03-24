@@ -23,7 +23,7 @@ import (
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAPIKeyAuthenticator(t *testing.T) {
@@ -41,7 +41,7 @@ func TestAPIKeyAuthenticator(t *testing.T) {
 	}, goenvconf.NewEnvStringVariable("API_KEY"), sessionVariables)
 
 	authenticator, err := NewAPIKeyAuthenticator(config, authmode.RelyAuthenticatorOptions{})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	for range 10 {
 		go func() {
@@ -50,8 +50,8 @@ func TestAPIKeyAuthenticator(t *testing.T) {
 					"authorization": "Bearer " + apiKey,
 				},
 			})
-			assert.NilError(t, err)
-			assert.DeepEqual(t, result.SessionVariables, map[string]any{"foo": "bar"})
+			assert.NoError(t, err)
+			assert.Equal(t, result.SessionVariables, map[string]any{"foo": "bar"})
 			time.Sleep(time.Millisecond)
 		}()
 	}
@@ -68,7 +68,7 @@ func TestAPIKeyAuthenticator_Unauthorized(t *testing.T) {
 	}, goenvconf.NewEnvStringVariable("API_KEY"), map[string]goenvconf.EnvAny{})
 
 	authenticator, err := NewAPIKeyAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	// Test with wrong key
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -94,7 +94,7 @@ func TestAPIKeyAuthenticator_Mode(t *testing.T) {
 	}, goenvconf.NewEnvStringVariable("API_KEY"), map[string]goenvconf.EnvAny{})
 
 	authenticator, err := NewAPIKeyAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	assert.Equal(t, authmode.AuthModeAPIKey, authenticator.Mode())
 }
@@ -108,10 +108,10 @@ func TestAPIKeyAuthenticator_Close(t *testing.T) {
 	}, goenvconf.NewEnvStringVariable("API_KEY"), map[string]goenvconf.EnvAny{})
 
 	authenticator, err := NewAPIKeyAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	err = authenticator.Close()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestAPIKeyConfig_Validate(t *testing.T) {
@@ -141,7 +141,7 @@ func TestAPIKeyConfig_Validate(t *testing.T) {
 				},
 				Value: goenvconf.NewEnvStringValue("secret"),
 			},
-			ExpectError: "required field",
+			ExpectError: "name of token location is required",
 		},
 		{
 			Name: "missing_value",
@@ -162,7 +162,7 @@ func TestAPIKeyConfig_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}

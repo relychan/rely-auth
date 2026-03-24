@@ -28,7 +28,7 @@ import (
 
 	"github.com/relychan/goutils/httpheader"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 //go:embed testdata/config.yaml
@@ -49,7 +49,7 @@ func TestHasuraAuthHookHandlers(t *testing.T, setupServer SetupTestServerFunc) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "auth-config.yaml")
 
-	assert.NilError(t, os.WriteFile(configPath, configYaml, 0o644))
+	assert.NoError(t, os.WriteFile(configPath, configYaml, 0o644))
 
 	server, close := setupServer(t, configPath)
 	defer close()
@@ -223,7 +223,7 @@ func TestAuthWebhook(t *testing.T, setupServer SetupTestServerFunc) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "auth-webhook.yaml")
 
-	assert.NilError(t, os.WriteFile(configPath, webhookYaml, 0o644))
+	assert.NoError(t, os.WriteFile(configPath, webhookYaml, 0o644))
 
 	server, close := setupServer(t, configPath)
 	defer close()
@@ -289,20 +289,20 @@ func runRequest[T any](
 	switch method {
 	case http.MethodGet:
 		req, err := http.NewRequest(method, body.URL, nil)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		for key, header := range body.Headers {
 			req.Header.Set(key, header)
 		}
 
 		resp, err = http.DefaultClient.Do(req)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 	case http.MethodPost:
 		bodyBytes, err := json.Marshal(body)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		req, err := http.NewRequest(method, body.URL, bytes.NewReader(bodyBytes))
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		for key, header := range body.Headers {
 			req.Header.Set(key, header)
@@ -311,14 +311,14 @@ func runRequest[T any](
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err = http.DefaultClient.Do(req)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != statusCode {
 		respBody, err := io.ReadAll(resp.Body)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		t.Errorf(
 			"expected status code: %d; got: %d; response body: %s",
@@ -338,14 +338,14 @@ func runRequest[T any](
 	var output, empty T
 
 	err = json.NewDecoder(resp.Body).Decode(&output)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	// ignore empty expected response.
 	if reflect.DeepEqual(expectedBody, empty) {
 		return
 	}
 
-	assert.DeepEqual(t, expectedBody, output)
+	assert.Equal(t, expectedBody, output)
 }
 
 func initWebhookServer(t *testing.T) *httptest.Server {
@@ -375,7 +375,7 @@ func initWebhookServer(t *testing.T) *httptest.Server {
 		assert.Equal(t, r.Header.Get(httpheader.ContentType), httpheader.ContentTypeJSON)
 
 		data, err := io.ReadAll(r.Body)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, `{"x-hasura-role":"user"}
 `, string(data))
 		_, _ = w.Write(data)

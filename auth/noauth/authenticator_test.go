@@ -20,7 +20,7 @@ import (
 
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNoAuth_Authenticate(t *testing.T) {
@@ -36,16 +36,16 @@ func TestNoAuth_Authenticate(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, authmode.AuthModeNoAuth, authenticator.Mode())
 
 	// Test authentication always succeeds
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "test-noauth", result.ID)
-	assert.DeepEqual(t, map[string]any{
+	assert.Equal(t, map[string]any{
 		"x-hasura-role":          "anonymous",
 		"x-hasura-allowed-roles": []string{"anonymous"},
 	}, result.SessionVariables)
@@ -58,11 +58,11 @@ func TestNoAuth_Close(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	// Test close
 	err = authenticator.Close()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestNoAuthConfig_Validate(t *testing.T) {
@@ -72,7 +72,7 @@ func TestNoAuthConfig_Validate(t *testing.T) {
 	}
 
 	err := config.Validate()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestNoAuthConfig_GetMode(t *testing.T) {
@@ -86,8 +86,8 @@ func TestNewNoAuthDefinition(t *testing.T) {
 	}
 
 	config := NewNoAuthDefinition(sessionVars)
-	assert.Assert(t, config != nil)
-	assert.DeepEqual(t, sessionVars, config.SessionVariables)
+	assert.True(t, config != nil)
+	assert.Equal(t, sessionVars, config.SessionVariables)
 }
 
 func TestNoAuth_Equal(t *testing.T) {
@@ -109,12 +109,12 @@ func TestNoAuth_Equal(t *testing.T) {
 		}
 
 		auth1, err := NewNoAuth(config1, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		auth2, err := NewNoAuth(config2, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
-		assert.Assert(t, auth1.Equal(*auth2))
+		assert.True(t, auth1.Equal(*auth2))
 	})
 
 	t.Run("different IDs", func(t *testing.T) {
@@ -135,12 +135,12 @@ func TestNoAuth_Equal(t *testing.T) {
 		}
 
 		auth1, err := NewNoAuth(config1, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		auth2, err := NewNoAuth(config2, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
-		assert.Assert(t, !auth1.Equal(*auth2))
+		assert.True(t, !auth1.Equal(*auth2))
 	})
 
 	t.Run("different session variables", func(t *testing.T) {
@@ -161,33 +161,33 @@ func TestNoAuth_Equal(t *testing.T) {
 		}
 
 		auth1, err := NewNoAuth(config1, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		auth2, err := NewNoAuth(config2, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
-		assert.Assert(t, !auth1.Equal(*auth2))
+		assert.True(t, !auth1.Equal(*auth2))
 	})
 }
 
 func TestRelyAuthNoAuthConfig_IsZero(t *testing.T) {
 	t.Run("zero config", func(t *testing.T) {
 		config := RelyAuthNoAuthConfig{}
-		assert.Assert(t, config.IsZero())
+		assert.True(t, config.IsZero())
 	})
 
 	t.Run("non-zero with ID", func(t *testing.T) {
 		config := RelyAuthNoAuthConfig{
 			ID: "test-id",
 		}
-		assert.Assert(t, !config.IsZero())
+		assert.True(t, !config.IsZero())
 	})
 
 	t.Run("non-zero with mode", func(t *testing.T) {
 		config := RelyAuthNoAuthConfig{
 			Mode: authmode.AuthModeNoAuth,
 		}
-		assert.Assert(t, !config.IsZero())
+		assert.True(t, !config.IsZero())
 	})
 
 	t.Run("non-zero with session variables", func(t *testing.T) {
@@ -196,7 +196,7 @@ func TestRelyAuthNoAuthConfig_IsZero(t *testing.T) {
 				"x-hasura-role": goenvconf.NewEnvAnyValue("admin"),
 			},
 		}
-		assert.Assert(t, !config.IsZero())
+		assert.True(t, !config.IsZero())
 	})
 }
 
@@ -218,7 +218,7 @@ func TestRelyAuthNoAuthConfig_Equal(t *testing.T) {
 			SessionVariables: sessionVars,
 		}
 
-		assert.Assert(t, config1.Equal(config2))
+		assert.True(t, config1.Equal(config2))
 	})
 
 	t.Run("different IDs", func(t *testing.T) {
@@ -232,7 +232,7 @@ func TestRelyAuthNoAuthConfig_Equal(t *testing.T) {
 			Mode: authmode.AuthModeNoAuth,
 		}
 
-		assert.Assert(t, !config1.Equal(config2))
+		assert.True(t, !config1.Equal(config2))
 	})
 
 	t.Run("different modes", func(t *testing.T) {
@@ -246,7 +246,7 @@ func TestRelyAuthNoAuthConfig_Equal(t *testing.T) {
 			Mode: authmode.AuthModeAPIKey,
 		}
 
-		assert.Assert(t, !config1.Equal(config2))
+		assert.True(t, !config1.Equal(config2))
 	})
 
 	t.Run("different session variables", func(t *testing.T) {
@@ -266,7 +266,7 @@ func TestRelyAuthNoAuthConfig_Equal(t *testing.T) {
 			},
 		}
 
-		assert.Assert(t, !config1.Equal(config2))
+		assert.True(t, !config1.Equal(config2))
 	})
 }
 
@@ -287,12 +287,12 @@ func TestNewNoAuth_WithEnvironmentVariables(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "test-env", result.ID)
-	assert.DeepEqual(t, map[string]any{
+	assert.Equal(t, map[string]any{
 		"x-hasura-role":    "env-admin",
 		"x-hasura-user-id": "12345",
 	}, result.SessionVariables)
@@ -306,12 +306,12 @@ func TestNewNoAuth_EmptySessionVariables(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "test-empty", result.ID)
-	assert.DeepEqual(t, map[string]any{}, result.SessionVariables)
+	assert.Equal(t, map[string]any{}, result.SessionVariables)
 }
 
 func TestNewNoAuth_ComplexSessionVariables(t *testing.T) {
@@ -334,17 +334,17 @@ func TestNewNoAuth_ComplexSessionVariables(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "test-complex", result.ID)
 	assert.Equal(t, "admin", result.SessionVariables["x-hasura-role"])
 	assert.Equal(t, "user-123", result.SessionVariables["x-hasura-user-id"])
-	assert.DeepEqual(t, []string{"admin", "user", "guest"}, result.SessionVariables["x-hasura-allowed-roles"])
+	assert.Equal(t, []string{"admin", "user", "guest"}, result.SessionVariables["x-hasura-allowed-roles"])
 	assert.Equal(t, 42, result.SessionVariables["x-hasura-org-id"])
 	assert.Equal(t, true, result.SessionVariables["x-hasura-is-active"])
-	assert.DeepEqual(t, map[string]any{
+	assert.Equal(t, map[string]any{
 		"department": "engineering",
 		"level":      5,
 	}, result.SessionVariables["x-hasura-metadata"])
@@ -359,12 +359,12 @@ func TestNewNoAuth_WithoutID(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "", result.ID)
-	assert.DeepEqual(t, map[string]any{
+	assert.Equal(t, map[string]any{
 		"x-hasura-role": "guest",
 	}, result.SessionVariables)
 }
@@ -379,7 +379,7 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.RelyAuthenticatorOptions{})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	t.Run("with headers", func(t *testing.T) {
 		result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -388,9 +388,9 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 				"X-Custom":      "value",
 			},
 		})
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "test-request", result.ID)
-		assert.DeepEqual(t, map[string]any{
+		assert.Equal(t, map[string]any{
 			"x-hasura-role": "public",
 		}, result.SessionVariables)
 	})
@@ -402,9 +402,9 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 				"Cookie": "session=abc123",
 			},
 		})
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "test-request", result.ID)
-		assert.DeepEqual(t, map[string]any{
+		assert.Equal(t, map[string]any{
 			"x-hasura-role": "public",
 		}, result.SessionVariables)
 	})
@@ -416,9 +416,9 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 			},
 			Request: []byte(`{"query": "{ users { id } }"}`),
 		})
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "test-request", result.ID)
-		assert.DeepEqual(t, map[string]any{
+		assert.Equal(t, map[string]any{
 			"x-hasura-role": "public",
 		}, result.SessionVariables)
 	})

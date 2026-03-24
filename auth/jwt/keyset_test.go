@@ -34,7 +34,7 @@ import (
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestJWTKeySet_Equal(t *testing.T) {
@@ -54,14 +54,14 @@ func TestJWTKeySet_Equal(t *testing.T) {
 		}
 
 		keyset1, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer keyset1.Close()
 
 		keyset2, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer keyset2.Close()
 
-		assert.Assert(t, keyset1.Equal(keyset2))
+		assert.True(t, keyset1.Equal(keyset2))
 	})
 
 	t.Run("different_configs", func(t *testing.T) {
@@ -94,14 +94,14 @@ func TestJWTKeySet_Equal(t *testing.T) {
 		}
 
 		keyset1, err := NewJWTKeySet(context.TODO(), config1, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer keyset1.Close()
 
 		keyset2, err := NewJWTKeySet(context.TODO(), config2, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer keyset2.Close()
 
-		assert.Assert(t, !keyset1.Equal(keyset2))
+		assert.True(t, !keyset1.Equal(keyset2))
 	})
 }
 
@@ -121,7 +121,7 @@ func TestJWTKeySet_GetConfig(t *testing.T) {
 	}
 
 	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer keyset.Close()
 
 	retrievedConfig := keyset.GetConfig()
@@ -145,10 +145,10 @@ func TestJWTKeySet_Close(t *testing.T) {
 	}
 
 	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	err = keyset.Close()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestTransformJWTClaims(t *testing.T) {
@@ -173,7 +173,7 @@ func TestTransformJWTClaims(t *testing.T) {
 		}
 
 		keyset, err := NewJWTKeySet(context.TODO(), &config, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		rawClaims := `{
 			"claims.jwt.hasura.io": {
@@ -190,24 +190,24 @@ func TestTransformJWTClaims(t *testing.T) {
 		}`
 
 		result, err := keyset.TransformClaims([]byte(rawClaims), "")
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		expected := map[string]any{
 			"x-hasura-role":    "user",
 			"x-hasura-user-id": "user-id",
 		}
 
-		assert.DeepEqual(t, result, expected)
+		assert.Equal(t, result, expected)
 
 		result2, err := keyset.TransformClaims([]byte(rawClaims), "admin")
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		expected2 := map[string]any{
 			"x-hasura-role":    "admin",
 			"x-hasura-user-id": "user-id",
 		}
 
-		assert.DeepEqual(t, result2, expected2)
+		assert.Equal(t, result2, expected2)
 	})
 
 	t.Run("namespace_stringified_json", func(t *testing.T) {
@@ -231,7 +231,7 @@ func TestTransformJWTClaims(t *testing.T) {
 		}
 
 		keyset, err := NewJWTKeySet(context.TODO(), &config, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		rawClaims := `{
 			"claims.jwt.hasura.io": "{\"x-hasura-allowed-roles\": [\"user\", \"admin\"],\"x-hasura-role\": \"user\"}",
@@ -243,24 +243,24 @@ func TestTransformJWTClaims(t *testing.T) {
 		}`
 
 		result, err := keyset.TransformClaims([]byte(rawClaims), "")
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		expected := map[string]any{
 			"x-hasura-role":    "user",
 			"x-hasura-user-id": "user-id",
 		}
 
-		assert.DeepEqual(t, result, expected)
+		assert.Equal(t, result, expected)
 
 		result2, err := keyset.TransformClaims([]byte(rawClaims), "admin")
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		expected2 := map[string]any{
 			"x-hasura-role":    "admin",
 			"x-hasura-user-id": "user-id",
 		}
 
-		assert.DeepEqual(t, result2, expected2)
+		assert.Equal(t, result2, expected2)
 	})
 
 	t.Run("empty_claims", func(t *testing.T) {
@@ -278,7 +278,7 @@ func TestTransformJWTClaims(t *testing.T) {
 		}
 
 		keyset, err := NewJWTKeySet(context.TODO(), &config, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer keyset.Close()
 
 		_, err = keyset.TransformClaims([]byte{}, "")
@@ -300,7 +300,7 @@ func TestTransformJWTClaims(t *testing.T) {
 		}
 
 		keyset, err := NewJWTKeySet(context.TODO(), &config, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer keyset.Close()
 
 		_, err = keyset.TransformClaims([]byte("invalid json"), "")
@@ -329,7 +329,7 @@ func TestTransformJWTClaims(t *testing.T) {
 		}
 
 		keyset, err := NewJWTKeySet(context.TODO(), &config, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer keyset.Close()
 
 		rawClaims := `{
@@ -338,7 +338,7 @@ func TestTransformJWTClaims(t *testing.T) {
 		}`
 
 		result, err := keyset.TransformClaims([]byte(rawClaims), "")
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "user-123", result["x-hasura-user-id"])
 		assert.Equal(t, "default-org", result["x-hasura-org-id"])
 	})
@@ -360,7 +360,7 @@ func TestJWTKeySet_GetSignatureAlgorithms(t *testing.T) {
 		}
 
 		keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer keyset.Close()
 
 		algorithms := keyset.GetSignatureAlgorithms()
@@ -387,7 +387,7 @@ func TestJWTKeySet_ValidateClaims(t *testing.T) {
 		}
 
 		keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer keyset.Close()
 
 		claims := &jwt.Claims{
@@ -397,7 +397,7 @@ func TestJWTKeySet_ValidateClaims(t *testing.T) {
 		}
 
 		err = keyset.ValidateClaims(claims)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("invalid_issuer", func(t *testing.T) {
@@ -416,7 +416,7 @@ func TestJWTKeySet_ValidateClaims(t *testing.T) {
 		}
 
 		keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer keyset.Close()
 
 		claims := &jwt.Claims{
@@ -439,13 +439,13 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 		}
 
 		result, err := evalHasuraSessionVariables(input, "")
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "admin", result["x-hasura-role"])
 		assert.Equal(t, "123", result["x-hasura-user-id"])
 		_, hasAllowedRoles := result["x-hasura-allowed-roles"]
-		assert.Assert(t, !hasAllowedRoles)
+		assert.True(t, !hasAllowedRoles)
 		_, hasDefaultRole := result["x-hasura-default-role"]
-		assert.Assert(t, !hasDefaultRole)
+		assert.True(t, !hasDefaultRole)
 	})
 
 	t.Run("with_default_role", func(t *testing.T) {
@@ -456,7 +456,7 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 		}
 
 		result, err := evalHasuraSessionVariables(input, "")
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "user", result["x-hasura-role"])
 		assert.Equal(t, "123", result["x-hasura-user-id"])
 	})
@@ -499,7 +499,7 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 		}
 
 		result, err := evalHasuraSessionVariables(input, "")
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "123", result["x-hasura-user-id"])
 		assert.Equal(t, "value", result["custom-claim"])
 	})
@@ -539,10 +539,10 @@ func TestEvalHasuraSessionVariables(t *testing.T) {
 func TestJWTKeySet_InitWithECDSA(t *testing.T) {
 	// Generate ECDSA key pair
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	pubKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	pubKeyPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "PUBLIC KEY",
@@ -563,10 +563,10 @@ func TestJWTKeySet_InitWithECDSA(t *testing.T) {
 	}
 
 	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer keyset.Close()
 
-	assert.Assert(t, keyset.signatureVerifier != nil)
+	assert.True(t, keyset.signatureVerifier != nil)
 }
 
 func TestJWTKeySet_InitWithEdDSA(t *testing.T) {
@@ -576,11 +576,11 @@ func TestJWTKeySet_InitWithEdDSA(t *testing.T) {
 
 	// Generate Ed25519 key pair
 	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	// ed25519.PublicKey is already a []byte, we need to marshal it properly
 	pubKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	pubKeyPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "PUBLIC KEY",
@@ -602,11 +602,11 @@ func TestJWTKeySet_InitWithEdDSA(t *testing.T) {
 
 	// This will fail due to the type assertion issue in keyset.go line 305
 	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	defer keyset.Close()
 
-	assert.Assert(t, keyset.signatureVerifier != nil)
+	assert.True(t, keyset.signatureVerifier != nil)
 }
 
 func TestJWTKeySet_InitWithJWKURL(t *testing.T) {
@@ -614,7 +614,7 @@ func TestJWTKeySet_InitWithJWKURL(t *testing.T) {
 
 	// Generate a real RSA key for the JWKS
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	jwk := jose.JSONWebKey{
 		KeyID:     "test-key-1",
@@ -649,12 +649,12 @@ func TestJWTKeySet_InitWithJWKURL(t *testing.T) {
 	}
 
 	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer keyset.Close()
 
 	result, ok := keyset.signatureVerifier.(*JWKS)
-	assert.Assert(t, ok)
+	assert.True(t, ok)
 
 	assert.Equal(t, server.URL, result.url)
-	assert.Assert(t, len(result.cachedKeys.Load().Keys) > 0)
+	assert.True(t, len(result.cachedKeys.Load().Keys) > 0)
 }

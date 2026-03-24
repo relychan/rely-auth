@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/relychan/gohttpc/authc/authscheme"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFindAuthTokenByLocation(t *testing.T) {
@@ -110,7 +110,7 @@ func TestFindAuthTokenByLocation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
 			location, err := ValidateTokenLocation(tc.Location)
-			assert.NilError(t, err)
+			assert.NoError(t, err)
 
 			result, err := FindAuthTokenByLocation(&tc.Body, &location)
 			if tc.Error != "" {
@@ -119,7 +119,7 @@ func TestFindAuthTokenByLocation(t *testing.T) {
 				return
 			}
 
-			assert.NilError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, tc.Expected, result)
 		})
 	}
@@ -150,7 +150,7 @@ func TestValidateTokenLocation(t *testing.T) {
 			Location: authscheme.TokenLocation{
 				In: authscheme.InHeader,
 			},
-			ExpectError: ErrLocationNameRequired.Error(),
+			ExpectError: authscheme.ErrLocationNameRequired.Error(),
 		},
 		{
 			Name: "trim_whitespace",
@@ -173,8 +173,8 @@ func TestValidateTokenLocation(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NilError(t, err)
-				assert.DeepEqual(t, tc.Expected, result)
+				assert.NoError(t, err)
+				assert.Equal(t, tc.Expected, result)
 			}
 		})
 	}
@@ -235,10 +235,10 @@ func TestSerializeSessionVariablesHasuraGraphQLEngine(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			result, err := SerializeSessionVariablesHasuraGraphQLEngine(tc.Input)
 			if tc.ExpectError {
-				assert.Assert(t, err != nil)
+				assert.True(t, err != nil)
 			} else {
-				assert.NilError(t, err)
-				assert.DeepEqual(t, tc.Expected, result)
+				assert.NoError(t, err)
+				assert.Equal(t, tc.Expected, result)
 			}
 		})
 	}

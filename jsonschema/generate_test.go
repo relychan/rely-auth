@@ -17,9 +17,9 @@ package main
 import (
 	"testing"
 
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerate(t *testing.T) {
-	assert.NilError(t, jsonSchemaConfiguration())
+	assert.NoError(t, jsonSchemaConfiguration())
 }

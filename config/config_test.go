@@ -22,8 +22,8 @@ import (
 	"testing"
 
 	"github.com/hasura/gotel"
+	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel"
-	"gotest.tools/v3/assert"
 )
 
 func TestRelyAuthServerConfig_GetConfigPath(t *testing.T) {
@@ -67,8 +67,8 @@ func TestLoadServerConfig_FromEnv(t *testing.T) {
 	t.Setenv("RELY_AUTH_SERVER_CONFIG_PATH", "")
 
 	config, err := LoadServerConfig()
-	assert.NilError(t, err)
-	assert.Assert(t, config != nil)
+	assert.NoError(t, err)
+	assert.True(t, config != nil)
 	assert.Equal(t, "/test/path/auth.yaml", config.ConfigPath)
 	assert.Equal(t, "rely-auth", config.Telemetry.ServiceName)
 }
@@ -79,8 +79,8 @@ func TestLoadServerConfig_DefaultServiceName(t *testing.T) {
 	t.Setenv("RELY_AUTH_CONFIG_PATH", "")
 
 	config, err := LoadServerConfig()
-	assert.NilError(t, err)
-	assert.Assert(t, config != nil)
+	assert.NoError(t, err)
+	assert.True(t, config != nil)
 	assert.Equal(t, "rely-auth", config.Telemetry.ServiceName)
 }
 
@@ -94,13 +94,13 @@ server:
   logLevel: DEBUG
 `
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	t.Setenv("RELY_AUTH_SERVER_CONFIG_PATH", configPath)
 
 	config, err := LoadServerConfig()
-	assert.NilError(t, err)
-	assert.Assert(t, config != nil)
+	assert.NoError(t, err)
+	assert.True(t, config != nil)
 	// ConfigPath will use the default value as handled by GetConfigPath()
 	assert.Equal(t, "/etc/rely-auth/auth.yaml", config.GetConfigPath())
 	// ServiceName will be set to default "rely-auth" if empty
@@ -125,14 +125,14 @@ server:
   logLevel: WARN
 `
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	t.Setenv("RELY_AUTH_SERVER_CONFIG_PATH", configPath)
 	t.Setenv("RELY_AUTH_CONFIG_PATH", "/env/auth.yaml")
 
 	config, err := LoadServerConfig()
-	assert.NilError(t, err)
-	assert.Assert(t, config != nil)
+	assert.NoError(t, err)
+	assert.True(t, config != nil)
 	// Environment variable should override default value
 	assert.Equal(t, "/env/auth.yaml", config.ConfigPath)
 	// Service name will be set to default "rely-auth" if empty
@@ -151,13 +151,13 @@ func TestLoadServerConfig_JSONFile(t *testing.T) {
   }
 }`
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	t.Setenv("RELY_AUTH_SERVER_CONFIG_PATH", configPath)
 
 	config, err := LoadServerConfig()
-	assert.NilError(t, err)
-	assert.Assert(t, config != nil)
+	assert.NoError(t, err)
+	assert.True(t, config != nil)
 	// ConfigPath will use the default value as handled by the GetConfigPath() method
 	assert.Equal(t, "/etc/rely-auth/auth.yaml", config.GetConfigPath())
 	// ServiceName will be set to default "rely-auth" if empty
@@ -200,13 +200,13 @@ definition:
         value: admin
 `
 	err := os.WriteFile(authConfigPath, []byte(authConfigContent), 0644)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	exporters := newTestExporters()
 
 	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
-	assert.NilError(t, err)
-	assert.Assert(t, manager != nil)
+	assert.NoError(t, err)
+	assert.True(t, manager != nil)
 	defer manager.Close()
 }
 
@@ -227,7 +227,7 @@ definition:
   - mode: invalid
 `
 	err := os.WriteFile(authConfigPath, []byte(authConfigContent), 0644)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	exporters := newTestExporters()
 
@@ -258,13 +258,13 @@ definition:
           path: sub
 `
 	err := os.WriteFile(authConfigPath, []byte(authConfigContent), 0644)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	exporters := newTestExporters()
 
 	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
-	assert.NilError(t, err)
-	assert.Assert(t, manager != nil)
+	assert.NoError(t, err)
+	assert.True(t, manager != nil)
 	defer manager.Close()
 }
 
@@ -284,13 +284,13 @@ definition:
       headers: {}
 `
 	err := os.WriteFile(authConfigPath, []byte(authConfigContent), 0644)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	exporters := newTestExporters()
 
 	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
-	assert.NilError(t, err)
-	assert.Assert(t, manager != nil)
+	assert.NoError(t, err)
+	assert.True(t, manager != nil)
 	defer manager.Close()
 }
 
@@ -330,13 +330,13 @@ definition:
         value: anonymous
 `
 	err := os.WriteFile(authConfigPath, []byte(authConfigContent), 0644)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	exporters := newTestExporters()
 
 	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
-	assert.NilError(t, err)
-	assert.Assert(t, manager != nil)
+	assert.NoError(t, err)
+	assert.True(t, manager != nil)
 	defer manager.Close()
 }
 
@@ -361,13 +361,13 @@ definition:
         value: admin
 `
 	err := os.WriteFile(authConfigPath, []byte(authConfigContent), 0644)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	exporters := newTestExporters()
 
 	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
-	assert.NilError(t, err)
-	assert.Assert(t, manager != nil)
+	assert.NoError(t, err)
+	assert.True(t, manager != nil)
 	defer manager.Close()
 }
 
@@ -398,12 +398,12 @@ func TestInitAuthManager_JSONConfig(t *testing.T) {
   }
 }`
 	err := os.WriteFile(authConfigPath, []byte(authConfigContent), 0644)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	exporters := newTestExporters()
 
 	manager, err := InitAuthManager(context.TODO(), authConfigPath, exporters)
-	assert.NilError(t, err)
-	assert.Assert(t, manager != nil)
+	assert.NoError(t, err)
+	assert.True(t, manager != nil)
 	defer manager.Close()
 }
