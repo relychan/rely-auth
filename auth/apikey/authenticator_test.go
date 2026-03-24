@@ -141,7 +141,7 @@ func TestAPIKeyConfig_Validate(t *testing.T) {
 				},
 				Value: goenvconf.NewEnvStringValue("secret"),
 			},
-			ExpectError: "required field",
+			ExpectError: "name of token location is required",
 		},
 		{
 			Name: "missing_value",
