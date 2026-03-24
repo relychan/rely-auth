@@ -22,7 +22,7 @@ import (
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRelyAuthJWTConfig_Validate(t *testing.T) {
@@ -91,27 +91,6 @@ func TestRelyAuthJWTConfig_Validate(t *testing.T) {
 			ExpectError: ErrJWTClaimsConfigEmpty.Error(),
 		},
 		{
-			Name: "invalid_token_location",
-			Config: RelyAuthJWTConfig{
-				Mode: authmode.AuthModeJWT,
-				TokenLocation: authscheme.TokenLocation{
-					In: "invalid",
-				},
-				Key: JWTKey{
-					Algorithm: jose.HS256,
-					Key:       new(goenvconf.NewEnvStringValue("secret")),
-				},
-				ClaimsConfig: JWTClaimsConfig{
-					Locations: map[string]jmes.FieldMappingEntryConfig{
-						"x-hasura-user-id": {
-							Path: new("sub"),
-						},
-					},
-				},
-			},
-			ExpectError: "invalid",
-		},
-		{
 			Name: "invalid_key_algorithm",
 			Config: RelyAuthJWTConfig{
 				Mode: authmode.AuthModeJWT,
@@ -141,7 +120,7 @@ func TestRelyAuthJWTConfig_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -163,9 +142,9 @@ func TestNewJWTAuthDefinition(t *testing.T) {
 	}
 
 	config := NewRelyAuthJWTConfig(key, tokenLocation)
-	assert.Assert(t, config != nil)
+	assert.True(t, config != nil)
 	assert.Equal(t, key, config.Key)
-	assert.DeepEqual(t, tokenLocation, config.TokenLocation)
+	assert.Equal(t, tokenLocation, config.TokenLocation)
 }
 
 func TestJWTKey_Validate(t *testing.T) {
@@ -212,7 +191,7 @@ func TestJWTKey_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -268,7 +247,7 @@ func TestJWTClaimsConfig_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -312,7 +291,7 @@ func TestJWTClaimsNamespace_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}

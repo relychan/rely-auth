@@ -23,8 +23,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/invopop/jsonschema"
 	"github.com/relychan/goutils"
+	"github.com/relychan/jsonschema"
 	"github.com/relychan/rely-auth/auth"
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"

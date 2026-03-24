@@ -58,7 +58,6 @@ func NewRelyAuthManager(
 
 	if opts.HTTPClient == nil {
 		clientOptions := []gohttpc.ClientOption{
-			gohttpc.WithLogger(opts.Logger.With("type", "auth-client")),
 			gohttpc.WithTimeout(time.Minute),
 		}
 

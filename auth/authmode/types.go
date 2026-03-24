@@ -45,8 +45,6 @@ var (
 	ErrOnlyOneNoAuthModeAllowed = errors.New("only one noAuth config is allowed")
 	// ErrAuthFieldRequired occurs when a field in the auth config is empty.
 	ErrAuthFieldRequired = errors.New("required field")
-	// ErrLocationNameRequired occurs when the name of the token location is empty.
-	ErrLocationNameRequired = errors.New("name of token location is required")
 	// ErrAuthTokenNotFound occurs when the API key or token is not found.
 	ErrAuthTokenNotFound = errors.New("auth token not found")
 	// ErrUnsupportedAuthMode occurs when the auth mode is unsupported.

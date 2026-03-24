@@ -26,7 +26,7 @@ import (
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/relychan/rely-auth/auth/noauth"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewRelyAuthManager(t *testing.T) {
@@ -44,11 +44,11 @@ func TestNewRelyAuthManager(t *testing.T) {
 	}
 
 	manager, err := NewRelyAuthManager(context.TODO(), config)
-	assert.NilError(t, err)
-	assert.Assert(t, manager != nil)
+	assert.NoError(t, err)
+	assert.True(t, manager != nil)
 
 	err = manager.Close()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestRelyAuthManager_Authenticate_NoAuth(t *testing.T) {
@@ -68,14 +68,14 @@ func TestRelyAuthManager_Authenticate_NoAuth(t *testing.T) {
 	}
 
 	manager, err := NewRelyAuthManager(context.TODO(), config)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer manager.Close()
 
 	result, err := manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
-	assert.NilError(t, err)
-	assert.DeepEqual(t, authmode.AuthenticatedOutput{
+	assert.NoError(t, err)
+	assert.Equal(t, authmode.AuthenticatedOutput{
 		ID:               "0",
 		Mode:             authmode.AuthModeNoAuth,
 		SessionVariables: map[string]any{"x-hasura-role": string("guest")},
@@ -107,7 +107,7 @@ func TestRelyAuthManager_Authenticate_APIKey(t *testing.T) {
 	}
 
 	manager, err := NewRelyAuthManager(context.TODO(), config)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer manager.Close()
 
 	// Test successful authentication
@@ -116,8 +116,8 @@ func TestRelyAuthManager_Authenticate_APIKey(t *testing.T) {
 			"authorization": apiKey,
 		},
 	})
-	assert.NilError(t, err)
-	assert.DeepEqual(t, authmode.AuthenticatedOutput{
+	assert.NoError(t, err)
+	assert.Equal(t, authmode.AuthenticatedOutput{
 		ID:               "0",
 		Mode:             authmode.AuthModeAPIKey,
 		SessionVariables: map[string]any{"x-hasura-role": string("admin")},
@@ -165,15 +165,15 @@ func TestRelyAuthManager_Authenticate_Fallback(t *testing.T) {
 	}
 
 	manager, err := NewRelyAuthManager(context.TODO(), config)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer manager.Close()
 
 	// Test fallback to noAuth when no token provided
 	result, err := manager.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
-	assert.NilError(t, err)
-	assert.DeepEqual(t, authmode.AuthenticatedOutput{
+	assert.NoError(t, err)
+	assert.Equal(t, authmode.AuthenticatedOutput{
 		ID:               "1",
 		Mode:             authmode.AuthModeNoAuth,
 		SessionVariables: map[string]any{"x-hasura-role": string("anonymous")},
@@ -197,11 +197,11 @@ func TestRelyAuthManager_WithOptions(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	manager, err := NewRelyAuthManager(context.TODO(), config, authmode.WithLogger(logger))
-	assert.NilError(t, err)
-	assert.Assert(t, manager != nil)
+	assert.NoError(t, err)
+	assert.True(t, manager != nil)
 
 	err = manager.Close()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
@@ -246,7 +246,7 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 	}
 
 	manager, err := NewRelyAuthManager(context.TODO(), config)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer manager.Close()
 
 	// Test first authenticator
@@ -255,8 +255,8 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 			"x-api-key-1": apiKey1,
 		},
 	})
-	assert.NilError(t, err)
-	assert.DeepEqual(t, authmode.AuthenticatedOutput{
+	assert.NoError(t, err)
+	assert.Equal(t, authmode.AuthenticatedOutput{
 		ID:   "auth1",
 		Mode: authmode.AuthModeAPIKey,
 		SessionVariables: map[string]any{
@@ -270,8 +270,8 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 			"x-api-key-2": apiKey2,
 		},
 	})
-	assert.NilError(t, err)
-	assert.DeepEqual(t, authmode.AuthenticatedOutput{
+	assert.NoError(t, err)
+	assert.Equal(t, authmode.AuthenticatedOutput{
 		ID:   "auth2",
 		Mode: authmode.AuthModeAPIKey,
 		SessionVariables: map[string]any{
@@ -282,7 +282,7 @@ func TestRelyAuthManager_MultipleAuthenticators(t *testing.T) {
 
 func TestRelyAuthManager_RefreshProcess(t *testing.T) {
 	manager, err := NewRelyAuthManager(context.TODO(), &RelyAuthConfig{})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer manager.Close()
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)

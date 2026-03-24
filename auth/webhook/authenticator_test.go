@@ -24,7 +24,7 @@ import (
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWebhookAuthenticator_Authenticate_Success(t *testing.T) {
@@ -52,7 +52,7 @@ func TestWebhookAuthenticator_Authenticate_Success(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -60,9 +60,9 @@ func TestWebhookAuthenticator_Authenticate_Success(t *testing.T) {
 			"authorization": "Bearer token123",
 		},
 	})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "test-webhook", result.ID)
-	assert.DeepEqual(t, map[string]any{
+	assert.Equal(t, map[string]any{
 		"x-hasura-role":    "user",
 		"x-hasura-user-id": "123",
 	}, result.SessionVariables)
@@ -86,7 +86,7 @@ func TestWebhookAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -94,7 +94,7 @@ func TestWebhookAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 			"authorization": "Bearer invalid",
 		},
 	})
-	assert.Assert(t, err != nil)
+	assert.True(t, err != nil)
 }
 
 func TestWebhookAuthenticator_Authenticate_EmptyBody(t *testing.T) {
@@ -114,7 +114,7 @@ func TestWebhookAuthenticator_Authenticate_EmptyBody(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -134,7 +134,7 @@ func TestWebhookAuthenticator_Mode(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	assert.Equal(t, authmode.AuthModeWebhook, authenticator.Mode())
@@ -160,7 +160,7 @@ func TestWebhookAuthenticator_GET_Method(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -168,8 +168,8 @@ func TestWebhookAuthenticator_GET_Method(t *testing.T) {
 			"authorization": "Bearer token",
 		},
 	})
-	assert.NilError(t, err)
-	assert.DeepEqual(t, map[string]any{
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]any{
 		"x-hasura-role": "guest",
 	}, result.SessionVariables)
 }
@@ -223,7 +223,7 @@ func TestWebhookConfig_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -238,10 +238,10 @@ func TestNewRelyAuthWebhookConfig(t *testing.T) {
 	url := goenvconf.NewEnvStringValue("http://example.com")
 	config := NewRelyAuthWebhookConfig(url, http.MethodPost)
 
-	assert.Assert(t, config != nil)
+	assert.True(t, config != nil)
 	assert.Equal(t, authmode.AuthModeWebhook, config.Mode)
 	assert.Equal(t, http.MethodPost, config.Method)
-	assert.DeepEqual(t, url, config.URL)
+	assert.Equal(t, url, config.URL)
 }
 
 func TestWebhookAuthenticator_InvalidURL(t *testing.T) {
@@ -271,7 +271,7 @@ func TestWebhookAuthenticator_MalformedResponseJSON(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -297,14 +297,14 @@ func TestWebhookAuthenticator_Equal(t *testing.T) {
 		}
 
 		auth1, err := NewWebhookAuthenticator(config1, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer auth1.Close()
 
 		auth2, err := NewWebhookAuthenticator(config2, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer auth2.Close()
 
-		assert.Assert(t, !auth1.Equal(*auth2))
+		assert.True(t, !auth1.Equal(*auth2))
 	})
 
 	t.Run("different_methods", func(t *testing.T) {
@@ -323,14 +323,14 @@ func TestWebhookAuthenticator_Equal(t *testing.T) {
 		}
 
 		auth1, err := NewWebhookAuthenticator(config1, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer auth1.Close()
 
 		auth2, err := NewWebhookAuthenticator(config2, authmode.NewRelyAuthenticatorOptions())
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer auth2.Close()
 
-		assert.Assert(t, !auth1.Equal(*auth2))
+		assert.True(t, !auth1.Equal(*auth2))
 	})
 }
 
@@ -342,16 +342,16 @@ func TestWebhookAuthenticator_Close(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	err = authenticator.Close()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestWebhookConfig_IsZero(t *testing.T) {
 	t.Run("zero_config", func(t *testing.T) {
 		config := RelyAuthWebhookConfig{}
-		assert.Assert(t, config.IsZero())
+		assert.True(t, config.IsZero())
 	})
 
 	t.Run("non_zero_config", func(t *testing.T) {
@@ -360,7 +360,7 @@ func TestWebhookConfig_IsZero(t *testing.T) {
 			URL:    goenvconf.NewEnvStringValue("http://example.com"),
 			Method: http.MethodGet,
 		}
-		assert.Assert(t, !config.IsZero())
+		assert.True(t, !config.IsZero())
 	})
 }
 
@@ -376,7 +376,7 @@ func TestWebhookConfig_Equal(t *testing.T) {
 			URL:    goenvconf.NewEnvStringValue("http://example.com"),
 			Method: http.MethodGet,
 		}
-		assert.Assert(t, config1.Equal(config2))
+		assert.True(t, config1.Equal(config2))
 	})
 
 	t.Run("different_methods", func(t *testing.T) {
@@ -390,34 +390,34 @@ func TestWebhookConfig_Equal(t *testing.T) {
 			URL:    goenvconf.NewEnvStringValue("http://example.com"),
 			Method: http.MethodPost,
 		}
-		assert.Assert(t, !config1.Equal(config2))
+		assert.True(t, !config1.Equal(config2))
 	})
 }
 
 func TestWebhookAuthCustomRequestConfig_IsZero(t *testing.T) {
 	t.Run("zero_config", func(t *testing.T) {
 		config := WebhookAuthCustomRequestConfig{}
-		assert.Assert(t, config.IsZero())
+		assert.True(t, config.IsZero())
 	})
 
 	t.Run("non_zero_with_headers", func(t *testing.T) {
 		config := WebhookAuthCustomRequestConfig{
 			Headers: &WebhookAuthHeadersConfig{},
 		}
-		assert.Assert(t, config.IsZero()) // Empty headers config is still zero
+		assert.True(t, config.IsZero()) // Empty headers config is still zero
 	})
 }
 
 func TestWebhookAuthCustomRequestConfig_Equal(t *testing.T) {
 	config1 := WebhookAuthCustomRequestConfig{}
 	config2 := WebhookAuthCustomRequestConfig{}
-	assert.Assert(t, config1.Equal(config2))
+	assert.True(t, config1.Equal(config2))
 }
 
 func TestWebhookAuthHeadersConfig_IsZero(t *testing.T) {
 	t.Run("zero_config", func(t *testing.T) {
 		config := WebhookAuthHeadersConfig{}
-		assert.Assert(t, config.IsZero())
+		assert.True(t, config.IsZero())
 	})
 
 	t.Run("non_zero_with_additional", func(t *testing.T) {
@@ -426,27 +426,27 @@ func TestWebhookAuthHeadersConfig_IsZero(t *testing.T) {
 				"x-custom-header": {},
 			},
 		}
-		assert.Assert(t, !config.IsZero())
+		assert.True(t, !config.IsZero())
 	})
 }
 
 func TestWebhookAuthHeadersConfig_Equal(t *testing.T) {
 	config1 := WebhookAuthHeadersConfig{}
 	config2 := WebhookAuthHeadersConfig{}
-	assert.Assert(t, config1.Equal(config2))
+	assert.True(t, config1.Equal(config2))
 }
 
 func TestWebhookAuthCustomResponseConfig_IsZero(t *testing.T) {
 	t.Run("zero_config", func(t *testing.T) {
 		config := WebhookAuthCustomResponseConfig{}
-		assert.Assert(t, config.IsZero())
+		assert.True(t, config.IsZero())
 	})
 }
 
 func TestWebhookAuthCustomResponseConfig_Equal(t *testing.T) {
 	config1 := WebhookAuthCustomResponseConfig{}
 	config2 := WebhookAuthCustomResponseConfig{}
-	assert.Assert(t, config1.Equal(config2))
+	assert.True(t, config1.Equal(config2))
 }
 
 func TestWebhookAuthenticator_ServerError(t *testing.T) {
@@ -464,7 +464,7 @@ func TestWebhookAuthenticator_ServerError(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.RelyAuthenticatorOptions{})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -489,7 +489,7 @@ func TestWebhookAuthenticator_NonJSONResponse(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -516,7 +516,7 @@ func TestWebhookAuthenticator_WithCustomHeaders(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -524,8 +524,8 @@ func TestWebhookAuthenticator_WithCustomHeaders(t *testing.T) {
 			"authorization": "Bearer token123",
 		},
 	})
-	assert.NilError(t, err)
-	assert.DeepEqual(t, map[string]any{
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]any{
 		"x-hasura-role": "user",
 	}, result.SessionVariables)
 }
@@ -549,7 +549,7 @@ func TestWebhookAuthenticator_ContextCancellation(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	// Create a cancelled context
@@ -560,7 +560,7 @@ func TestWebhookAuthenticator_ContextCancellation(t *testing.T) {
 		Headers: map[string]string{},
 	})
 	// The error should be related to context cancellation
-	assert.Assert(t, err != nil)
+	assert.True(t, err != nil)
 }
 
 func TestWebhookConfig_ValidateInvalidMethod(t *testing.T) {

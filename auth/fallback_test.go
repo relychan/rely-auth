@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/relychan/rely-auth/auth/authmode"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewComposedAuthenticator(t *testing.T) {

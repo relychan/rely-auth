@@ -150,13 +150,9 @@ func FindAuthTokenByLocation(
 func ValidateTokenLocation(
 	tokenLocation authscheme.TokenLocation,
 ) (authscheme.TokenLocation, error) {
-	err := tokenLocation.In.Validate()
+	err := tokenLocation.Validate()
 	if err != nil {
 		return tokenLocation, err
-	}
-
-	if tokenLocation.Name == "" {
-		return tokenLocation, ErrLocationNameRequired
 	}
 
 	return authscheme.TokenLocation{
@@ -187,32 +183,35 @@ func SerializeSessionVariablesHasuraGraphQLEngine(
 }
 
 func serializeSessionVariableHasuraGraphQLEngine(value any) (string, error) {
-	return goutils.ToStringWithCustomTypeFormatter(value, "", func(anyValue any) (string, error) {
-		switch typedValue := anyValue.(type) {
-		case []any:
-			results := make([]string, 0, len(typedValue))
+	scalarString, ok := goutils.FormatScalar(value)
+	if ok {
+		return scalarString, nil
+	}
 
-			for i, item := range typedValue {
-				result, err := serializeSessionVariableHasuraGraphQLEngine(item)
-				if err != nil {
-					return "", fmt.Errorf("%d: %w", i, err)
-				}
+	switch typedValue := value.(type) {
+	case []any:
+		results := make([]string, 0, len(typedValue))
 
-				if result != "" {
-					results = append(results, result)
-				}
-			}
-
-			return "{" + strings.Join(results, ",") + "}", nil
-		default:
-			jsonValue, err := json.Marshal(value)
+		for i, item := range typedValue {
+			result, err := serializeSessionVariableHasuraGraphQLEngine(item)
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf("%d: %w", i, err)
 			}
 
-			return string(jsonValue), nil
+			if result != "" {
+				results = append(results, result)
+			}
 		}
-	})
+
+		return "{" + strings.Join(results, ",") + "}", nil
+	default:
+		jsonValue, err := json.Marshal(value)
+		if err != nil {
+			return "", err
+		}
+
+		return string(jsonValue), nil
+	}
 }
 
 func findTokenByLocation(

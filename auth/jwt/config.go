@@ -17,12 +17,12 @@ package jwt
 import (
 	"github.com/go-jose/go-jose/v4"
 	"github.com/hasura/goenvconf"
-	"github.com/invopop/jsonschema"
+	orderedmap "github.com/pb33f/ordered-map/v2"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/goutils"
+	"github.com/relychan/jsonschema"
 	"github.com/relychan/rely-auth/auth/authmode"
-	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
 // RelyAuthJWTConfig holds configurations to which the incoming JWT will be verified and decoded to extract the session variable claims.

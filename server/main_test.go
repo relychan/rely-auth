@@ -24,8 +24,8 @@ import (
 	"github.com/hasura/gotel"
 	"github.com/relychan/rely-auth/authtests"
 	"github.com/relychan/rely-auth/config"
+	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel"
-	"gotest.tools/v3/assert"
 )
 
 func TestHasuraAuthHookHandlers(t *testing.T) {
@@ -48,7 +48,7 @@ func initTestServer(t *testing.T, configPath string) (*httptest.Server, func()) 
 	t.Setenv("RELY_AUTH_CONFIG_PATH", configPath)
 
 	envVars, err := config.LoadServerConfig()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
@@ -65,7 +65,7 @@ func initTestServer(t *testing.T, configPath string) (*httptest.Server, func()) 
 	}
 
 	authManager, err := config.InitAuthManager(t.Context(), envVars.GetConfigPath(), exporters)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	router := setupRouter(envVars, authManager, exporters)
 	server := httptest.NewServer(router)

@@ -23,8 +23,8 @@ import (
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/relychan/rely-auth/auth/noauth"
+	"github.com/stretchr/testify/assert"
 	"go.yaml.in/yaml/v4"
-	"gotest.tools/v3/assert"
 )
 
 func TestRelyAuthConfig_Validate(t *testing.T) {
@@ -99,7 +99,7 @@ func TestRelyAuthConfig_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -179,7 +179,7 @@ func TestRelyAuthMode_UnmarshalJSON(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tc.ExpectMode, def.GetMode())
 			}
 		})
@@ -408,12 +408,12 @@ mode: invalid
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tc.ExpectMode, def.GetMode())
 				if tc.ExpectSecurityRules != nil {
-					assert.DeepEqual(t, tc.ExpectSecurityRules, def.SecurityRules)
+					assert.Equal(t, tc.ExpectSecurityRules, def.SecurityRules)
 				} else {
-					assert.Assert(t, def.SecurityRules == nil)
+					assert.True(t, def.SecurityRules == nil)
 				}
 			}
 		})

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/go-jose/go-jose/v4"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestJWTClaimsFormat_Validate(t *testing.T) {
@@ -50,7 +50,7 @@ func TestJWTClaimsFormat_Validate(t *testing.T) {
 			if tc.ExpectError {
 				assert.ErrorContains(t, err, ErrInvalidJWTClaimsFormat.Error())
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -88,7 +88,7 @@ func TestParseJWTClaimsFormat(t *testing.T) {
 			if tc.ExpectError {
 				assert.ErrorContains(t, err, ErrInvalidJWTClaimsFormat.Error())
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tc.Expected, result)
 			}
 		})
@@ -97,9 +97,9 @@ func TestParseJWTClaimsFormat(t *testing.T) {
 
 func TestGetSupportedJWTClaimsFormats(t *testing.T) {
 	formats := GetSupportedJWTClaimsFormats()
-	assert.Assert(t, len(formats) == 2)
-	assert.Assert(t, formats[0] == JWTClaimsFormatJSON)
-	assert.Assert(t, formats[1] == JWTClaimsFormatStringifiedJSON)
+	assert.True(t, len(formats) == 2)
+	assert.True(t, formats[0] == JWTClaimsFormatJSON)
+	assert.True(t, formats[1] == JWTClaimsFormatStringifiedJSON)
 }
 
 func TestParseSignatureAlgorithm(t *testing.T) {
@@ -152,7 +152,7 @@ func TestParseSignatureAlgorithm(t *testing.T) {
 			if tc.ExpectError {
 				assert.ErrorContains(t, err, ErrInvalidSignatureAlgorithm.Error())
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tc.Expected, result)
 			}
 		})
@@ -161,7 +161,7 @@ func TestParseSignatureAlgorithm(t *testing.T) {
 
 func TestGetSupportedSignatureAlgorithms(t *testing.T) {
 	algorithms := GetSupportedSignatureAlgorithms()
-	assert.Assert(t, len(algorithms) == 13)
+	assert.True(t, len(algorithms) == 13)
 
 	// Check that all expected algorithms are present
 	expectedAlgorithms := []jose.SignatureAlgorithm{
@@ -180,6 +180,6 @@ func TestGetSupportedSignatureAlgorithms(t *testing.T) {
 				break
 			}
 		}
-		assert.Assert(t, found, "Expected algorithm %s not found", expected)
+		assert.True(t, found, "Expected algorithm %s not found", expected)
 	}
 }

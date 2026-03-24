@@ -29,7 +29,7 @@ import (
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/rely-auth/auth/authmode"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 // Helper function to encode RSA public key to PEM format
@@ -65,8 +65,8 @@ func TestNewJWTAuthenticator(t *testing.T) {
 
 	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 	err := authenticator.Add(context.TODO(), config, nil)
-	assert.NilError(t, err)
-	assert.Assert(t, authenticator != nil)
+	assert.NoError(t, err)
+	assert.True(t, authenticator != nil)
 	defer authenticator.Close()
 }
 
@@ -92,7 +92,7 @@ func TestJWTAuthenticator_Mode(t *testing.T) {
 
 	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 	err := authenticator.Add(context.TODO(), config, nil)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	assert.Equal(t, authmode.AuthModeJWT, authenticator.Mode())
@@ -126,12 +126,12 @@ func TestJWTAuthenticator_Authenticate_HMAC(t *testing.T) {
 
 	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 	err := authenticator.Add(context.TODO(), config, nil)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	// Create a test JWT token
 	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: []byte(secret)}, nil)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	claims := jwt.Claims{
 		Subject:  "user-123",
@@ -141,14 +141,14 @@ func TestJWTAuthenticator_Authenticate_HMAC(t *testing.T) {
 	}
 
 	token, err := jwt.Signed(signer).Claims(claims).Serialize()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer " + token,
 		},
 	})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "test-jwt-hmac", result.ID)
 	assert.Equal(t, "user-123", result.SessionVariables["x-hasura-user-id"])
 	assert.Equal(t, "user", result.SessionVariables["x-hasura-role"])
@@ -177,7 +177,7 @@ func TestJWTAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 
 	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 	err := authenticator.Add(context.TODO(), config, nil)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	// Test with invalid token
@@ -186,19 +186,19 @@ func TestJWTAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 			"authorization": "Bearer invalid-token",
 		},
 	})
-	assert.Assert(t, err != nil)
+	assert.True(t, err != nil)
 
 	// Test with missing token
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
-	assert.Assert(t, err != nil)
+	assert.True(t, err != nil)
 }
 
 func TestJWTAuthenticator_Authenticate_RSA(t *testing.T) {
 	// Generate RSA key pair
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	publicKeyPEM := encodePublicKeyToPEM(&privateKey.PublicKey)
 
@@ -228,12 +228,12 @@ func TestJWTAuthenticator_Authenticate_RSA(t *testing.T) {
 
 	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 	err = authenticator.Add(context.TODO(), config, nil)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	// Create a test JWT token with RSA
 	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.RS256, Key: privateKey}, nil)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	claims := jwt.Claims{
 		Subject:  "admin-456",
@@ -243,14 +243,14 @@ func TestJWTAuthenticator_Authenticate_RSA(t *testing.T) {
 	}
 
 	token, err := jwt.Signed(signer).Claims(claims).Serialize()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer " + token,
 		},
 	})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "test-jwt-rsa", result.ID)
 	assert.Equal(t, "admin-456", result.SessionVariables["x-hasura-user-id"])
 	assert.Equal(t, "admin", result.SessionVariables["x-hasura-role"])
@@ -283,11 +283,11 @@ func TestJWTAuthenticator_Authenticate_WithIssuerValidation(t *testing.T) {
 
 	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 	err := authenticator.Add(context.TODO(), config, nil)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer authenticator.Close()
 
 	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: []byte(secret)}, nil)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	// Test with correct issuer
 	claims := jwt.Claims{
@@ -298,14 +298,14 @@ func TestJWTAuthenticator_Authenticate_WithIssuerValidation(t *testing.T) {
 	}
 
 	token, err := jwt.Signed(signer).Claims(claims).Serialize()
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{
 			"authorization": "Bearer " + token,
 		},
 	})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "user-789", result.SessionVariables["x-hasura-user-id"])
 }
 
@@ -331,15 +331,15 @@ func TestJWTAuthenticator_Equal(t *testing.T) {
 
 		auth1 := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 		err := auth1.Add(context.TODO(), config, nil)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer auth1.Close()
 
 		auth2 := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 		err = auth2.Add(context.TODO(), config, nil)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer auth2.Close()
 
-		assert.Assert(t, auth1.Equal(*auth2))
+		assert.True(t, auth1.Equal(*auth2))
 	})
 
 	t.Run("different_authenticators", func(t *testing.T) {
@@ -381,22 +381,22 @@ func TestJWTAuthenticator_Equal(t *testing.T) {
 
 		auth1 := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 		err := auth1.Add(context.TODO(), config1, nil)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer auth1.Close()
 
 		auth2 := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 		err = auth2.Add(context.TODO(), config2, nil)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		defer auth2.Close()
 
-		assert.Assert(t, !auth1.Equal(*auth2))
+		assert.True(t, !auth1.Equal(*auth2))
 	})
 
 	t.Run("nil_keysets", func(t *testing.T) {
 		auth1 := JWTAuthenticator{}
 		auth2 := JWTAuthenticator{}
 
-		assert.Assert(t, auth1.Equal(auth2))
+		assert.True(t, auth1.Equal(auth2))
 	})
 }
 
@@ -424,8 +424,8 @@ func TestJWTAuthenticator_Add(t *testing.T) {
 	}
 
 	err := authenticator.Add(context.TODO(), config, nil)
-	assert.NilError(t, err)
-	assert.Assert(t, len(authenticator.keySets) > 0)
+	assert.NoError(t, err)
+	assert.True(t, len(authenticator.keySets) > 0)
 }
 
 func TestJWTAuthenticator_MultipleConfigs(t *testing.T) {
@@ -467,11 +467,11 @@ func TestJWTAuthenticator_MultipleConfigs(t *testing.T) {
 
 	authenticator := NewJWTAuthenticator(authmode.NewRelyAuthenticatorOptions())
 	err := authenticator.Add(context.TODO(), config1, nil)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	err = authenticator.Add(context.TODO(), config2, nil)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	defer authenticator.Close()
 
-	assert.Assert(t, len(authenticator.keySets) == 2)
+	assert.True(t, len(authenticator.keySets) == 2)
 }

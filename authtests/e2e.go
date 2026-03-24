@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/relychan/rely-auth/auth/authmode"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHasuraDDNGraphQLAuth(t *testing.T) {
@@ -146,7 +146,7 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 	t.Helper()
 
 	req, err := http.NewRequest(http.MethodPost, body.URL, bytes.NewReader(body.Request))
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	for key, header := range body.Headers {
 		req.Header.Set(key, header)
@@ -155,13 +155,13 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, err := io.ReadAll(resp.Body)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 
 		t.Errorf(
 			"expected status code: %d; got: %d; response body: %s",
@@ -175,6 +175,6 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 	var output T
 
 	err = json.NewDecoder(resp.Body).Decode(&output)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expectedBody, output)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedBody, output)
 }

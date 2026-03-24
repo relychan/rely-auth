@@ -65,7 +65,7 @@ type RelyAuthIPAllowListConfig struct {
 // IsZero if the current instance is empty.
 func (hal RelyAuthIPAllowListConfig) IsZero() bool {
 	return len(hal.Headers) == 0 && hal.RelyAuthAllowListConfig.IsZero() &&
-		hal.Position == "" && !hal.PublicOnly
+		hal.Position == 0 && !hal.PublicOnly
 }
 
 // Equal checks if the target value is equal.

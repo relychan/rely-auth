@@ -21,8 +21,8 @@ import (
 	"slices"
 
 	"github.com/go-jose/go-jose/v4"
-	"github.com/invopop/jsonschema"
 	"github.com/relychan/goutils"
+	"github.com/relychan/jsonschema"
 )
 
 var (
