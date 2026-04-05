@@ -280,60 +280,6 @@ func TestWebhookAuthenticator_MalformedResponseJSON(t *testing.T) {
 	assert.ErrorContains(t, err, "could not unmarshal as JSON")
 }
 
-func TestWebhookAuthenticator_Equal(t *testing.T) {
-	t.Run("different_urls", func(t *testing.T) {
-		config1 := &RelyAuthWebhookConfig{
-			ID:     "test-webhook-1",
-			Mode:   authmode.AuthModeWebhook,
-			URL:    goenvconf.NewEnvStringValue("http://example1.com"),
-			Method: http.MethodGet,
-		}
-
-		config2 := &RelyAuthWebhookConfig{
-			ID:     "test-webhook-2",
-			Mode:   authmode.AuthModeWebhook,
-			URL:    goenvconf.NewEnvStringValue("http://example2.com"),
-			Method: http.MethodGet,
-		}
-
-		auth1, err := NewWebhookAuthenticator(config1, authmode.NewRelyAuthenticatorOptions())
-		assert.NoError(t, err)
-		defer auth1.Close()
-
-		auth2, err := NewWebhookAuthenticator(config2, authmode.NewRelyAuthenticatorOptions())
-		assert.NoError(t, err)
-		defer auth2.Close()
-
-		assert.True(t, !auth1.Equal(*auth2))
-	})
-
-	t.Run("different_methods", func(t *testing.T) {
-		config1 := &RelyAuthWebhookConfig{
-			ID:     "test-webhook-1",
-			Mode:   authmode.AuthModeWebhook,
-			URL:    goenvconf.NewEnvStringValue("http://example.com"),
-			Method: http.MethodGet,
-		}
-
-		config2 := &RelyAuthWebhookConfig{
-			ID:     "test-webhook-2",
-			Mode:   authmode.AuthModeWebhook,
-			URL:    goenvconf.NewEnvStringValue("http://example.com"),
-			Method: http.MethodPost,
-		}
-
-		auth1, err := NewWebhookAuthenticator(config1, authmode.NewRelyAuthenticatorOptions())
-		assert.NoError(t, err)
-		defer auth1.Close()
-
-		auth2, err := NewWebhookAuthenticator(config2, authmode.NewRelyAuthenticatorOptions())
-		assert.NoError(t, err)
-		defer auth2.Close()
-
-		assert.True(t, !auth1.Equal(*auth2))
-	})
-}
-
 func TestWebhookAuthenticator_Close(t *testing.T) {
 	config := &RelyAuthWebhookConfig{
 		Mode:   authmode.AuthModeWebhook,

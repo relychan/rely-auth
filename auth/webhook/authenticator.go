@@ -73,16 +73,6 @@ func (wa *WebhookAuthenticator) IDs() []string {
 	return []string{wa.id}
 }
 
-// Equal checks if the target value is equal.
-func (wa WebhookAuthenticator) Equal(target WebhookAuthenticator) bool {
-	return wa.id == target.id &&
-		wa.method == target.method &&
-		wa.url == target.url &&
-		wa.customRequest.Equal(target.customRequest) &&
-		wa.customResponse.Equal(target.customResponse) &&
-		wa.httpClient == target.httpClient
-}
-
 // Authenticate validates and authenticates the token from the auth webhook request.
 func (wa *WebhookAuthenticator) Authenticate(
 	ctx context.Context,
