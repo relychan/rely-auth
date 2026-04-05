@@ -38,21 +38,10 @@ type CustomWebhookResponseConfig struct {
 	Body gotransform.TemplateTransformer
 }
 
-// Equal checks if the target value is equal.
-func (cwr CustomWebhookResponseConfig) Equal(target CustomWebhookResponseConfig) bool {
-	return gotransform.EqualTemplateTransformer(cwr.Body, target.Body)
-}
-
 // CustomWebhookRequestConfig represents a custom webhook request config.
 type CustomWebhookRequestConfig struct {
 	Headers *CustomWebhookAuthHeadersConfig
 	Body    gotransform.TemplateTransformer
-}
-
-// Equal checks if the target value is equal.
-func (cwr CustomWebhookRequestConfig) Equal(target CustomWebhookRequestConfig) bool {
-	return gotransform.EqualTemplateTransformer(cwr.Body, target.Body) &&
-		goutils.EqualPtr(cwr.Headers, target.Headers)
 }
 
 // CustomWebhookAuthHeadersConfig represents a custom webhook auth header config.
