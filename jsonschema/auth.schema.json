@@ -239,11 +239,11 @@
       "properties": {
         "path": {
           "type": "string",
-          "description": "JMESPath expression to find a value in the input data"
+          "description": "Path is a JMESPath expression to find a value in the input data."
         },
         "default": {
           "$ref": "#/$defs/EnvAny",
-          "description": "Default value to be used when no value is found"
+          "description": "Default value to be used when no value is found when looking up the value using the path."
         },
         "type": {
           "type": "string",
@@ -1132,7 +1132,8 @@
               "description": "Configurations for request headers and transformed request body to be sent to the auth hook"
             }
           },
-          "type": "object"
+          "type": "object",
+          "title": "RelyAuthWebhookGETConfig"
         },
         {
           "properties": {
@@ -1156,7 +1157,8 @@
               "description": "Configurations for request headers and transformed request body to be sent to the auth hook"
             }
           },
-          "type": "object"
+          "type": "object",
+          "title": "RelyAuthWebhookPOSTConfig"
         }
       ],
       "properties": {
@@ -1332,8 +1334,7 @@
           "type": "object",
           "required": [
             "type",
-            "template",
-            "contentType"
+            "template"
           ],
           "title": "TemplateTransformerGoTemplateConfig",
           "description": "Transform responses using the standard Go template"

@@ -177,10 +177,12 @@ func (RelyAuthWebhookConfig) JSONSchema() *jsonschema.Schema {
 		OneOf: []*jsonschema.Schema{
 			{
 				Type:       "object",
+				Title:      "RelyAuthWebhookGETConfig",
 				Properties: getProps,
 			},
 			{
 				Type:       "object",
+				Title:      "RelyAuthWebhookPOSTConfig",
 				Properties: postProps,
 			},
 		},
