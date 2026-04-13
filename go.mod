@@ -7,19 +7,19 @@ require (
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/hasura/goenvconf v0.7.0
-	github.com/hasura/gotel v0.7.2
+	github.com/hasura/gotel v0.8.0
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
 	github.com/pb33f/ordered-map/v2 v2.3.1
-	github.com/relychan/gohttpc v0.0.0-20260408163431-cd354060d46a
-	github.com/relychan/gohttps v0.0.0-20260324085512-a759b25e1ac5
+	github.com/relychan/gohttpc v0.0.0-20260412101208-b0b28074e188
+	github.com/relychan/gohttps v0.0.0-20260412090650-ff2f886ba49c
 	github.com/relychan/gotransform v0.0.0-20260404192235-bcef8d71746d
-	github.com/relychan/goutils v0.0.0-20260404183650-6657ea84ff81
+	github.com/relychan/goutils v0.0.0-20260410181000-7cadbbfb748d
 	github.com/relychan/jsonschema v0.13.1
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/metric v1.43.0
 	go.opentelemetry.io/otel/trace v1.43.0
-	go.yaml.in/yaml/v4 v4.0.0-rc.4.0.20260316011301-aadd5c28b882
+	go.yaml.in/yaml/v4 v4.0.0-rc.4.0.20260405193028-802e24f4fbcc
 	golang.org/x/sync v0.20.0
 )
 
@@ -53,7 +53,7 @@ require (
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
-	github.com/relychan/gocompress v0.1.2 // indirect
+	github.com/relychan/gocompress v0.2.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
@@ -74,8 +74,8 @@ require (
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
-	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
-	golang.org/x/net v0.52.0 // indirect
+	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
+	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect

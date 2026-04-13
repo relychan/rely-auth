@@ -26,6 +26,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/relychan/gohttpc"
 	"github.com/relychan/goutils/httpheader"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/stretchr/testify/assert"
@@ -314,7 +315,7 @@ func runRequest[T any](
 		assert.NoError(t, err)
 	}
 
-	defer resp.Body.Close()
+	defer gohttpc.CloseResponse(resp)
 
 	if resp.StatusCode != statusCode {
 		respBody, err := io.ReadAll(resp.Body)

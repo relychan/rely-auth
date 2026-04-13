@@ -156,7 +156,7 @@ func (j *RelyAuthMode) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("%w: %s", authmode.ErrUnsupportedAuthMode, *authMode)
 	}
 
-	err = value.Decode(config)
+	err = value.Load(config)
 	if err != nil {
 		return err
 	}

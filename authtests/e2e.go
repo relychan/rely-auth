@@ -22,6 +22,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/relychan/gohttpc"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/stretchr/testify/assert"
 )
@@ -157,7 +158,7 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 	resp, err := http.DefaultClient.Do(req)
 	assert.NoError(t, err)
 
-	defer resp.Body.Close()
+	defer gohttpc.CloseResponse(resp)
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, err := io.ReadAll(resp.Body)
@@ -175,6 +176,7 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 	var output T
 
 	err = json.NewDecoder(resp.Body).Decode(&output)
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedBody, output)
 }

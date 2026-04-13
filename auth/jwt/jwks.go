@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"sync/atomic"
 
 	"github.com/go-jose/go-jose/v4"
@@ -160,15 +159,16 @@ func (j *JWKS) updateKeys(ctx context.Context) ([]jose.JSONWebKey, error) {
 		return nil, fmt.Errorf("%w: response body has no content", ErrGetJWKsFailed)
 	}
 
-	defer goutils.CatchWarnErrorFunc(resp.Body.Close)
-
 	var keySet jose.JSONWebKeySet
 
 	err = json.NewDecoder(resp.Body).Decode(&keySet)
-	if err != nil {
-		ct := resp.Header.Get(httpheader.ContentType)
 
-		if strings.HasPrefix(ct, httpheader.ContentTypeJSON) {
+	gohttpc.CloseResponse(resp)
+
+	if err != nil {
+		ct := resp.Header[httpheader.ContentType]
+
+		if len(ct) > 0 && goutils.HasStringPrefixFold(ct[0], httpheader.ContentTypeJSON) {
 			return nil, fmt.Errorf(
 				"got Content-Type = application/json, but could not unmarshal as JSON: %w",
 				err,
