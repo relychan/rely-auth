@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/rely-auth/auth/apikey"
@@ -99,7 +100,7 @@ func TestRelyAuthConfig_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -179,7 +180,7 @@ func TestRelyAuthMode_UnmarshalJSON(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.ExpectMode, def.GetMode())
 			}
 		})
@@ -408,7 +409,7 @@ mode: invalid
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.ExpectMode, def.GetMode())
 				if tc.ExpectSecurityRules != nil {
 					assert.Equal(t, tc.ExpectSecurityRules, def.SecurityRules)

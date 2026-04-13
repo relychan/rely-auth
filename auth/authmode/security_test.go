@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/goutils"
 	"github.com/stretchr/testify/assert"
@@ -203,7 +204,7 @@ func TestRelyAuthAllowedIPsFromConfig(t *testing.T) {
 			},
 		}
 		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 1, len(result.AllowedIPRanges))
 		assert.Equal(t, "192.168.1.100/32", result.AllowedIPRanges[0].String())
@@ -216,7 +217,7 @@ func TestRelyAuthAllowedIPsFromConfig(t *testing.T) {
 			},
 		}
 		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 1, len(result.AllowedIPRanges))
 		assert.Equal(t, "192.168.1.0/24", result.AllowedIPRanges[0].String())
@@ -233,7 +234,7 @@ func TestRelyAuthAllowedIPsFromConfig(t *testing.T) {
 			},
 		}
 		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 3, len(result.AllowedIPRanges))
 	})
@@ -246,7 +247,7 @@ func TestRelyAuthAllowedIPsFromConfig(t *testing.T) {
 			},
 		}
 		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 2, len(result.Headers))
 		// Headers are sorted alphabetically
@@ -276,7 +277,7 @@ func TestRelyAuthAllowedIPsFromConfig(t *testing.T) {
 			},
 		}
 		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 2, len(result.AllowedIPRanges))
 	})
@@ -289,7 +290,7 @@ func TestRelyAuthAllowedIPsFromConfig(t *testing.T) {
 			},
 		}
 		result, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 1, len(result.Headers))
 		assert.Equal(t, 1, len(result.AllowedIPRanges))
@@ -306,7 +307,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 			},
 		}
 		allowedIPs, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -314,7 +315,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 			},
 		}
 		err = allowedIPs.Validate(body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("disallowed_ip", func(t *testing.T) {
@@ -326,7 +327,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 			},
 		}
 		allowedIPs, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -346,7 +347,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 			},
 		}
 		allowedIPs, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{},
@@ -365,7 +366,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 			},
 		}
 		allowedIPs, err := AllowedIPsFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -373,7 +374,7 @@ func TestRelyAuthAllowedIPs_Validate(t *testing.T) {
 			},
 		}
 		err = allowedIPs.Validate(body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }
 
@@ -439,7 +440,7 @@ func TestRelyAuthentication_Authenticate(t *testing.T) {
 		}
 
 		result, err := auth.Authenticate(context.Background(), body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "test-id", result.ID)
 		assert.Equal(t, AuthModeAPIKey, result.Mode)
 	})
@@ -455,7 +456,7 @@ func TestRelyAuthentication_Authenticate(t *testing.T) {
 			},
 		}
 		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		mockAuth := &mockAuthenticator{
 			mode: AuthModeAPIKey,
@@ -478,7 +479,7 @@ func TestRelyAuthentication_Authenticate(t *testing.T) {
 		}
 
 		result, err := auth.Authenticate(context.Background(), body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "test-id", result.ID)
 	})
 
@@ -493,7 +494,7 @@ func TestRelyAuthentication_Authenticate(t *testing.T) {
 			},
 		}
 		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		mockAuth := &mockAuthenticator{
 			mode: AuthModeAPIKey,
@@ -549,7 +550,7 @@ func TestAllowListMatcherRuleFromConfig(t *testing.T) {
 	t.Run("nil_config", func(t *testing.T) {
 		config := RelyAuthAllowListConfig{}
 		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 0, len(result.Include))
 		assert.Equal(t, 0, len(result.Exclude))
@@ -560,7 +561,7 @@ func TestAllowListMatcherRuleFromConfig(t *testing.T) {
 			Include: new(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*", "^Token .*"})),
 		}
 		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 2, len(result.Include))
 		assert.Equal(t, 0, len(result.Exclude))
@@ -571,7 +572,7 @@ func TestAllowListMatcherRuleFromConfig(t *testing.T) {
 			Exclude: new(goenvconf.NewEnvStringSliceValue([]string{"^Blocked.*"})),
 		}
 		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 0, len(result.Include))
 		assert.Equal(t, 1, len(result.Exclude))
@@ -583,7 +584,7 @@ func TestAllowListMatcherRuleFromConfig(t *testing.T) {
 			Exclude: new(goenvconf.NewEnvStringSliceValue([]string{"^Bearer test.*"})),
 		}
 		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 1, len(result.Include))
 		assert.Equal(t, 1, len(result.Exclude))
@@ -612,7 +613,7 @@ func TestAllowListMatcherRuleFromConfig(t *testing.T) {
 			Include: new(goenvconf.NewEnvStringSliceValue([]string{""})),
 		}
 		result, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 1, len(result.Include))
 	})
@@ -629,7 +630,7 @@ func TestRelyAuthAllowListMatcherRule_IsValid(t *testing.T) {
 			Include: new(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*"})),
 		}
 		matcherRule, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.True(t, matcherRule.IsValid("Bearer token123"))
 		assert.True(t, !matcherRule.IsValid("Token abc"))
@@ -640,7 +641,7 @@ func TestRelyAuthAllowListMatcherRule_IsValid(t *testing.T) {
 			Include: new(goenvconf.NewEnvStringSliceValue([]string{"^Bearer .*", ".*token.*"})),
 		}
 		matcherRule, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.True(t, matcherRule.IsValid("Bearer token123"))
 		assert.True(t, matcherRule.IsValid("Bearer abc"))
@@ -652,7 +653,7 @@ func TestRelyAuthAllowListMatcherRule_IsValid(t *testing.T) {
 			Exclude: new(goenvconf.NewEnvStringSliceValue([]string{"^Blocked.*"})),
 		}
 		matcherRule, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.True(t, matcherRule.IsValid("Allowed value"))
 		assert.True(t, !matcherRule.IsValid("Blocked value"))
@@ -664,7 +665,7 @@ func TestRelyAuthAllowListMatcherRule_IsValid(t *testing.T) {
 			Exclude: new(goenvconf.NewEnvStringSliceValue([]string{".*test.*"})),
 		}
 		matcherRule, err := AllowListMatcherRuleFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.True(t, matcherRule.IsValid("Bearer production"))
 		assert.True(t, !matcherRule.IsValid("Bearer test"))
@@ -677,7 +678,7 @@ func TestRelyAuthAllowListMatcherRule_IsValid(t *testing.T) {
 func TestHeaderRulesFromConfig(t *testing.T) {
 	t.Run("nil_config", func(t *testing.T) {
 		result, err := HeaderRulesFromConfig(nil, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 0, len(result))
 	})
@@ -685,7 +686,7 @@ func TestHeaderRulesFromConfig(t *testing.T) {
 	t.Run("empty_config", func(t *testing.T) {
 		config := map[string]RelyAuthAllowListConfig{}
 		result, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 0, len(result))
 	})
@@ -697,7 +698,7 @@ func TestHeaderRulesFromConfig(t *testing.T) {
 			},
 		}
 		result, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 1, len(result))
 		_, ok := result["authorization"]
@@ -714,7 +715,7 @@ func TestHeaderRulesFromConfig(t *testing.T) {
 			},
 		}
 		result, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 2, len(result))
 		_, ok := result["authorization"]
@@ -730,7 +731,7 @@ func TestHeaderRulesFromConfig(t *testing.T) {
 			},
 		}
 		result, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		_, ok := result["authorization"]
 		assert.True(t, ok)
@@ -758,7 +759,7 @@ func TestRelyAuthHeaderRules_Validate(t *testing.T) {
 			Headers: map[string]string{},
 		}
 		err := rules.Validate(body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("rules_exist_but_no_headers", func(t *testing.T) {
@@ -768,7 +769,7 @@ func TestRelyAuthHeaderRules_Validate(t *testing.T) {
 			},
 		}
 		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{},
@@ -785,7 +786,7 @@ func TestRelyAuthHeaderRules_Validate(t *testing.T) {
 			},
 		}
 		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -804,7 +805,7 @@ func TestRelyAuthHeaderRules_Validate(t *testing.T) {
 			},
 		}
 		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -812,7 +813,7 @@ func TestRelyAuthHeaderRules_Validate(t *testing.T) {
 			},
 		}
 		err = rules.Validate(body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("header_value_does_not_match", func(t *testing.T) {
@@ -822,7 +823,7 @@ func TestRelyAuthHeaderRules_Validate(t *testing.T) {
 			},
 		}
 		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -844,7 +845,7 @@ func TestRelyAuthHeaderRules_Validate(t *testing.T) {
 			},
 		}
 		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -853,7 +854,7 @@ func TestRelyAuthHeaderRules_Validate(t *testing.T) {
 			},
 		}
 		err = rules.Validate(body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("multiple_headers_one_fails", func(t *testing.T) {
@@ -866,7 +867,7 @@ func TestRelyAuthHeaderRules_Validate(t *testing.T) {
 			},
 		}
 		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -886,7 +887,7 @@ func TestRelyAuthHeaderRules_Validate(t *testing.T) {
 			},
 		}
 		rules, err := HeaderRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -910,7 +911,7 @@ func TestRelyAuthSecurityRulesFromConfig_WithHeaderRules(t *testing.T) {
 			},
 		}
 		result, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.True(t, result.AllowedIPs == nil)
 		assert.Equal(t, 1, len(result.HeaderRules))
@@ -930,7 +931,7 @@ func TestRelyAuthSecurityRulesFromConfig_WithHeaderRules(t *testing.T) {
 			},
 		}
 		result, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.True(t, result.AllowedIPs != nil)
 		assert.Equal(t, 1, len(result.HeaderRules))
@@ -954,7 +955,7 @@ func TestRelyAuthSecurityRulesFromConfig_WithHeaderRules(t *testing.T) {
 			HeaderRules: map[string]RelyAuthAllowListConfig{},
 		}
 		result, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, result != nil)
 		assert.Equal(t, 0, len(result.HeaderRules))
 	})
@@ -972,7 +973,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 			},
 		}
 		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -980,7 +981,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 			},
 		}
 		err = rules.Validate(body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("header_rules_only_fail", func(t *testing.T) {
@@ -992,7 +993,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 			},
 		}
 		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -1017,7 +1018,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 			},
 		}
 		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -1026,7 +1027,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 			},
 		}
 		err = rules.Validate(body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("both_ip_and_header_rules_ip_fails", func(t *testing.T) {
@@ -1043,7 +1044,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 			},
 		}
 		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -1069,7 +1070,7 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 			},
 		}
 		rules, err := RelyAuthSecurityRulesFromConfig(config, goenvconf.GetOSEnv)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		body := &AuthenticateRequestData{
 			Headers: map[string]string{
@@ -1089,6 +1090,6 @@ func TestRelyAuthSecurityRules_Validate_WithHeaderRules(t *testing.T) {
 			Headers: map[string]string{},
 		}
 		err := rules.Validate(body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }

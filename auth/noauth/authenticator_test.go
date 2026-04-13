@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/stretchr/testify/assert"
@@ -36,14 +37,14 @@ func TestNoAuth_Authenticate(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, authmode.AuthModeNoAuth, authenticator.Mode())
 
 	// Test authentication always succeeds
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
 		Headers: map[string]string{},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "test-noauth", result.ID)
 	assert.Equal(t, map[string]any{
 		"x-hasura-role":          "anonymous",
@@ -58,11 +59,11 @@ func TestNoAuth_Close(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test close
 	err = authenticator.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestNoAuthConfig_Validate(t *testing.T) {
@@ -72,7 +73,7 @@ func TestNoAuthConfig_Validate(t *testing.T) {
 	}
 
 	err := config.Validate()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestNoAuthConfig_GetMode(t *testing.T) {
@@ -109,10 +110,10 @@ func TestNoAuth_Equal(t *testing.T) {
 		}
 
 		auth1, err := NewNoAuth(config1, authmode.NewRelyAuthenticatorOptions())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		auth2, err := NewNoAuth(config2, authmode.NewRelyAuthenticatorOptions())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.True(t, auth1.Equal(*auth2))
 	})
@@ -135,10 +136,10 @@ func TestNoAuth_Equal(t *testing.T) {
 		}
 
 		auth1, err := NewNoAuth(config1, authmode.NewRelyAuthenticatorOptions())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		auth2, err := NewNoAuth(config2, authmode.NewRelyAuthenticatorOptions())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.True(t, !auth1.Equal(*auth2))
 	})
@@ -161,10 +162,10 @@ func TestNoAuth_Equal(t *testing.T) {
 		}
 
 		auth1, err := NewNoAuth(config1, authmode.NewRelyAuthenticatorOptions())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		auth2, err := NewNoAuth(config2, authmode.NewRelyAuthenticatorOptions())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.True(t, !auth1.Equal(*auth2))
 	})
@@ -287,10 +288,10 @@ func TestNewNoAuth_WithEnvironmentVariables(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "test-env", result.ID)
 	assert.Equal(t, map[string]any{
 		"x-hasura-role":    "env-admin",
@@ -306,10 +307,10 @@ func TestNewNoAuth_EmptySessionVariables(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "test-empty", result.ID)
 	assert.Equal(t, map[string]any{}, result.SessionVariables)
 }
@@ -334,10 +335,10 @@ func TestNewNoAuth_ComplexSessionVariables(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "test-complex", result.ID)
 	assert.Equal(t, "admin", result.SessionVariables["x-hasura-role"])
 	assert.Equal(t, "user-123", result.SessionVariables["x-hasura-user-id"])
@@ -359,10 +360,10 @@ func TestNewNoAuth_WithoutID(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "", result.ID)
 	assert.Equal(t, map[string]any{
 		"x-hasura-role": "guest",
@@ -379,7 +380,7 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 	}
 
 	authenticator, err := NewNoAuth(config, authmode.RelyAuthenticatorOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("with headers", func(t *testing.T) {
 		result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -388,7 +389,7 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 				"X-Custom":      "value",
 			},
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "test-request", result.ID)
 		assert.Equal(t, map[string]any{
 			"x-hasura-role": "public",
@@ -402,7 +403,7 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 				"Cookie": "session=abc123",
 			},
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "test-request", result.ID)
 		assert.Equal(t, map[string]any{
 			"x-hasura-role": "public",
@@ -416,7 +417,7 @@ func TestNoAuth_AuthenticateWithDifferentRequestData(t *testing.T) {
 			},
 			Request: []byte(`{"query": "{ users { id } }"}`),
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "test-request", result.ID)
 		assert.Equal(t, map[string]any{
 			"x-hasura-role": "public",

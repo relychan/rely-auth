@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/rely-auth/auth/authmode"
@@ -37,7 +38,7 @@ func TestReloadJWKS(t *testing.T) {
 
 	// Generate a real RSA key for the JWKS
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	jwk := jose.JSONWebKey{
 		KeyID:     "test-key-1",
@@ -73,12 +74,12 @@ func TestReloadJWKS(t *testing.T) {
 	}
 
 	keyset, err := NewJWTKeySet(context.TODO(), config, nil, authmode.RelyAuthenticatorOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer keyset.Close()
 
 	initialCallCount := callCount
 
 	err = ReloadJWKS(context.TODO())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, callCount > initialCallCount)
 }
