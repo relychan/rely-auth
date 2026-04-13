@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,7 +51,7 @@ func TestJWTClaimsFormat_Validate(t *testing.T) {
 			if tc.ExpectError {
 				assert.ErrorContains(t, err, ErrInvalidJWTClaimsFormat.Error())
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -88,7 +89,7 @@ func TestParseJWTClaimsFormat(t *testing.T) {
 			if tc.ExpectError {
 				assert.ErrorContains(t, err, ErrInvalidJWTClaimsFormat.Error())
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.Expected, result)
 			}
 		})
@@ -152,7 +153,7 @@ func TestParseSignatureAlgorithm(t *testing.T) {
 			if tc.ExpectError {
 				assert.ErrorContains(t, err, ErrInvalidSignatureAlgorithm.Error())
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.Expected, result)
 			}
 		})

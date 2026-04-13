@@ -257,7 +257,8 @@ Follow idiomatic Go practices and community standards when writing Go code. Thes
 - Methods should accept `context.Context` and input parameters, assemble the `*http.Request` locally (or via a short-lived builder/helper created per call), then call `c.httpClient.Do(req)`
 - If request-building logic is reused, factor it into unexported helper functions or a per-call builder type; never keep `http.Request` (URL params, body, headers) as fields on the long-lived client
 - Ensure the underlying `*http.Client` is configured (timeouts, transport) and is safe for concurrent use; avoid mutating `Transport` after first use
-- Always set headers on the request instance you’re sending, and close response bodies (`defer resp.Body.Close()`), handling errors appropriately
+- Always set headers on the request instance you’re sending, and close response bodies using `gohttpc.CloseResponse(resp)` (from `github.com/relychan/gohttpc`) after reading the body; do not use `defer resp.Body.Close()` directly
+- When checking `Content-Type` headers, access the header map directly (`resp.Header[httpheader.ContentType]`) rather than `.Get()` to avoid unnecessary allocations, and use `httpheader.IsContentTypeJSON` (from `github.com/relychan/goutils/httpheader`) for JSON content-type checks
 
 ## Performance Optimization
 
@@ -423,7 +424,8 @@ This project uses `github.com/go-jose/go-jose/v4` for JWT/JOSE operations. Follo
 
 - When filtering slices, preallocate with capacity: `result := make([]Type, 0, len(input))`
 - Sort slices after building them if order matters: `slices.Sort()`
-- Use `strings.ToLower()` for case-insensitive map keys
+- Use `strings.ToLower()` for normalizing map keys at insertion/lookup time
+- Use `strings.EqualFold` for case-insensitive string comparisons instead of lowercasing both sides manually
 - Remove duplicates by using a map as a set, then converting back to slice
 
 ### Testing Collections

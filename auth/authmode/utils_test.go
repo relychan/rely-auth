@@ -17,6 +17,7 @@ package authmode
 import (
 	"testing"
 
+	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/stretchr/testify/assert"
 )
@@ -110,7 +111,7 @@ func TestFindAuthTokenByLocation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
 			location, err := ValidateTokenLocation(tc.Location)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			result, err := FindAuthTokenByLocation(&tc.Body, &location)
 			if tc.Error != "" {
@@ -119,7 +120,7 @@ func TestFindAuthTokenByLocation(t *testing.T) {
 				return
 			}
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tc.Expected, result)
 		})
 	}
@@ -173,7 +174,7 @@ func TestValidateTokenLocation(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.Expected, result)
 			}
 		})
@@ -237,7 +238,7 @@ func TestSerializeSessionVariablesHasuraGraphQLEngine(t *testing.T) {
 			if tc.ExpectError {
 				assert.True(t, err != nil)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.Expected, result)
 			}
 		})

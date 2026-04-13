@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/rely-auth/auth/authmode"
@@ -41,7 +42,7 @@ func TestAPIKeyAuthenticator(t *testing.T) {
 	}, goenvconf.NewEnvStringVariable("API_KEY"), sessionVariables)
 
 	authenticator, err := NewAPIKeyAuthenticator(config, authmode.RelyAuthenticatorOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for range 10 {
 		go func() {
@@ -50,7 +51,7 @@ func TestAPIKeyAuthenticator(t *testing.T) {
 					"authorization": "Bearer " + apiKey,
 				},
 			})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, result.SessionVariables, map[string]any{"foo": "bar"})
 			time.Sleep(time.Millisecond)
 		}()
@@ -68,7 +69,7 @@ func TestAPIKeyAuthenticator_Unauthorized(t *testing.T) {
 	}, goenvconf.NewEnvStringVariable("API_KEY"), map[string]goenvconf.EnvAny{})
 
 	authenticator, err := NewAPIKeyAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test with wrong key
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -94,7 +95,7 @@ func TestAPIKeyAuthenticator_Mode(t *testing.T) {
 	}, goenvconf.NewEnvStringVariable("API_KEY"), map[string]goenvconf.EnvAny{})
 
 	authenticator, err := NewAPIKeyAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, authmode.AuthModeAPIKey, authenticator.Mode())
 }
@@ -108,10 +109,10 @@ func TestAPIKeyAuthenticator_Close(t *testing.T) {
 	}, goenvconf.NewEnvStringVariable("API_KEY"), map[string]goenvconf.EnvAny{})
 
 	authenticator, err := NewAPIKeyAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = authenticator.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestAPIKeyConfig_Validate(t *testing.T) {
@@ -162,7 +163,7 @@ func TestAPIKeyConfig_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

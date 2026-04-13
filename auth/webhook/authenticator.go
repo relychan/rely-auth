@@ -98,9 +98,9 @@ func (wa *WebhookAuthenticator) Authenticate(
 		return result, ErrResponseBodyRequired
 	}
 
-	defer goutils.CatchWarnErrorFunc(resp.Body.Close)
-
 	sessionVariables, err := wa.evaluateResponseBody(resp)
+
+	gohttpc.CloseResponse(resp)
 
 	result.SessionVariables = sessionVariables
 

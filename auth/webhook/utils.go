@@ -59,9 +59,9 @@ func decodeResponseJSON(resp *http.Response, value any) error {
 			return ErrResponseBodyRequired
 		}
 
-		ct := resp.Header.Get(httpheader.ContentType)
+		contentTypes := resp.Header[httpheader.ContentType]
 
-		if strings.HasPrefix(ct, httpheader.ContentTypeJSON) {
+		if len(contentTypes) > 0 && httpheader.IsContentTypeJSON(contentTypes[0]) {
 			return fmt.Errorf(
 				"got Content-Type = application/json, but could not unmarshal as JSON: %w",
 				err,

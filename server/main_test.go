@@ -21,10 +21,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/hasura/gotel"
 	"github.com/relychan/rely-auth/authtests"
 	"github.com/relychan/rely-auth/config"
-	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel"
 )
 
@@ -48,7 +48,7 @@ func initTestServer(t *testing.T, configPath string) (*httptest.Server, func()) 
 	t.Setenv("RELY_AUTH_CONFIG_PATH", configPath)
 
 	envVars, err := config.LoadServerConfig()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
@@ -65,7 +65,7 @@ func initTestServer(t *testing.T, configPath string) (*httptest.Server, func()) 
 	}
 
 	authManager, err := config.InitAuthManager(t.Context(), envVars.GetConfigPath(), exporters)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	router := setupRouter(envVars, authManager, exporters)
 	server := httptest.NewServer(router)

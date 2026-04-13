@@ -21,6 +21,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gotransform/jmes"
 	"github.com/relychan/rely-auth/auth/authmode"
@@ -52,7 +53,7 @@ func TestWebhookAuthenticator_Authenticate_Success(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer authenticator.Close()
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -60,7 +61,7 @@ func TestWebhookAuthenticator_Authenticate_Success(t *testing.T) {
 			"authorization": "Bearer token123",
 		},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "test-webhook", result.ID)
 	assert.Equal(t, map[string]any{
 		"x-hasura-role":    "user",
@@ -86,7 +87,7 @@ func TestWebhookAuthenticator_Authenticate_Unauthorized(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer authenticator.Close()
 
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -114,7 +115,7 @@ func TestWebhookAuthenticator_Authenticate_EmptyBody(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer authenticator.Close()
 
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -134,7 +135,7 @@ func TestWebhookAuthenticator_Mode(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer authenticator.Close()
 
 	assert.Equal(t, authmode.AuthModeWebhook, authenticator.Mode())
@@ -160,7 +161,7 @@ func TestWebhookAuthenticator_GET_Method(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer authenticator.Close()
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -168,7 +169,7 @@ func TestWebhookAuthenticator_GET_Method(t *testing.T) {
 			"authorization": "Bearer token",
 		},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, map[string]any{
 		"x-hasura-role": "guest",
 	}, result.SessionVariables)
@@ -223,7 +224,7 @@ func TestWebhookConfig_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -271,7 +272,7 @@ func TestWebhookAuthenticator_MalformedResponseJSON(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer authenticator.Close()
 
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -288,10 +289,10 @@ func TestWebhookAuthenticator_Close(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = authenticator.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestWebhookConfig_IsZero(t *testing.T) {
@@ -410,7 +411,7 @@ func TestWebhookAuthenticator_ServerError(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.RelyAuthenticatorOptions{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer authenticator.Close()
 
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -435,7 +436,7 @@ func TestWebhookAuthenticator_NonJSONResponse(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer authenticator.Close()
 
 	_, err = authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -462,7 +463,7 @@ func TestWebhookAuthenticator_WithCustomHeaders(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer authenticator.Close()
 
 	result, err := authenticator.Authenticate(context.Background(), &authmode.AuthenticateRequestData{
@@ -470,7 +471,7 @@ func TestWebhookAuthenticator_WithCustomHeaders(t *testing.T) {
 			"authorization": "Bearer token123",
 		},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, map[string]any{
 		"x-hasura-role": "user",
 	}, result.SessionVariables)
@@ -495,7 +496,7 @@ func TestWebhookAuthenticator_ContextCancellation(t *testing.T) {
 	}
 
 	authenticator, err := NewWebhookAuthenticator(config, authmode.NewRelyAuthenticatorOptions())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer authenticator.Close()
 
 	// Create a cancelled context

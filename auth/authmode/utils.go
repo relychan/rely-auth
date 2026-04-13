@@ -137,9 +137,7 @@ func FindAuthTokenByLocation(
 		return "", nil
 	}
 
-	tokenPrefix := rawToken[:prefixLength]
-
-	if strings.ToLower(tokenPrefix) != scheme {
+	if !strings.EqualFold(rawToken[:prefixLength], scheme) {
 		return "", nil
 	}
 
@@ -221,7 +219,7 @@ func findTokenByLocation(
 	switch location.In {
 	case authscheme.InHeader:
 		for key, value := range body.Headers {
-			if strings.ToLower(key) == location.Name {
+			if strings.EqualFold(key, location.Name) {
 				return value, nil
 			}
 		}
@@ -257,7 +255,7 @@ func findTokenByLocation(
 		}
 
 		for _, cookie := range cookies {
-			if strings.ToLower(cookie.Name) == location.Name {
+			if strings.EqualFold(cookie.Name, location.Name) {
 				return cookie.Value, nil
 			}
 		}

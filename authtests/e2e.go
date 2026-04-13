@@ -22,6 +22,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-jose/go-jose/v4/testutils/require"
+	"github.com/relychan/gohttpc"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/stretchr/testify/assert"
 )
@@ -146,7 +148,7 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 	t.Helper()
 
 	req, err := http.NewRequest(http.MethodPost, body.URL, bytes.NewReader(body.Request))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for key, header := range body.Headers {
 		req.Header.Set(key, header)
@@ -155,13 +157,13 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	defer resp.Body.Close()
+	defer gohttpc.CloseResponse(resp)
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, err := io.ReadAll(resp.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		t.Errorf(
 			"expected status code: %d; got: %d; response body: %s",
@@ -175,6 +177,7 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 	var output T
 
 	err = json.NewDecoder(resp.Body).Decode(&output)
-	assert.NoError(t, err)
+
+	require.NoError(t, err)
 	assert.Equal(t, expectedBody, output)
 }

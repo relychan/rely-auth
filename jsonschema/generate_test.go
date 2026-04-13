@@ -17,9 +17,9 @@ package main
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-jose/go-jose/v4/testutils/require"
 )
 
 func TestGenerate(t *testing.T) {
-	assert.NoError(t, jsonSchemaConfiguration())
+	require.NoError(t, jsonSchemaConfiguration())
 }

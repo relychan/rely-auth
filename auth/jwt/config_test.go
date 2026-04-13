@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/gotransform/jmes"
@@ -120,7 +121,7 @@ func TestRelyAuthJWTConfig_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -191,7 +192,7 @@ func TestJWTKey_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -247,7 +248,7 @@ func TestJWTClaimsConfig_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -291,7 +292,7 @@ func TestJWTClaimsNamespace_Validate(t *testing.T) {
 			if tc.ExpectError != "" {
 				assert.ErrorContains(t, err, tc.ExpectError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
