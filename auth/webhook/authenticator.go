@@ -100,7 +100,7 @@ func (wa *WebhookAuthenticator) Authenticate(
 
 	sessionVariables, err := wa.evaluateResponseBody(resp)
 
-	gohttpc.CloseResponse(resp)
+	goutils.CloseResponse(resp)
 
 	result.SessionVariables = sessionVariables
 

@@ -163,7 +163,7 @@ func (j *JWKS) updateKeys(ctx context.Context) ([]jose.JSONWebKey, error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&keySet)
 
-	gohttpc.CloseResponse(resp)
+	goutils.CloseResponse(resp)
 
 	if err != nil {
 		ct := resp.Header[httpheader.ContentType]
