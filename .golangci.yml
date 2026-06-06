@@ -12,6 +12,8 @@ linters:
     - nilnil
     - contextcheck
     - tagalign
+    - gomodguard
+    - goconst
   settings:
     depguard:
       rules:

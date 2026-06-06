@@ -32,6 +32,8 @@ import (
 	"github.com/relychan/rely-auth/auth/authmode"
 )
 
+const defaultConfigPath = "/etc/rely-auth/auth.yaml"
+
 // RelyAuthServerConfig holds information of required configurations to run the auth server.
 type RelyAuthServerConfig struct {
 	// Server configs.
@@ -48,7 +50,7 @@ func (rlsc RelyAuthServerConfig) GetConfigPath() string {
 		return rlsc.ConfigPath
 	}
 
-	return "/etc/rely-auth/auth.yaml"
+	return defaultConfigPath
 }
 
 // LoadServerConfig loads and parses configurations for [RelyAuthServerConfig].

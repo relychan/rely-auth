@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	"github.com/hasura/goenvconf"
+	"github.com/invopop/jsonschema"
 	"github.com/relychan/goutils"
-	"github.com/relychan/jsonschema"
 )
 
 // ForwardedIPPosition represents the position of the IP to select from X-Forwarded-For header.

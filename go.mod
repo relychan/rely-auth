@@ -8,13 +8,13 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/hasura/goenvconf v0.7.0
 	github.com/hasura/gotel v0.8.1
+	github.com/invopop/jsonschema v0.14.0
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
 	github.com/pb33f/ordered-map/v2 v2.3.1
 	github.com/relychan/gohttpc v0.0.0-20260531030038-6fc91e67f25f
 	github.com/relychan/gohttps v0.0.0-20260606100045-c5b3f0e28a07
 	github.com/relychan/gotransform v0.0.0-20260404192235-bcef8d71746d
 	github.com/relychan/goutils v0.0.0-20260606074624-e7ca20d73713
-	github.com/relychan/jsonschema v0.13.1
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/metric v1.44.0
