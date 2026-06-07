@@ -90,8 +90,8 @@ github.com/relychan/gocompress v0.2.1 h1:QFXF7vS106szD7nKbCFv4WUpe7OHNQSxG0yB1//
 github.com/relychan/gocompress v0.2.1/go.mod h1:rU3CWbSGXWVYCMzDti6WjnHMFAj/D82+pON52N6B+pQ=
 github.com/relychan/gohttpc v0.0.0-20260531030038-6fc91e67f25f h1:oH0P3J/h59xS7sOGSpn7y7yI/jT9CbYijhiocWJrqh0=
 github.com/relychan/gohttpc v0.0.0-20260531030038-6fc91e67f25f/go.mod h1:K5GcE7XLqVDRx+KwG9Je7Y5kaK6h+zLkUmwb4aQXD/Q=
-github.com/relychan/gohttps v0.0.0-20260606100045-c5b3f0e28a07 h1:YXb6pCIkUaQSdPdKV3wbfkLOcP8GSMaytPmcYdFBaaI=
-github.com/relychan/gohttps v0.0.0-20260606100045-c5b3f0e28a07/go.mod h1:C0qA+qtmGqUbgCKEJ/NQGUPN9hUeie26tjY4VKEldaM=
+github.com/relychan/gohttps v0.0.0-20260606164601-a6fcc7422b8d h1:dTQejCWZxchnErlmkmfkJlvzATwNq9Kp2cqLLr9+OUE=
+github.com/relychan/gohttps v0.0.0-20260606164601-a6fcc7422b8d/go.mod h1:C0qA+qtmGqUbgCKEJ/NQGUPN9hUeie26tjY4VKEldaM=
 github.com/relychan/gotransform v0.0.0-20260404192235-bcef8d71746d h1:EG/ma3CZhiob4m7GRCN++78bBpaYbL2YdR/SqF/lH/E=
 github.com/relychan/gotransform v0.0.0-20260404192235-bcef8d71746d/go.mod h1:fPlveeSdDOYcXIILl+pIyTPx93MxCl/U/V3CQxsVUTw=
 github.com/relychan/goutils v0.0.0-20260606074624-e7ca20d73713 h1:wh/js8qgtk0NhYo/GOZFH5X4PJp3wSZ5L/zWSJaAMz4=

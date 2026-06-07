@@ -34,6 +34,8 @@ type AuthenticateRequestData struct {
 	Headers map[string]string `json:"headers"`
 	// Raw request body.
 	Request json.RawMessage `json:"request"`
+	// Remote address.
+	RemoteAddr string `json:"-"`
 }
 
 // HasuraV2PostRequestBody holds the original body of the request.

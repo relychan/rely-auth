@@ -20,82 +20,13 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
+	"github.com/hasura/goenvconf"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/goutils"
 )
-
-var ipHeaders = []string{
-	"cf-connecting-ip",
-	"true-client-ip",
-	"x-real-ip",
-	"x-forwarded-for",
-}
-
-// GetClientIPsFromHeader gets the client IPs from request headers.
-func GetClientIPsFromHeader(
-	headers map[string]string,
-	position ForwardedIPPosition,
-	allowedHeaders ...string,
-) []net.IP {
-	if len(headers) == 0 {
-		return nil
-	}
-
-	if len(allowedHeaders) == 0 {
-		allowedHeaders = ipHeaders
-	}
-
-L:
-	for _, name := range allowedHeaders {
-		value, ok := headers[name]
-		if !ok || value == "" {
-			continue
-		}
-
-		rawIPs := strings.Split(value, ",")
-		ips := make([]net.IP, 0, len(rawIPs))
-
-		// Some headers (e.g., X-Forwarded-For) may contain a comma-separated list of IPs.
-		for i, part := range rawIPs {
-			part = strings.TrimSpace(part)
-			if part == "" {
-				continue
-			}
-
-			ip := net.ParseIP(part)
-			if ip != nil {
-				ips = append(ips, ip)
-
-				continue
-			}
-
-			if i == 0 || i == len(rawIPs)-1 {
-				// invalid IP, ignore this header.
-				continue L
-			}
-		}
-
-		switch len(ips) {
-		case 0:
-			// no valid IP. ignore this header
-		case 1:
-			return ips
-		default:
-			switch position {
-			case IPPositionEdge:
-				return []net.IP{ips[0], ips[len(ips)-1]}
-			case IPPositionLeftmost:
-				return []net.IP{ips[0]}
-			default:
-				return []net.IP{ips[len(ips)-1]}
-			}
-		}
-	}
-
-	return nil
-}
 
 // GetAuthModeHeader gets the authentication mode from request headers.
 // Note that headers must be converted to a string map with keys in lower-case.
@@ -263,4 +194,44 @@ func findTokenByLocation(
 	}
 
 	return "", nil
+}
+
+func parseEnvSubnets(
+	list *goenvconf.EnvStringSlice,
+	getEnvFunc goenvconf.GetEnvFunc,
+) ([]*net.IPNet, error) {
+	if list == nil {
+		return nil, nil
+	}
+
+	patterns, err := list.GetCustom(getEnvFunc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get allowed IP patterns: %w", err)
+	}
+
+	if len(patterns) == 0 {
+		return nil, nil
+	}
+
+	slices.Sort(patterns)
+
+	patterns = slices.Compact(patterns)
+	results := make([]*net.IPNet, 0, len(patterns))
+
+	for _, pattern := range patterns {
+		trimmed := strings.TrimSpace(pattern)
+
+		if trimmed == "" {
+			continue
+		}
+
+		ip, err := goutils.ParseSubnet(trimmed)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, ip)
+	}
+
+	return results, nil
 }
