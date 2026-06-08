@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/relychan/gohttpc"
-	"github.com/relychan/goutils"
+	"github.com/relychan/goutils/httperror"
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmetrics"
 	"github.com/relychan/rely-auth/auth/authmode"
@@ -128,7 +128,7 @@ func (am *RelyAuthManager) Authenticate(
 		span.SetStatus(codes.Error, "authentication failed")
 		span.RecordError(err)
 
-		return output, goutils.NewUnauthorizedError()
+		return output, httperror.NewUnauthorizedError()
 	}
 
 	metrics.RequestDuration.Record(

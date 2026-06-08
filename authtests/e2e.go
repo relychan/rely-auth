@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/go-jose/go-jose/v4/testutils/require"
-	"github.com/relychan/gohttpc"
+	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/stretchr/testify/assert"
 )
@@ -159,7 +159,7 @@ func runGraphQLRequest[T any](t *testing.T, body authmode.AuthenticateRequestDat
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 
-	defer gohttpc.CloseResponse(resp)
+	defer goutils.CloseResponse(resp)
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, err := io.ReadAll(resp.Body)

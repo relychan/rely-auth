@@ -27,7 +27,7 @@ import (
 	"testing"
 
 	"github.com/go-jose/go-jose/v4/testutils/require"
-	"github.com/relychan/gohttpc"
+	"github.com/relychan/goutils"
 	"github.com/relychan/goutils/httpheader"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/stretchr/testify/assert"
@@ -316,7 +316,7 @@ func runRequest[T any](
 		require.NoError(t, err)
 	}
 
-	defer gohttpc.CloseResponse(resp)
+	defer goutils.CloseResponse(resp)
 
 	if resp.StatusCode != statusCode {
 		respBody, err := io.ReadAll(resp.Body)

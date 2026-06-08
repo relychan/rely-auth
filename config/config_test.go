@@ -43,14 +43,14 @@ func TestRelyAuthServerConfig_GetConfigPath(t *testing.T) {
 		{
 			Name:         "default_path",
 			Config:       RelyAuthServerConfig{},
-			ExpectedPath: "/etc/rely-auth/auth.yaml",
+			ExpectedPath: defaultConfigPath,
 		},
 		{
 			Name: "empty_string_path",
 			Config: RelyAuthServerConfig{
 				ConfigPath: "",
 			},
-			ExpectedPath: "/etc/rely-auth/auth.yaml",
+			ExpectedPath: defaultConfigPath,
 		},
 	}
 
@@ -103,7 +103,7 @@ server:
 	require.NoError(t, err)
 	assert.True(t, config != nil)
 	// ConfigPath will use the default value as handled by GetConfigPath()
-	assert.Equal(t, "/etc/rely-auth/auth.yaml", config.GetConfigPath())
+	assert.Equal(t, defaultConfigPath, config.GetConfigPath())
 	// ServiceName will be set to default "rely-auth" if empty
 	assert.Equal(t, "rely-auth", config.Telemetry.ServiceName)
 	assert.Equal(t, "DEBUG", config.Server.LogLevel)
@@ -160,7 +160,7 @@ func TestLoadServerConfig_JSONFile(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, config != nil)
 	// ConfigPath will use the default value as handled by the GetConfigPath() method
-	assert.Equal(t, "/etc/rely-auth/auth.yaml", config.GetConfigPath())
+	assert.Equal(t, defaultConfigPath, config.GetConfigPath())
 	// ServiceName will be set to default "rely-auth" if empty
 	assert.Equal(t, "rely-auth", config.Telemetry.ServiceName)
 }

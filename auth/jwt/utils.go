@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/relychan/goutils"
+	"github.com/relychan/goutils/httperror"
 	"github.com/relychan/rely-auth/auth/authmode"
 )
 
@@ -45,8 +46,9 @@ func evalHasuraSessionVariables(result map[string]any, desiredRole string) (map[
 
 	if desiredRole != "" {
 		if !slices.Contains(allowedRoles, desiredRole) {
-			return nil, goutils.NewForbiddenError(goutils.ErrorDetail{
-				Header: authmode.XHasuraRole,
+			return nil, httperror.NewForbiddenError(httperror.ValidationError{
+				Parameter: authmode.XHasuraRole,
+				Location:  "header",
 				Detail: fmt.Sprintf(
 					"%s is not in the allowed roles %v",
 					desiredRole,
@@ -86,15 +88,17 @@ func evalHasuraSessionVariables(result map[string]any, desiredRole string) (map[
 	}
 
 	if roleStr == nil || *roleStr == "" {
-		return nil, goutils.NewForbiddenError(goutils.ErrorDetail{
-			Header: authmode.XHasuraDefaultRole,
-			Detail: "value of x-hasura-default-role variable is empty",
+		return nil, httperror.NewForbiddenError(httperror.ValidationError{
+			Parameter: authmode.XHasuraDefaultRole,
+			Location:  "header",
+			Detail:    "value of x-hasura-default-role variable is empty",
 		})
 	}
 
 	if !slices.Contains(allowedRoles, *roleStr) {
-		return nil, goutils.NewForbiddenError(goutils.ErrorDetail{
-			Header: authmode.XHasuraRole,
+		return nil, httperror.NewForbiddenError(httperror.ValidationError{
+			Parameter: authmode.XHasuraRole,
+			Location:  "header",
 			Detail: fmt.Sprintf(
 				"%s is not in the allowed roles %v",
 				*roleStr,
