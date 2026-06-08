@@ -17,6 +17,7 @@ package authmode
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"net"
 	"slices"
 	"strings"
@@ -186,10 +187,6 @@ func AllowedIPsFromConfig(
 
 	switch location {
 	case ClientIPFromHeader:
-		if len(conf.Headers) == 0 {
-			return nil, ErrClientIPHeaderRequired
-		}
-
 		headers := make([]string, 0, len(conf.Headers))
 
 		for _, header := range conf.Headers {
@@ -198,6 +195,10 @@ func AllowedIPsFromConfig(
 			}
 
 			headers = append(headers, strings.ToLower(header))
+		}
+
+		if len(headers) == 0 {
+			return nil, ErrClientIPHeaderRequired
 		}
 
 		slices.Sort(headers)
@@ -239,12 +240,16 @@ func (rai *RelyAuthIPAllowList) Validate(body *AuthenticateRequestData) error {
 
 // GetClientIPs gets the client IPs from request data.
 func (rai *RelyAuthIPAllowList) GetClientIPs(data *AuthenticateRequestData) (net.IP, error) {
-	if data == nil || len(data.Headers) == 0 {
+	if data == nil {
 		return nil, ErrIPNotFound
 	}
 
 	switch rai.Location {
 	case ClientIPFromHeader:
+		if len(data.Headers) == 0 {
+			return nil, ErrIPNotFound
+		}
+
 		for _, name := range rai.Headers {
 			ip := parseHeaderAddr(data.Headers[name])
 			if ip != nil {
@@ -254,6 +259,10 @@ func (rai *RelyAuthIPAllowList) GetClientIPs(data *AuthenticateRequestData) (net
 
 		return nil, ErrInvalidIP
 	case ClientIPFromXForwardedFor:
+		if len(data.Headers) == 0 {
+			return nil, ErrIPNotFound
+		}
+
 		return rai.parseXFFAddr(data.Headers["x-forwarded-for"])
 	default:
 		remoteAddr := data.RemoteAddr
@@ -276,79 +285,55 @@ func (rai *RelyAuthIPAllowList) GetClientIPs(data *AuthenticateRequestData) (net
 }
 
 func (rai *RelyAuthIPAllowList) parseXFFAddr(value string) (net.IP, error) {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return nil, ErrIPNotFound
-	}
-
 	if rai.NumTrustedProxies < 1 && len(rai.TrustedProxyIPPrefixes) == 0 {
 		return parseHeaderAddr(value), nil
 	}
 
-	rawIPs := strings.Split(value, ",")
-
-	if rai.NumTrustedProxies > 0 && len(rawIPs) != int(rai.NumTrustedProxies) {
-		return nil, fmt.Errorf(
-			"%w; expected %d trusted proxies, got %d",
-			ErrInvalidIP, rai.NumTrustedProxies, len(rawIPs),
-		)
+	numTrustedProxies := rai.NumTrustedProxies
+	if numTrustedProxies < 1 {
+		numTrustedProxies = math.MaxInt32
 	}
 
-	if len(rai.TrustedProxyIPPrefixes) > 0 {
-		err := rai.validateXFFTrustedProxyIPPrefixes(rawIPs)
-		if err != nil {
-			return nil, err
+	var lastIP net.IP
+
+	value = strings.TrimSpace(value)
+	// walks the entries of the merged X-Forwarded-For chain RIGHT-TO-LEFT, invoking visit on each trimmed non-empty entry. visit returns true to stop the walk.
+	// Lazy walk, zero allocations (entries are substrings of the input headers).
+	// Multiple XFF headers are merged per RFC 2616 — each header's comma-separated entries in order received — so an attacker cannot pick which value security logic sees by sending a duplicate header.
+	for value != "" {
+		var v string
+
+		i := strings.LastIndexByte(value, ',')
+		if i >= 0 {
+			v, value = value[i+1:], value[:i]
+		} else {
+			v, value = value, ""
+		}
+
+		v = strings.TrimSpace(v)
+		if v == "" {
+			if value == "" {
+				return lastIP, nil
+			}
+
+			continue
+		}
+
+		ip := parseHeaderAddr(v)
+		if ip == nil {
+			return nil, ErrInvalidIP
+		}
+
+		lastIP = ip
+		numTrustedProxies--
+
+		if (len(rai.TrustedProxyIPPrefixes) > 0 &&
+			!inAnyIPPrefix(ip, rai.TrustedProxyIPPrefixes)) || numTrustedProxies == 0 {
+			return ip, nil
 		}
 	}
 
-	ip := parseHeaderAddr(rawIPs[0])
-	if ip == nil {
-		return nil, ErrInvalidIP
-	}
-
-	return ip, nil
-}
-
-func (rai *RelyAuthIPAllowList) validateXFFTrustedProxyIPPrefixes(rawIPs []string) error {
-	for pi := len(rawIPs) - 1; pi > 0; pi-- {
-		rawIP := strings.TrimSpace(rawIPs[pi])
-		if rawIP == "" {
-			return fmt.Errorf("%w; proxy IP is empty", ErrInvalidIP)
-		}
-
-		proxyIP := net.ParseIP(rawIP)
-		if proxyIP == nil {
-			return fmt.Errorf("%w; invalid proxy IP %s", ErrInvalidIP, rawIP)
-		}
-
-		if !inAnyIPPrefix(proxyIP, rai.TrustedProxyIPPrefixes) {
-			return fmt.Errorf(
-				"%w; proxy IP %s is not in %s prefixes",
-				ErrInvalidIP, rawIP, rai.printTrustedProxyIPPrefixes(),
-			)
-		}
-	}
-
-	return nil
-}
-
-func (rai *RelyAuthIPAllowList) printTrustedProxyIPPrefixes() string {
-	var sb strings.Builder
-
-	sb.Grow(20 * len(rai.TrustedProxyIPPrefixes))
-	sb.WriteByte('[')
-
-	for i, prefix := range rai.TrustedProxyIPPrefixes {
-		if i > 0 {
-			sb.WriteString(", ")
-		}
-
-		sb.WriteString(prefix.String())
-	}
-
-	sb.WriteByte(']')
-
-	return sb.String()
+	return nil, ErrIPNotFound
 }
 
 func parseHeaderAddr(value string) net.IP {
@@ -357,7 +342,7 @@ func parseHeaderAddr(value string) net.IP {
 		return nil
 	}
 
-	commaIndex := strings.IndexRune(value, ',')
+	commaIndex := strings.LastIndexByte(value, ',')
 	if commaIndex == -1 {
 		return net.ParseIP(value)
 	}
