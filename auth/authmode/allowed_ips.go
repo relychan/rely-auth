@@ -263,7 +263,12 @@ func (rai *RelyAuthIPAllowList) GetClientIPs(data *AuthenticateRequestData) (net
 			return nil, ErrIPNotFound
 		}
 
-		return rai.parseXFFAddr(data.Headers["x-forwarded-for"])
+		value, ok := data.Headers["x-forwarded-for"]
+		if !ok || value == "" {
+			return nil, ErrIPNotFound
+		}
+
+		return rai.parseXFFAddr(value)
 	default:
 		remoteAddr := data.RemoteAddr
 		if remoteAddr == "" {
@@ -285,8 +290,18 @@ func (rai *RelyAuthIPAllowList) GetClientIPs(data *AuthenticateRequestData) (net
 }
 
 func (rai *RelyAuthIPAllowList) parseXFFAddr(value string) (net.IP, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil, ErrIPNotFound
+	}
+
 	if rai.NumTrustedProxies < 1 && len(rai.TrustedProxyIPPrefixes) == 0 {
-		return parseHeaderAddr(value), nil
+		ip := parseHeaderAddr(value)
+		if ip == nil {
+			return nil, ErrInvalidIP
+		}
+
+		return ip, nil
 	}
 
 	numTrustedProxies := rai.NumTrustedProxies
@@ -295,8 +310,6 @@ func (rai *RelyAuthIPAllowList) parseXFFAddr(value string) (net.IP, error) {
 	}
 
 	var lastIP net.IP
-
-	value = strings.TrimSpace(value)
 	// walks the entries of the merged X-Forwarded-For chain RIGHT-TO-LEFT, invoking visit on each trimmed non-empty entry. visit returns true to stop the walk.
 	// Lazy walk, zero allocations (entries are substrings of the input headers).
 	// Multiple XFF headers are merged per RFC 2616 — each header's comma-separated entries in order received — so an attacker cannot pick which value security logic sees by sending a duplicate header.

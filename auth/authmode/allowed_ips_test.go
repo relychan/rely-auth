@@ -479,13 +479,14 @@ func TestParseXFFAddr(t *testing.T) {
 	t.Run("num_trusted_proxies_1_chain", func(t *testing.T) {
 		// client(1.2.3.4) -> proxy(10.0.0.1) -> this server; XFF: "1.2.3.4, 10.0.0.1"
 		// With 1 trusted proxy, we return the rightmost entry (10.0.0.1).
+		rai := &RelyAuthIPAllowList{NumTrustedProxies: 1}
 		ip, err := rai.parseXFFAddr("1.2.3.4, 10.0.0.1")
 		require.NoError(t, err)
 		assert.Equal(t, "10.0.0.1", ip.String())
 	})
 
-		t.Run("num_trusted_proxies_2_chain", func(t *testing.T) {
-			// XFF: "client, proxy1, proxy2" — with 2 trusted proxies, we return the middle entry (proxy1).
+	t.Run("num_trusted_proxies_2_chain", func(t *testing.T) {
+		// XFF: "client, proxy1, proxy2" — with 2 trusted proxies, we return the middle entry (proxy1).
 		rai := &RelyAuthIPAllowList{NumTrustedProxies: 2}
 		ip, err := rai.parseXFFAddr("5.5.5.5, 10.0.0.1, 10.0.0.2")
 		require.NoError(t, err)
