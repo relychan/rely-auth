@@ -16,6 +16,7 @@ package authmode
 
 import (
 	"github.com/hasura/goenvconf"
+	"github.com/invopop/jsonschema"
 	"github.com/relychan/goutils"
 )
 
@@ -56,9 +57,9 @@ type RelyAuthIPAllowListConfig struct {
 	Location ClientIPLocation `json:"location,omitempty" yaml:"location,omitempty"`
 	// Allow public IPs only.
 	PublicOnly bool `json:"publicOnly,omitempty" yaml:"publicOnly,omitempty"`
-	// The exact number of trusted reverse proxies between this server and the public internet. Required if location=x_forward_for.
+	// The exact number of trusted reverse proxies between this server and the public internet. Required if location=x_forwarded_for.
 	NumTrustedProxies int32 `json:"numTrustedProxies,omitempty" yaml:"numTrustedProxies,omitempty"`
-	// Proxy IPs must be in these trusted proxy prefixes. Ignore if empty. This configuration is available if location=x_forward_for.
+	// Proxy IPs must be in these trusted proxy prefixes. Ignore if empty. This configuration is available if location=x_forwarded_for.
 	TrustedProxyIPPrefixes []string `json:"trustedProxyIpPrefixes,omitempty" yaml:"trustedProxyIpPrefixes,omitempty"`
 	// The client IP could be in this header list. Required if location=header.
 	Headers []string `json:"headers,omitempty" yaml:"headers,omitempty"`
@@ -79,6 +80,63 @@ func (hal RelyAuthIPAllowListConfig) Equal(target RelyAuthIPAllowListConfig) boo
 		hal.PublicOnly == target.PublicOnly &&
 		hal.NumTrustedProxies == target.NumTrustedProxies &&
 		goutils.EqualSliceSorted(hal.TrustedProxyIPPrefixes, target.TrustedProxyIPPrefixes)
+}
+
+// JSONSchemaExtend extends the JSON schema with custom fields.
+func (RelyAuthIPAllowListConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	schema.Properties.Delete("location")
+
+	numTrustedProxies, _ := schema.Properties.Delete("numTrustedProxies")
+
+	trustedProxyIPPrefixes, _ := schema.Properties.Delete("trustedProxyIpPrefixes")
+	trustedProxyIPPrefixes.Items.Pattern = `^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\/([0-9]+))|((([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\\/([0-9]+))$` //nolint:lll
+
+	headers, _ := schema.Properties.Delete("headers")
+	headers.MinItems = new(uint64(1))
+	headers.Items.Pattern = `^[A-Za-z0-9!#\$%&'*+\-.^_|~]+$`
+
+	xffProps := jsonschema.NewProperties()
+	xffProps.Set("location", &jsonschema.Schema{
+		Type:        "string",
+		Enum:        []any{"x_forwarded_for"},
+		Description: "The location of the IP to select.",
+	})
+	xffProps.Set("numTrustedProxies", numTrustedProxies)
+	xffProps.Set("trustedProxyIpPrefixes", trustedProxyIPPrefixes)
+
+	remoteAddrProps := jsonschema.NewProperties()
+	remoteAddrProps.Set("location", &jsonschema.Schema{
+		Type:        "string",
+		Enum:        []any{"remote_addr"},
+		Description: "The location of the IP to select.",
+	})
+
+	headersProps := jsonschema.NewProperties()
+	headersProps.Set("location", &jsonschema.Schema{
+		Type:        "string",
+		Enum:        []any{"header"},
+		Description: "The location of the IP to select.",
+	})
+	headersProps.Set("headers", headers)
+
+	schema.OneOf = []*jsonschema.Schema{
+		{
+			Title:      "ClientIPFromXForwardedFor",
+			Type:       "object",
+			Required:   []string{"location"},
+			Properties: xffProps,
+		}, {
+			Title:      "ClientIPFromHeader",
+			Type:       "object",
+			Required:   []string{"location", "headers"},
+			Properties: headersProps,
+		}, {
+			Title:      "ClientIPFromRemoteAddr",
+			Type:       "object",
+			Required:   []string{"location"},
+			Properties: remoteAddrProps,
+		},
+	}
 }
 
 // RelyAuthSecurityRulesConfig defines configurations of security rules.

@@ -151,8 +151,7 @@ func AllowedIPsFromConfig(
 	conf *RelyAuthIPAllowListConfig,
 	getEnvFunc goenvconf.GetEnvFunc,
 ) (*RelyAuthIPAllowList, error) {
-	if conf == nil ||
-		((conf.Include == nil || conf.Include.IsZero()) && (conf.Exclude == nil || conf.Exclude.IsZero())) {
+	if conf == nil || conf.RelyAuthAllowListConfig.IsZero() {
 		return nil, ErrEmptyAllowedIPs
 	}
 
@@ -189,7 +188,8 @@ func AllowedIPsFromConfig(
 	case ClientIPFromHeader:
 		headers := make([]string, 0, len(conf.Headers))
 
-		for _, header := range conf.Headers {
+		for i := range conf.Headers {
+			header := strings.TrimSpace(conf.Headers[i])
 			if header == "" {
 				continue
 			}
@@ -347,12 +347,14 @@ func parseHeaderAddr(value string) net.IP {
 		return net.ParseIP(value)
 	}
 
-	part := strings.TrimSpace(value[:commaIndex])
+	// Multiple values in a single-IP header: the LAST entry (rightmost) is set by the
+	// hop closest to this server and is therefore the most trusted.
+	part := strings.TrimSpace(value[commaIndex+1:])
 	if part == "" {
 		return nil
 	}
 
-	return net.ParseIP(value)
+	return net.ParseIP(part)
 }
 
 // inAnyIPPrefix reports whether ip falls within any of the given prefixes.
