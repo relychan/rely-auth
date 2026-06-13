@@ -131,6 +131,11 @@ func (wa *WebhookAuthenticator) init(
 		return authmode.NewAuthFieldRequiredError(authmode.AuthModeWebhook, "url")
 	}
 
+	_, err = goutils.ParseHTTPURL(endpoint)
+	if err != nil {
+		return err
+	}
+
 	wa.url = endpoint
 
 	err = wa.initCustomRequest(config, getEnvFunc)
