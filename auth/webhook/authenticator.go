@@ -131,7 +131,7 @@ func (wa *WebhookAuthenticator) init(
 		return authmode.NewAuthFieldRequiredError(authmode.AuthModeWebhook, "url")
 	}
 
-	_, err = goutils.ParseHTTPURL(endpoint)
+	_, err = goutils.ParseAbsoluteHTTPURL(endpoint)
 	if err != nil {
 		return err
 	}

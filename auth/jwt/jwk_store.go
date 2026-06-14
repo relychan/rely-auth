@@ -88,7 +88,7 @@ func RegisterJWKS(
 		opt(opts)
 	}
 
-	parsedURL, err := goutils.ParseHTTPURL(jwksURL)
+	parsedURL, err := goutils.ParseAbsoluteHTTPURL(jwksURL)
 	if err != nil {
 		return nil, err
 	}
