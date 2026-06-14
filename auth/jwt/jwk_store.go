@@ -18,10 +18,10 @@ import (
 	"context"
 	"errors"
 	"maps"
-	"strings"
 	"sync"
 
 	"github.com/relychan/gohttpc"
+	"github.com/relychan/goutils"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -88,14 +88,16 @@ func RegisterJWKS(
 		opt(opts)
 	}
 
-	trimmedURL := strings.TrimRight(jwksURL, "/")
-	if trimmedURL == "" {
-		return nil, ErrJWKsURLRequired
+	parsedURL, err := goutils.ParseAbsoluteHTTPURL(jwksURL)
+	if err != nil {
+		return nil, err
 	}
 
-	jwksID := trimmedURL
+	encodedURL := parsedURL.String()
+
+	jwksID := encodedURL
 	if opts.prefix != "" {
-		jwksID = opts.prefix + ":" + trimmedURL
+		jwksID = opts.prefix + ":" + encodedURL
 	}
 
 	keyset, err, _ := globalJWKStore.inflight.Do(jwksID, func() (any, error) {
@@ -109,7 +111,7 @@ func RegisterJWKS(
 		}
 
 		jwk = &JWKS{
-			url:        trimmedURL,
+			url:        encodedURL,
 			httpClient: opts.httpClient,
 			inflight:   globalJWKStore.inflight,
 		}
