@@ -66,8 +66,8 @@ jobs:
           tags: ${{ steps.docker-metadata.outputs.tags }}
           labels: ${{ steps.docker-metadata.outputs.labels }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=${{ env.GHCR_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:latest
-          cache-to: type=inline
+          cache-from: type=registry,ref=${{ env.GHCR_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:main-cache
+          cache-to: type=registry,ref=${{ env.GHCR_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:main-cache
           build-args: |
             VERSION=${{ steps.get-version.outputs.tagged_version }}
 
