@@ -19,13 +19,13 @@ import (
 	"fmt"
 
 	"github.com/invopop/jsonschema"
+	"github.com/pb33f/go-yaml"
 	"github.com/relychan/goutils"
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/relychan/rely-auth/auth/jwt"
 	"github.com/relychan/rely-auth/auth/noauth"
 	"github.com/relychan/rely-auth/auth/webhook"
-	"go.yaml.in/yaml/v4"
 )
 
 // RelyAuthConfig is the data structure for authentication configurations.

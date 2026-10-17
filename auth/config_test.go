@@ -20,12 +20,12 @@ import (
 
 	"github.com/go-jose/go-jose/v4/testutils/require"
 	"github.com/hasura/goenvconf"
+	"github.com/pb33f/go-yaml"
 	"github.com/relychan/gohttpc/authc/authscheme"
 	"github.com/relychan/rely-auth/auth/apikey"
 	"github.com/relychan/rely-auth/auth/authmode"
 	"github.com/relychan/rely-auth/auth/noauth"
 	"github.com/stretchr/testify/assert"
-	"go.yaml.in/yaml/v4"
 )
 
 func TestRelyAuthConfig_Validate(t *testing.T) {
