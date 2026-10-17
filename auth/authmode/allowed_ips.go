@@ -175,11 +175,9 @@ func AllowedIPsFromConfig(
 	}
 
 	result := &RelyAuthIPAllowList{
-		ValidateIPOptions: goutils.ValidateIPOptions{
-			AllowedIPRanges: include,
-			BlockedIPRanges: exclude,
-			PublicIPOnly:    conf.PublicOnly,
-		},
+		AllowedIPRanges:   include,
+		BlockedIPRanges:   exclude,
+		PublicIPOnly:      conf.PublicOnly,
 		Location:          location,
 		NumTrustedProxies: conf.NumTrustedProxies,
 	}
