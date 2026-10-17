@@ -10,16 +10,16 @@ require (
 	github.com/hasura/gotel v0.9.0
 	github.com/invopop/jsonschema v0.14.0
 	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
+	github.com/pb33f/go-yaml v0.1.1
 	github.com/pb33f/ordered-map/v2 v2.3.2
-	github.com/relychan/gohttpc v0.0.0-20261017081102-ea2565550107
-	github.com/relychan/gohttps v0.0.0-20261017090154-34401d68e16a
-	github.com/relychan/gotransform v0.0.0-20261017090710-8a799b6171e7
-	github.com/relychan/goutils v0.0.0-20261016081333-a535416d898b
+	github.com/relychan/gohttpc v0.0.0-20261017112843-31eb07fc027a
+	github.com/relychan/gohttps v0.0.0-20261017145111-12512702fa81
+	github.com/relychan/gotransform v0.0.0-20261017145819-4f6b0b16d1e3
+	github.com/relychan/goutils v0.0.0-20261017111743-d09d3d665f7f
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/metric v1.47.0
 	go.opentelemetry.io/otel/trace v1.47.0
-	go.yaml.in/yaml/v4 v4.0.0-rc.6
 	golang.org/x/sync v0.24.0
 )
 
@@ -46,7 +46,6 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/pb33f/go-yaml v0.1.1 // indirect
 	github.com/prometheus/client_golang v1.25.0 // indirect
 	github.com/prometheus/client_model v0.6.3 // indirect
 	github.com/prometheus/common v0.72.1 // indirect
